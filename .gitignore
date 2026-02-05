@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+*.csv
+*.png
+*.txt
+!requirements.txt
+!README.md
+.env
