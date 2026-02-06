@@ -106,6 +106,31 @@ def detectar_separador(caminho, encoding):
         return '\t'
     return ','
 
+def detectar_coluna_cnpj(colunas):
+    """Detecta o nome da coluna que contém o CNPJ."""
+    candidatos = ['CPF_CNPJ', 'CNPJ', 'CPF_CNPJ_DEVEDOR', 'CNPJ_DEVEDOR', 'NR_CPF_CNPJ', 'CPF/CNPJ']
+    for candidato in candidatos:
+        if candidato in colunas:
+            return candidato
+    # Procurar por substring
+    for col in colunas:
+        col_upper = col.upper()
+        if 'CNPJ' in col_upper or 'CPF' in col_upper:
+            return col
+    return None
+
+def detectar_coluna_nome(colunas):
+    """Detecta o nome da coluna que contém o nome do devedor."""
+    candidatos = ['NOME_DEVEDOR', 'NOME', 'RAZAO_SOCIAL', 'DEVEDOR']
+    for candidato in candidatos:
+        if candidato in colunas:
+            return candidato
+    for col in colunas:
+        col_upper = col.upper()
+        if 'NOME' in col_upper and 'DEVEDOR' in col_upper:
+            return col
+    return None
+
 # ============================================================================
 # ETAPA 1 - DIAGNÓSTICO DA BASE
 # ============================================================================
@@ -176,6 +201,11 @@ def executar_diagnostico(caminho_arquivo, output_dir):
     # Para distribuição temporal
     anos_inscricao = {}
 
+    # Detectar nomes das colunas no primeiro chunk
+    col_cnpj = None
+    col_nome = None
+    todas_colunas = []
+
     chunks_processados = 0
 
     for chunk in pd.read_csv(
@@ -187,6 +217,16 @@ def executar_diagnostico(caminho_arquivo, output_dir):
         low_memory=False
     ):
         chunks_processados += 1
+
+        # Detectar colunas no primeiro chunk
+        if chunks_processados == 1:
+            todas_colunas = list(chunk.columns)
+            col_cnpj = detectar_coluna_cnpj(todas_colunas)
+            col_nome = detectar_coluna_nome(todas_colunas)
+            log(f"\n    Colunas detectadas: {len(todas_colunas)}")
+            log(f"    Coluna CNPJ: {col_cnpj}")
+            log(f"    Coluna Nome: {col_nome}")
+            log(f"    Todas as colunas: {todas_colunas[:10]}..." if len(todas_colunas) > 10 else f"    Todas as colunas: {todas_colunas}")
         if chunks_processados % 10 == 0:
             log(f"    Processando chunk {chunks_processados}... ({chunks_processados * CHUNK_SIZE:,} linhas)")
 
@@ -424,7 +464,10 @@ def executar_diagnostico(caminho_arquivo, output_dir):
         'encoding': encoding,
         'separador': separador,
         'contagens': contagens,
-        'situacoes': situacoes
+        'situacoes': situacoes,
+        'col_cnpj': col_cnpj,
+        'col_nome': col_nome,
+        'colunas': todas_colunas
     }
 
 # ============================================================================
@@ -536,11 +579,15 @@ def definir_grupo_tributario(receita):
 
     return 'OUTROS'
 
-def processar_chunk_etapa2(chunk, data_referencia):
+def processar_chunk_etapa2(chunk, data_referencia, col_cnpj='CPF_CNPJ'):
     """
     Processa um chunk adicionando variáveis derivadas.
     """
     # 2.1 - Variáveis no nível da INSCRIÇÃO
+
+    # Criar coluna padronizada CPF_CNPJ se necessário
+    if col_cnpj != 'CPF_CNPJ' and col_cnpj in chunk.columns:
+        chunk['CPF_CNPJ'] = chunk[col_cnpj]
 
     # Data como datetime
     chunk['DATA_INSCRICAO_DT'] = pd.to_datetime(chunk['DATA_INSCRICAO'], errors='coerce')
@@ -603,9 +650,14 @@ def executar_etapa2(caminho_arquivo, diagnostico, output_dir):
     encoding = diagnostico['encoding']
     separador = diagnostico['separador']
     total_linhas = diagnostico['total_linhas']
+    col_cnpj = diagnostico.get('col_cnpj', 'CPF_CNPJ')
+    col_nome = diagnostico.get('col_nome', 'NOME_DEVEDOR')
+
+    print(f"\n  Usando coluna CNPJ: {col_cnpj}")
+    print(f"  Usando coluna Nome: {col_nome}")
 
     data_referencia = pd.Timestamp.now()
-    print(f"\nData de referência: {data_referencia.strftime('%d/%m/%Y')}")
+    print(f"  Data de referência: {data_referencia.strftime('%d/%m/%Y')}")
 
     # Arquivo de saída temporário
     caminho_saida = output_dir / "pgfn_unificada_enriquecida_seguro_garantia.csv"
@@ -630,7 +682,7 @@ def executar_etapa2(caminho_arquivo, diagnostico, output_dir):
         chunks_processados += 1
 
         # Processar chunk
-        chunk = processar_chunk_etapa2(chunk, data_referencia)
+        chunk = processar_chunk_etapa2(chunk, data_referencia, col_cnpj)
 
         # Salvar chunk no arquivo de saída
         if primeiro_chunk:
@@ -639,7 +691,12 @@ def executar_etapa2(caminho_arquivo, diagnostico, output_dir):
         else:
             chunk.to_csv(caminho_saida, sep=";", index=False, encoding="utf-8-sig", mode='a', header=False)
 
-        # Acumular agregações por CNPJ
+        # Acumular agregações por CNPJ (usa coluna padronizada CPF_CNPJ criada no processamento)
+        if 'CPF_CNPJ' not in chunk.columns:
+            print(f"  [ERRO] Coluna 'CPF_CNPJ' não encontrada no chunk após processamento!")
+            print(f"  Colunas disponíveis: {list(chunk.columns)}")
+            break
+
         for cpf_cnpj, grupo in chunk.groupby('CPF_CNPJ'):
             if cpf_cnpj not in agg_cnpj_parcial:
                 agg_cnpj_parcial[cpf_cnpj] = {
@@ -680,8 +737,8 @@ def executar_etapa2(caminho_arquivo, diagnostico, output_dir):
                 agg['VALORES'].extend(grupo['VALOR_CONSOLIDADO_NUM'].head(10).tolist())
 
             # Nome do devedor
-            if agg['NOME'] is None and 'NOME_DEVEDOR' in grupo.columns:
-                agg['NOME'] = grupo['NOME_DEVEDOR'].iloc[0]
+            if agg['NOME'] is None and col_nome in grupo.columns:
+                agg['NOME'] = grupo[col_nome].iloc[0]
 
         if chunks_processados % 5 == 0:
             print(f"  Chunk {chunks_processados}: {chunks_processados * CHUNK_SIZE:,} linhas processadas...")
