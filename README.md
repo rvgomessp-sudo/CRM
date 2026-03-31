@@ -125,3 +125,32 @@ scripts/*.py      -> Scripts de analise (usam config + utils)
 
 Todos os scripts importam `config` e `utils`, eliminando duplicacao de codigo
 e paths hardcoded.
+
+## VF CRM (Interface Web)
+
+O arquivo `VF_CRM.html` e o CRM completo da Vazquez & Fonseca, executavel direto no navegador (sem servidor). Funcionalidades:
+
+- **Pipeline Kanban** com 8 estagios (Identificado → Pos-venda)
+- **Ficha de Empresa** com dados PGFN, enriquecimento financeiro e elegibilidade por seguradora
+- **Seguradoras & Regras** (Sancor, Berkley, Zurich/Swiss/Chubb)
+- **Gerador de Proposta** com calculo automatico de premio, honorarios e comissao
+- **Biblioteca de Documentos** com controle de sigilo
+- **Google Sheets** como backend (via Apps Script)
+- **Import XLSX/CSV/JSON** de dados do pipeline Python
+
+### Integracao Pipeline Python → CRM
+
+```bash
+# 1. Executar pipeline de segmentacao
+python segmentacao_universo.py
+
+# 2. Exportar para formato CRM
+python exportar_para_crm.py
+
+# 3. Abrir VF_CRM.html no navegador e importar o .xlsx ou .json gerado
+```
+
+O script `exportar_para_crm.py` le o CSV agregado por CNPJ raiz e gera:
+- **XLSX** com abas Sancor/Berkley/Zurich (para import via botao no CRM)
+- **JSON** no formato de backup do CRM (importavel direto)
+- **CSV** com todas as empresas qualificadas
