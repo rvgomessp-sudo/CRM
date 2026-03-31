@@ -673,11 +673,13 @@ function doPost(e) {
       <div class="cfg-block" style="border-color:var(--cherry20)">
         <div class="cfg-title" style="color:var(--cherry)">📥 Importar Planilha PGFN (.xlsx)</div>
         <div class="alert blue" style="margin-bottom:10px">
-          Selecione o arquivo <strong>VF_PGFN_4T2025_Carteira_Completa.xlsx</strong>. O CRM vai ler todas as abas (Sancor, Berkley, Zurich) e importar as empresas automaticamente, sem duplicar quem já está cadastrado.
+          Selecione o arquivo <strong>.xlsx</strong> (com abas Sancor/Berkley/Zurich) ou <strong>.csv</strong> gerado pelo pipeline Python (<code>exportar_para_crm.py</code>). O CRM importa automaticamente sem duplicar quem já está cadastrado.
         </div>
         <div class="btn-row" style="margin-bottom:10px">
-          <button class="btn pri" onclick="document.getElementById('imp_xlsx').click()">📂 Selecionar arquivo .xlsx</button>
+          <button class="btn pri" onclick="document.getElementById('imp_xlsx').click()">📂 Selecionar .xlsx</button>
           <input type="file" id="imp_xlsx" accept=".xlsx,.xls" style="display:none" onchange="importXLSX(event)"/>
+          <button class="btn sec" onclick="document.getElementById('imp_csv').click()">📂 Selecionar .csv (Pipeline)</button>
+          <input type="file" id="imp_csv" accept=".csv" style="display:none" onchange="importCSVPipeline(event)"/>
         </div>
         <div id="xlsx_status"></div>
       </div>
@@ -1545,6 +1547,113 @@ function importXLSX(event){
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+// ══════════════════════════════════════════════════════
+// IMPORTAR CSV — Pipeline Python (exportar_para_crm.py)
+// ══════════════════════════════════════════════════════
+function importCSVPipeline(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const st = g_el('xlsx_status');
+  st.innerHTML = '<div class="alert info">⏳ Lendo CSV...</div>';
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const text = e.target.result;
+      const lines = text.split('\n').filter(l=>l.trim());
+      if(lines.length<2){ st.innerHTML='<div class="alert warn">CSV vazio.</div>'; return; }
+
+      // Parse header
+      const hdrs = parseCSVLine(lines[0]);
+      const cnpjsExistentes = new Set(S.empresas.map(x=>(x.cnpj||'').replace(/\D/g,'')));
+      let importados=0, duplicados=0;
+
+      for(let i=1;i<lines.length;i++){
+        const vals = parseCSVLine(lines[i]);
+        if(!vals.length) continue;
+        const row = {};
+        hdrs.forEach((h,idx)=>row[h.trim()]=vals[idx]||'');
+
+        const nome = row['Empresa']||'';
+        if(!nome) continue;
+
+        const cnpjRaw = String(row['CNPJ Completo']||row['CNPJ Raiz']||'').replace(/\D/g,'');
+        if(cnpjRaw && cnpjsExistentes.has(cnpjRaw)){ duplicados++; continue; }
+
+        const sit = String(row['Situacoes Presentes']||row['Situações Presentes']||'');
+        const urgente = sit.includes('AJUIZADA_SEM_GAR');
+        const seguradora = String(row['Seguradora Alvo']||'A definir');
+
+        const empresa = {
+          id: uid(),
+          nome: nome,
+          cnpj: String(row['CNPJ Completo']||row['CNPJ Raiz']||''),
+          uf: String(row['UF']||''),
+          setor: '',
+          email: '',
+          tel: '',
+          valor_divida: String(row['Valor Aberto (R$)']||''),
+          faixa: String(row['Faixa Valor']||''),
+          score_pgfn: String(row['Score']||''),
+          anos_pgfn: String(row['Anos na PGFN']||''),
+          situacao: sit.split(';')[0].trim()||'EM_ABERTO',
+          receita_principal: String(row['Receita Principal']||''),
+          faturamento: '',
+          pl: '',
+          ebitda: '',
+          regime: String(row['Simples Nacional']||'').toLowerCase()==='sim'?'Simples Nacional':'Lucro Real',
+          fonte: 'Pipeline PGFN',
+          data_enriquecimento: today(),
+          estagio: 'identificado',
+          seguradora: seguradora,
+          resp_inst: String(row['Responsavel V&F']||row['Responsável V&F']||'Anna'),
+          resp_tec: 'Rodrigo',
+          data_entrada: today(),
+          followup: '',
+          urgente: urgente,
+          notas: `Importado do Pipeline CSV. Inscricoes: ${row['Total Inscricoes']||'?'}, Ajuizadas: ${row['Total Ajuizado']||'?'}, Porte: ${row['Porte Proxy']||'?'}.`,
+          updated: today()
+        };
+
+        S.empresas.push(empresa);
+        if(cnpjRaw) cnpjsExistentes.add(cnpjRaw);
+        importados++;
+      }
+
+      saveS(); renderPipe(); populateEmpSel();
+      st.innerHTML = `<div class="alert ok">
+        ✅ <strong>CSV importado!</strong><br/>
+        ${importados} empresas importadas do pipeline Python.<br/>
+        ${duplicados>0?`${duplicados} duplicatas ignoradas.`:''}
+        <br/><strong>Vá para 📊 Pipeline para ver.</strong>
+      </div>`;
+      event.target.value='';
+    }catch(err){
+      st.innerHTML='<div class="alert danger">❌ Erro: '+err.message+'</div>';
+    }
+  };
+  reader.readAsText(file,'utf-8');
+}
+
+function parseCSVLine(line){
+  const result=[];
+  let current='', inQuotes=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(inQuotes){
+      if(c==='"'&&line[i+1]==='"'){current+='"';i++;}
+      else if(c==='"'){inQuotes=false;}
+      else{current+=c;}
+    }else{
+      if(c==='"'){inQuotes=true;}
+      else if(c===','){result.push(current);current='';}
+      else{current+=c;}
+    }
+  }
+  result.push(current);
+  return result;
 }
 
 function copyScript(){
