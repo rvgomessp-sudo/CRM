@@ -1460,14 +1460,34 @@ function importXLSX(event){
           if(cleanName.toLowerCase().includes(k.toLowerCase())){ seguradora = v; break; }
         }
 
-        const ws   = wb.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
-        total += rows.length;
+        const ws = wb.Sheets[sheetName];
 
-        rows.forEach(row => {
-          // Pula linha de título
+        // Converter para array de arrays para detectar a linha de headers
+        const allRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        if(!allRows.length) return;
+
+        // Encontrar a linha de headers (a que contem 'Empresa' e 'CNPJ')
+        let headerIdx = -1;
+        for(let i=0; i<Math.min(allRows.length,5); i++){
+          const rowStr = allRows[i].map(c=>String(c)).join('|').toLowerCase();
+          if(rowStr.includes('empresa') && (rowStr.includes('cnpj') || rowStr.includes('score'))){
+            headerIdx = i; break;
+          }
+        }
+        if(headerIdx < 0) return; // aba sem headers reconheciveis
+
+        const headers = allRows[headerIdx].map(h=>String(h).trim());
+        const dataRows = allRows.slice(headerIdx+1);
+        total += dataRows.length;
+
+        dataRows.forEach(vals => {
+          // Montar objeto com headers como chaves
+          const row = {};
+          headers.forEach((h,i) => row[h] = vals[i]!==undefined ? vals[i] : '');
+
+          // Pular linhas vazias ou de titulo
           if(!row['Empresa'] && !row['CNPJ Completo']) return;
-          if(String(row['Empresa']).startsWith('V&F |')) return;
+          if(String(row['Empresa']).startsWith('V&F')) return;
 
           const cnpjRaw = String(row['CNPJ Completo']||row['CNPJ Raiz']||'').replace(/\D/g,'');
 
@@ -1475,7 +1495,7 @@ function importXLSX(event){
           if(cnpjRaw && cnpjsExistentes.has(cnpjRaw)){ duplicados++; return; }
 
           // Mapear situação → urgente
-          const sit     = String(row['Situações Presentes']||'');
+          const sit     = String(row['Situações Presentes']||row['Situacoes Presentes']||'');
           const urgente = sit.includes('AJUIZADA_SEM_GAR');
 
           // Mapear Simples Nacional
@@ -1483,7 +1503,7 @@ function importXLSX(event){
           const regime  = simplesStr==='sim'||simplesStr==='s' ? 'Simples Nacional' : 'Lucro Real';
 
           // Mapear estágio (se vier preenchido, respeitar; senão padrão)
-          const estagioXls = String(row['Estágio Pipeline']||'').toLowerCase();
+          const estagioXls = String(row['Estágio Pipeline']||row['Estagio Pipeline']||'').toLowerCase();
           let estagio = 'identificado';
           if(estagioXls.includes('contato'))      estagio = 'contato';
           else if(estagioXls.includes('qualif'))  estagio = 'qualificacao';
@@ -1513,12 +1533,12 @@ function importXLSX(event){
             data_enriquecimento: today(),
             estagio:            estagio,
             seguradora:         seguradora,
-            resp_inst:          String(row['Responsável V&F']||'Anna')||'Anna',
+            resp_inst:          String(row['Responsável V&F']||row['Responsavel V&F']||'Anna')||'Anna',
             resp_tec:           'Rodrigo',
             data_entrada:       today(),
-            followup:           String(row['Próximo Follow-up']||''),
+            followup:           String(row['Próximo Follow-up']||row['Proximo Follow-up']||''),
             urgente:            urgente,
-            notas:              String(row['Observações']||''),
+            notas:              String(row['Observações']||row['Observacoes']||''),
             updated:            today()
           };
 

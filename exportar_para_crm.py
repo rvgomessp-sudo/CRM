@@ -206,30 +206,33 @@ def transformar_para_crm(df):
         situacoes = determinar_situacoes(row)
         urgente = 'AJUIZADA_SEM_GAR' in situacoes
 
+        # Nomes de coluna compativeis com VF_PGFN_4T2025_Carteira_Completa.xlsx
         registro = {
             'Empresa': row.get('NOME_DEVEDOR', ''),
-            'CNPJ Raiz': str(row.get('CNPJ_RAIZ', '')),
-            'CNPJ Completo': str(row.get('CNPJ_RAIZ', '')),
             'UF': row.get('UF_PRINCIPAL', ''),
-            'Valor Aberto (R$)': valor_total,
-            'Faixa Valor': classificar_faixa(valor_total),
+            'CNPJ Completo': str(row.get('CNPJ_RAIZ', '')),
             'Score': score,
+            'Prioridade': 'ALTA' if urgente and score >= 60 else 'MEDIA' if score >= 40 else 'NORMAL',
+            'Faixa Valor': classificar_faixa(valor_total),
+            'Valor Aberto (R$)': valor_total,
+            'Qtd. Inscricoes': row.get('TOTAL_INSCRICOES_CNPJ', 0),
             'Anos na PGFN': calcular_anos_pgfn(row),
-            'Situacoes Presentes': situacoes,
             'Receita Principal': row.get('GRUPO_TRIB_PREDOMINANTE_CNPJ', ''),
-            'Total Inscricoes': row.get('TOTAL_INSCRICOES_CNPJ', 0),
+            'Situacoes Presentes': situacoes,
+            'Estagio Pipeline': '',
+            'Responsavel V&F': 'Anna',
+            'Ultimo Contato': '',
+            'Proximo Follow-up': '',
+            'Telefone': '',
+            'E-mail': '',
+            'Contato (Nome)': '',
+            'Porte': row.get('PORTE_PROXY', ''),
+            'Simples Nacional': 'Nao',
+            'Observacoes': '',
+            'Seguradora Alvo': seguradora,
             'Total Ajuizado': row.get('TOTAL_AJUIZADO_CNPJ', 0),
             'Total Garantidas': row.get('TOTAL_GARANTIDAS_CNPJ', 0),
             'Valor Nao Garantido': row.get('VALOR_TOTAL_NAO_GARANTIDO_CNPJ', 0),
-            'Taxa Ajuizamento': row.get('TAXA_AJUIZAMENTO_CNPJ', 0),
-            'Taxa Garantia': row.get('TAXA_GARANTIA_CNPJ', 0),
-            'Porte Proxy': row.get('PORTE_PROXY', ''),
-            'Seguradora Alvo': seguradora,
-            'Responsavel V&F': 'Anna',
-            'Estagio Pipeline': 'Identificado',
-            'Proximo Follow-up': '',
-            'Observacoes': '',
-            'Simples Nacional': 'Nao',  # ja filtrado no pipeline
         }
 
         registros.append(registro)
@@ -243,18 +246,39 @@ def transformar_para_crm(df):
 def exportar_xlsx(df_crm, caminho_saida):
     """
     Exporta XLSX com abas por seguradora, compativel com VF_CRM.html.
+    Formato identico ao VF_PGFN_4T2025_Carteira_Completa.xlsx:
+    Row 1 = titulo, Row 2 = headers, Row 3+ = dados.
     """
     with pd.ExcelWriter(caminho_saida, engine='openpyxl') as writer:
-        for seguradora in ['Sancor', 'Berkley', 'Zurich/Swiss/Chubb']:
+        seg_config = [
+            ('Sancor', 'Sancor', 'Sancor — Frente 1'),
+            ('Berkley', 'Berkley', 'Berkley — Frente 2'),
+            ('Zurich/Swiss/Chubb', 'Zurich-Swiss-Chubb', 'Zurich / Swiss Re / Chubb — F2'),
+        ]
+
+        for seguradora, nome_aba, label in seg_config:
             df_seg = df_crm[df_crm['Seguradora Alvo'] == seguradora].copy()
-            # Nome da aba (max 31 chars no Excel)
-            nome_aba = seguradora.replace('/', '-')
-            df_seg.to_excel(writer, sheet_name=nome_aba, index=False)
+            df_seg = df_seg.drop(columns=['Seguradora Alvo'], errors='ignore')
+
+            # Adicionar coluna # (numeracao)
+            df_seg.insert(0, '#', range(1, len(df_seg) + 1))
+
+            # Escrever com startrow=1 para deixar row 0 para titulo
+            df_seg.to_excel(writer, sheet_name=nome_aba, index=False, startrow=1)
+
+            # Adicionar titulo na row 0
+            ws = writer.sheets[nome_aba]
+            ws.cell(row=1, column=1, value=f'V&F | {label} | {len(df_seg)} empresas')
+
             print(f"  Aba '{nome_aba}': {len(df_seg):,} empresas")
 
         # Aba completa
-        df_crm.to_excel(writer, sheet_name='Base Completa', index=False)
-        print(f"  Aba 'Base Completa': {len(df_crm):,} empresas")
+        df_all = df_crm.copy()
+        df_all.insert(0, '#', range(1, len(df_all) + 1))
+        df_all.to_excel(writer, sheet_name='Base Completa', index=False, startrow=1)
+        ws = writer.sheets['Base Completa']
+        ws.cell(row=1, column=1, value=f'V&F | Base Completa | {len(df_all)} empresas')
+        print(f"  Aba 'Base Completa': {len(df_all):,} empresas")
 
     print(f"\n[OK] XLSX salvo: {caminho_saida}")
 
