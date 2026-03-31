@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:mso="urn:schemas-microsoft-com:office:office" xmlns:msdt="uuid:C2F41010-65B3-11d1-A29F-00AA00C14882">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VF CRM — Vazquez &amp; Fonseca | Seguro Garantia Tributário</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ══════════════════════════════════════════
+   TOKENS
+══════════════════════════════════════════ */
+:root{
+  --white:#ffffff;
+  --off:#f5f5f8;
+  --g50:#f0f0f4;
+  --g100:#e4e4ec;
+  --g200:#c8c8d6;
+  --g400:#8a8a9e;
+  --g600:#5a5a6e;
+  --charcoal:#2c2c3a;
+  --charcoal2:#3d3d4e;
+  --cherry:#b5152b;
+  --cherry-dark:#8b0f21;
+  --cherry10:rgba(181,21,43,.08);
+  --cherry20:rgba(181,21,43,.16);
+  --ok:#1a7a50;
+  --ok-bg:rgba(26,122,80,.08);
+  --warn:#b87a00;
+  --warn-bg:rgba(184,122,0,.08);
+  --blue:#2a7ecc;
+  --blue-bg:rgba(42,126,204,.08);
+  --purple:#6a4fc4;
+  --purple-bg:rgba(106,79,196,.08);
+  --shadow:0 2px 14px rgba(44,44,58,.10);
+  --shadow-sm:0 1px 5px rgba(44,44,58,.07);
+  --r:10px; --rsm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--off);color:var(--charcoal);font:13.5px/1.55 Inter,system-ui,-apple-system,Arial;min-height:100vh}
+
+/* ══ LAYOUT ══ */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.content{flex:1;padding:20px 24px 60px;max-width:1440px;margin:0 auto;width:100%}
+.panel{display:none}.panel.active{display:block}
+
+/* ══ HEADER ══ */
+.header{
+  background:var(--charcoal);color:var(--white);
+  padding:0 22px;height:54px;
+  display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:200;
+  box-shadow:0 2px 10px rgba(0,0,0,.22);
+}
+.logo{
+  width:33px;height:33px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cherry),var(--cherry-dark));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:13px;color:#fff;
+  box-shadow:0 0 0 1px rgba(255,255,255,.12);
+}
+.hdr-title{font-weight:700;font-size:14.5px}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.45);margin-top:1px}
+.hdr-spacer{flex:1}
+.conf-badge{
+  padding:3px 9px;border-radius:999px;
+  background:rgba(181,21,43,.28);border:1px solid rgba(181,21,43,.45);
+  font-size:10px;font-weight:700;color:#ffb3bc;letter-spacing:.07em;text-transform:uppercase;
+}
+.user-btn{
+  padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;
+  cursor:pointer;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);
+  border:1px solid transparent;transition:all .15s;
+}
+.user-btn.active{background:var(--cherry);color:#fff;border-color:var(--cherry-dark)}
+#sync_dot{font-size:11px;color:rgba(255,255,255,.4)}
+
+/* ══ NAV ══ */
+.nav{
+  background:var(--white);border-bottom:1px solid var(--g100);
+  padding:0 22px;display:flex;gap:0;overflow-x:auto;
+}
+.ntab{
+  padding:11px 17px;font-size:12.5px;font-weight:600;color:var(--g400);
+  cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;
+  white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:6px;
+}
+.ntab:hover{color:var(--charcoal)}
+.ntab.active{color:var(--cherry);border-bottom-color:var(--cherry)}
+.nbadge{background:var(--cherry10);color:var(--cherry);border-radius:999px;padding:1px 7px;font-size:10px}
+
+/* ══ CARDS ══ */
+.card{
+  background:var(--white);border:1px solid var(--g100);
+  border-radius:var(--r);padding:16px 20px;margin-bottom:14px;
+  box-shadow:var(--shadow-sm);
+}
+.card-hdr{
+  font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--g600);margin-bottom:14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.ctag{
+  font-size:10px;padding:2px 8px;border-radius:999px;
+  background:var(--cherry10);color:var(--cherry);
+  text-transform:none;letter-spacing:0;font-weight:600;
+}
+
+/* ══ GRIDS ══ */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .field{flex:1;min-width:140px}
+
+/* ══ FORMS ══ */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:700;color:var(--g600);text-transform:uppercase;letter-spacing:.04em}
+input[type=text],input[type=number],input[type=email],input[type=date],select,textarea{
+  background:var(--off);border:1px solid var(--g100);color:var(--charcoal);
+  padding:8px 11px;border-radius:var(--rsm);font-size:13px;
+  outline:none;width:100%;transition:border-color .15s;font-family:inherit;
+}
+input:focus,select:focus,textarea:focus{
+  border-color:var(--cherry);background:var(--white);
+  box-shadow:0 0 0 2.5px var(--cherry10);
+}
+
+/* ══ BUTTONS ══ */
+.btn{
+  cursor:pointer;padding:9px 16px;border-radius:var(--rsm);
+  font-size:12.5px;font-weight:600;border:1px solid;transition:all .15s;
+  white-space:nowrap;font-family:inherit;
+}
+.btn.pri{background:var(--cherry);border-color:var(--cherry-dark);color:#fff}
+.btn.pri:hover{background:var(--cherry-dark)}
+.btn.sec{background:var(--white);border-color:var(--g200);color:var(--charcoal)}
+.btn.sec:hover{border-color:var(--cherry);color:var(--cherry)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--g400);padding:5px 9px}
+.btn.ghost:hover{color:var(--cherry);background:var(--cherry10)}
+.btn.sm{padding:5px 11px;font-size:11.5px}
+.btn.danger{background:var(--cherry10);border-color:var(--cherry);color:var(--cherry)}
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.active-filter{border-color:var(--cherry)!important;color:var(--cherry)!important}
+
+/* ══ KPI CARDS ══ */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--white);border:1px solid var(--g100);border-radius:var(--r);padding:13px 16px;box-shadow:var(--shadow-sm)}
+.kpi .lbl{font-size:11px;color:var(--g400);margin-bottom:4px;font-weight:500}
+.kpi .val{font-size:22px;font-weight:800;color:var(--charcoal);line-height:1}
+.kpi.cherry .val{color:var(--cherry)}
+.kpi.ok .val{color:var(--ok)}
+.kpi.warn .val{color:var(--warn)}
+.kpi.blue .val{color:var(--blue)}
+.kpi .sub{font-size:10px;color:var(--g400);margin-top:3px}
+
+/* ══ ALERTS ══ */
+.alert{padding:10px 14px;border-radius:var(--rsm);font-size:12.5px;margin:6px 0}
+.alert.ok{background:var(--ok-bg);border:1px solid rgba(26,122,80,.2);color:#0d5030}
+.alert.warn{background:var(--warn-bg);border:1px solid rgba(184,122,0,.2);color:#7a5000}
+.alert.danger{background:var(--cherry10);border:1px solid var(--cherry20);color:var(--cherry-dark)}
+.alert.info{background:rgba(44,44,58,.04);border:1px solid var(--g100);color:var(--g600)}
+.alert.blue{background:var(--blue-bg);border:1px solid rgba(42,126,204,.2);color:#1a5a99}
+
+/* ══ KANBAN ══ */
+.kanban{display:flex;gap:11px;overflow-x:auto;padding-bottom:10px}
+.k-col{
+  min-width:195px;max-width:220px;flex-shrink:0;
+  background:var(--g50);border:1px solid var(--g100);
+  border-radius:var(--r);padding:11px;
+}
+.k-col-hdr{
+  font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--g600);margin-bottom:9px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.k-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.k-card{
+  background:var(--white);border:1px solid var(--g100);border-radius:var(--rsm);
+  padding:10px 12px;margin-bottom:7px;cursor:pointer;transition:all .15s;
+  box-shadow:var(--shadow-sm);
+}
+.k-card:hover{border-color:var(--cherry);box-shadow:0 2px 10px var(--cherry10)}
+.k-empresa{font-size:12.5px;font-weight:700;margin-bottom:3px}
+.k-meta{font-size:11px;color:var(--g400)}
+.k-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px}
+
+/* ══ TAGS ══ */
+.tag{font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600}
+.tag.sancor{background:var(--blue-bg);color:var(--blue)}
+.tag.berkley{background:var(--purple-bg);color:var(--purple)}
+.tag.zurich{background:var(--ok-bg);color:var(--ok)}
+.tag.anna{background:rgba(232,180,74,.12);color:#8a6200}
+.tag.rodrigo{background:var(--cherry10);color:var(--cherry)}
+.tag.urgente{background:var(--cherry10);color:var(--cherry);border:1px solid var(--cherry20)}
+
+/* ══ TABLES ══ */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--g100);border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  background:var(--g50);font-size:10.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--g600);padding:9px 12px;text-align:left;
+  border-bottom:1px solid var(--g100);
+}
+td{padding:9px 12px;border-bottom:1px dashed var(--g50);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--g50)}
+
+/* ══ SEG CARDS ══ */
+.seg-card{
+  background:var(--white);border:1px solid var(--g100);
+  border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow-sm);
+}
+.seg-name{font-size:15px;font-weight:800;margin-bottom:3px}
+.seg-sub{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--g400);margin-bottom:10px}
+.seg-rule{display:flex;align-items:flex-start;gap:8px;margin-bottom:7px;font-size:12.5px}
+.seg-rule .ico{font-size:13px;flex-shrink:0;margin-top:1px}
+.seg-div{height:1px;background:var(--g100);margin:11px 0}
+.seg-badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;
+  padding:3px 10px;border-radius:999px;
+}
+.seg-badge.f1{background:var(--blue-bg);color:var(--blue)}
+.seg-badge.f2{background:var(--ok-bg);color:var(--ok)}
+.seg-badge.off{background:var(--g50);color:var(--g400)}
+.seg-note{font-size:11.5px;color:var(--g600)}
+
+/* ══ PROPOSTA ══ */
+.proposta-wrap{
+  background:var(--white);border:1px solid var(--g100);border-radius:var(--r);
+  padding:36px 44px;font-family:Georgia,serif;font-size:13px;line-height:1.75;
+  box-shadow:var(--shadow);max-width:820px;margin:0 auto;
+}
+.prop-hdr{
+  border-bottom:3px solid var(--cherry);padding-bottom:16px;margin-bottom:22px;
+  display:flex;justify-content:space-between;align-items:flex-start;
+}
+.prop-logo{font-size:24px;font-weight:900;color:var(--charcoal);letter-spacing:-.5px;font-family:Inter,sans-serif}
+.prop-logo span{color:var(--cherry)}
+.prop-conf{
+  font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cherry);border:1px solid var(--cherry);padding:4px 9px;border-radius:4px;text-align:center;
+}
+.prop-section{
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--cherry);margin:20px 0 8px;font-family:Inter,sans-serif;
+}
+.prop-footer{
+  border-top:1px solid var(--g100);margin-top:28px;padding-top:14px;
+  font-size:11px;color:var(--g400);font-family:Inter,sans-serif;line-height:1.5;
+}
+
+/* ══ BIBLIOTECA ══ */
+.doc-card{
+  background:var(--off);border:1px solid var(--g100);border-radius:var(--rsm);
+  padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;
+  cursor:pointer;transition:all .15s;
+}
+.doc-card:hover{border-color:var(--cherry);background:var(--white)}
+.doc-ico{font-size:20px;flex-shrink:0}
+.doc-info{flex:1}
+.doc-name{font-size:13px;font-weight:600}
+.doc-meta{font-size:11px;color:var(--g400);margin-top:2px}
+.doc-tag{font-size:10px;padding:2px 7px;border-radius:999px;background:var(--cherry10);color:var(--cherry);font-weight:600;white-space:nowrap}
+
+/* ══ CONFIG ══ */
+.cfg-block{border:1px solid var(--g100);border-radius:var(--r);padding:16px 20px;margin-bottom:12px;background:var(--white)}
+.cfg-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--charcoal);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.code-block{
+  background:var(--charcoal);color:#a8e6cf;
+  font:12px/1.6 'Courier New',monospace;padding:14px 16px;
+  border-radius:var(--rsm);overflow-x:auto;margin-top:8px;white-space:pre;
+}
+
+/* ══ MODAL ══ */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.42);
+  display:none;align-items:center;justify-content:center;z-index:1000;padding:20px;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--white);border-radius:var(--r);padding:24px;
+  max-width:720px;width:100%;max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.22);
+}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{cursor:pointer;font-size:22px;color:var(--g400);background:none;border:none;line-height:1}
+
+/* ══ MISC ══ */
+.sep{height:1px;background:var(--g100);margin:16px 0}
+.section-title{font-size:17px;font-weight:800;color:var(--charcoal);margin-bottom:3px}
+.section-sub{font-size:12.5px;color:var(--g400);margin-bottom:18px}
+.enr-badge{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;padding:2px 8px;border-radius:999px;font-weight:600}
+.enr-badge.ok{background:var(--ok-bg);color:var(--ok)}
+.enr-badge.parcial{background:var(--warn-bg);color:var(--warn)}
+.enr-badge.vazio{background:var(--g50);color:var(--g400)}
+.note{font-size:12px;color:var(--g400)}
+
+@media print{
+  .header,.nav,.content > div:not(.panel.active),.btn,.btn-row,.card:not(.proposta-wrap){display:none!important}
+  .proposta-wrap{box-shadow:none;border:none;padding:20px}
+}
+@media(max-width:768px){
+  .g2,.g3,.g4{grid-template-columns:1fr}
+  .content{padding:14px}
+  .proposta-wrap{padding:20px}
+}
+</style>
+
+<!--[if gte mso 9]><xml>
+<mso:CustomDocumentProperties>
+<mso:_ApprovalStatus msdt:dt="string">0</mso:_ApprovalStatus>
+<mso:_ApprovalAssignedTo msdt:dt="string"></mso:_ApprovalAssignedTo>
+<mso:_ApprovalRespondedBy msdt:dt="string"></mso:_ApprovalRespondedBy>
+<mso:_ApprovalSentBy msdt:dt="string"></mso:_ApprovalSentBy>
+</mso:CustomDocumentProperties>
+</xml><![endif]-->
+</head>
+<body>
+<div class="app">
+
+<!-- ══════════ HEADER ══════════ -->
+<header class="header">
+  <div class="logo">VF</div>
+  <div>
+    <div class="hdr-title">V&amp;F CRM</div>
+    <div class="hdr-sub">Vazquez &amp; Fonseca · Seguro Garantia Tributário</div>
+  </div>
+  <div class="hdr-spacer"></div>
+  <span class="conf-badge">🔒 Confidencial</span>
+  <div style="display:flex;gap:5px">
+    <span class="user-btn" id="badge_anna" onclick="setUser('Anna')">Anna</span>
+    <span class="user-btn active" id="badge_rodrigo" onclick="setUser('Rodrigo')">Rodrigo</span>
+  </div>
+  <span id="sync_dot">⬤ Local</span>
+</header>
+
+<!-- ══════════ NAV ══════════ -->
+<nav class="nav">
+  <div class="ntab active" data-p="pipeline" onclick="showTab('pipeline')">📊 Pipeline <span class="nbadge" id="nb_pipe">0</span></div>
+  <div class="ntab" data-p="empresa" onclick="showTab('empresa')">🏢 Empresa</div>
+  <div class="ntab" data-p="seguradoras" onclick="showTab('seguradoras')">🛡 Seguradoras &amp; Regras</div>
+  <div class="ntab" data-p="proposta" onclick="showTab('proposta')">📄 Proposta</div>
+  <div class="ntab" data-p="biblioteca" onclick="showTab('biblioteca')">📁 Biblioteca <span class="nbadge" id="nb_bib">0</span></div>
+  <div class="ntab" data-p="config" onclick="showTab('config')">⚙ Config &amp; Sheets</div>
+</nav>
+
+<!-- ══════════ CONTENT ══════════ -->
+<main class="content">
+
+<!-- ═══ PIPELINE ═══ -->
+<div class="panel active" id="panel-pipeline">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <div class="section-title">Funil de Prospecção</div>
+      <div class="section-sub">Anna (institucional) + Rodrigo (técnico) — pipeline unificado</div>
+    </div>
+    <div class="btn-row">
+      <select id="f_resp" style="padding:7px 11px;border-radius:7px;border:1px solid var(--g200);background:var(--white);font-size:12px" onchange="renderPipe()">
+        <option value="">Todos responsáveis</option>
+        <option value="Anna">Anna</option>
+        <option value="Rodrigo">Rodrigo</option>
+      </select>
+      <select id="f_seg" style="padding:7px 11px;border-radius:7px;border:1px solid var(--g200);background:var(--white);font-size:12px" onchange="renderPipe()">
+        <option value="">Todas seguradoras</option>
+        <option value="Sancor">Sancor</option>
+        <option value="Berkley">Berkley</option>
+        <option value="Zurich">Zurich/Swiss/Chubb</option>
+      </select>
+      <button class="btn pri" onclick="openEmpresaModal('')">+ Nova Empresa</button>
+      <button class="btn sec sm" onclick="exportCSV()">⬇ CSV</button>
+    </div>
+  </div>
+  <div class="kpi-row" id="pipe_kpis"></div>
+  <div class="kanban" id="kanban"></div>
+</div>
+
+<!-- ═══ EMPRESA ═══ -->
+<div class="panel" id="panel-empresa">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <div class="section-title">Ficha de Empresa</div>
+      <div class="section-sub">Enriquecimento, PGFN, elegibilidade por seguradora</div>
+    </div>
+    <div class="btn-row">
+      <select id="sel_emp" style="min-width:240px;padding:7px 11px;border-radius:7px;border:1px solid var(--g200);background:var(--white);font-size:12px" onchange="loadEmpCard()">
+        <option value="">— Selecione —</option>
+      </select>
+      <button class="btn pri" onclick="openEmpresaModal('')">+ Nova</button>
+    </div>
+  </div>
+  <div id="emp_card">
+    <div class="alert info">Selecione uma empresa ou crie uma nova para ver a ficha completa.</div>
+  </div>
+</div>
+
+<!-- ═══ SEGURADORAS ═══ -->
+<div class="panel" id="panel-seguradoras">
+  <div class="section-title">Seguradoras &amp; Regras de Aceitação</div>
+  <div class="section-sub">Referência operacional — critérios, limites e posicionamento V&amp;F</div>
+  <div class="g3">
+
+    <div class="seg-card">
+      <div class="seg-name" style="color:var(--blue)">Sancor</div>
+      <div class="seg-sub">Frente 1 — Esteira principal V&amp;F</div>
+      <span class="seg-badge f1">✅ Volume · Alta rotatividade</span>
+      <div class="seg-div"></div>
+      <div class="seg-rule"><span class="ico">💰</span><span>Dívida PGFN: <strong>≤ R$ 20M</strong></span></div>
+      <div class="seg-rule"><span class="ico">📊</span><span>Patrimônio Líquido: <strong>≥ R$ 20M</strong></span></div>
+      <div class="seg-rule"><span class="ico">🏢</span><span>Regime: <strong>Lucro Real ou Presumido</strong> — Simples Nacional inelegível</span></div>
+      <div class="seg-rule"><span class="ico">🎯</span><span>Target ideal: <strong>marinheiro de 1ª viagem</strong> — primeira inscrição PGFN</span></div>
+      <div class="seg-rule"><span class="ico">📋</span><span>Produtos: Embargos à Execução, Anulatória, Parcelamento PGFN</span></div>
+      <div class="seg-div"></div>
+      <div class="seg-note"><strong>Faixa V&amp;F:</strong> R$ 1M – R$ 5M · Análise expedita · Alto volume</div>
+    </div>
+
+    <div class="seg-card">
+      <div class="seg-name" style="color:var(--purple)">Berkley</div>
+      <div class="seg-sub">Intermediária — Médio porte</div>
+      <span class="seg-badge f2">✅ Frente 2 · Seletivo</span>
+      <div class="seg-div"></div>
+      <div class="seg-rule"><span class="ico">💰</span><span>Dívida PGFN: <strong>≤ R$ 30M</strong></span></div>
+      <div class="seg-rule"><span class="ico">📈</span><span>Faturamento anual: <strong>≥ R$ 100M</strong></span></div>
+      <div class="seg-rule"><span class="ico">🏗</span><span>Estrutura financeira consolidada — balanço auditado preferencial</span></div>
+      <div class="seg-rule"><span class="ico">📋</span><span>Aceita substituição de imóvel com contragarantia estruturada</span></div>
+      <div class="seg-div"></div>
+      <div class="seg-note"><strong>Faixa V&amp;F:</strong> R$ 10M – R$ 30M · Análise motor VF v4 obrigatória</div>
+    </div>
+
+    <div class="seg-card">
+      <div class="seg-name" style="color:var(--ok)">Zurich / Swiss Re / Chubb</div>
+      <div class="seg-sub">Frente 2 — Alta complexidade · Artesanal</div>
+      <span class="seg-badge f2">⭐ Frente 2 · Grande porte</span>
+      <div class="seg-div"></div>
+      <div class="seg-rule"><span class="ico">💰</span><span>Dívida: <strong>acima de R$ 30M</strong> (referência caso prisional: R$ 60M)</span></div>
+      <div class="seg-rule"><span class="ico">📈</span><span>Faturamento: <strong>≥ R$ 300M</strong></span></div>
+      <div class="seg-rule"><span class="ico">📊</span><span>Patrimônio Líquido: <strong>≥ R$ 100M</strong></span></div>
+      <div class="seg-rule"><span class="ico">🔬</span><span>Exige VF Analyzer v4 completo + narrativa de underwriting Rodrigo</span></div>
+      <div class="seg-rule"><span class="ico">⚖</span><span>BEP, substituição de penhora, operações com step-in</span></div>
+      <div class="seg-div"></div>
+      <div class="seg-note"><strong>Referência V&amp;F:</strong> Sistema prisional R$ 60M — aprovado Zurich direto</div>
+    </div>
+
+    <div class="seg-card" style="opacity:.6">
+      <div class="seg-name" style="color:var(--g400)">Porto Seguro / Tokio Marine</div>
+      <div class="seg-sub">Fora do escopo atual</div>
+      <span class="seg-badge off">⛔ Descartadas</span>
+      <div class="seg-div"></div>
+      <div class="seg-rule"><span class="ico">ℹ</span><span>Critérios e comissionamento incompatíveis com modelo V&amp;F no momento.</span></div>
+      <div class="seg-rule"><span class="ico">🔄</span><span>Reavaliar em 6 meses — mudanças de mercado possíveis.</span></div>
+    </div>
+
+    <div class="seg-card" style="border-color:var(--cherry20)">
+      <div class="seg-name" style="color:var(--cherry)">Regra de Precificação V&amp;F</div>
+      <div class="seg-sub">Teorema central — aplicar em toda operação</div>
+      <div class="seg-div"></div>
+      <div class="seg-rule"><span class="ico">📐</span><span><strong>Receita V&amp;F</strong> = Teto − (1 − Com%) × Prêmio</span></div>
+      <div class="seg-rule"><span class="ico">⚡</span><span><strong>Taxa ótima = mínima</strong> aceita pela seguradora</span></div>
+      <div class="seg-rule"><span class="ico">💼</span><span>Comissão fixa: <strong>20%</strong> do prêmio líquido</span></div>
+      <div class="seg-rule"><span class="ico">📏</span><span>Hon/Prêmio razoabilidade: <strong>≤ 2×</strong> — conferir no Solver</span></div>
+      <div class="seg-rule"><span class="ico">🚫</span><span>Simples Nacional / MEI: <strong>inelegível</strong> (fat &lt; R$ 4,8M/ano)</span></div>
+      <div class="seg-div"></div>
+      <div class="seg-note" style="color:var(--cherry)">→ Use VF Analyzer v4 · aba Operação &amp; Solver</div>
+    </div>
+
+    <div class="seg-card">
+      <div class="seg-name" style="color:var(--charcoal)">BRI — Filtro Comportamental</div>
+      <div class="seg-sub">Motor VF v4 · Camada 6 (10%)</div>
+      <div class="seg-div"></div>
+      <div class="seg-rule"><span class="ico">⛔</span><span>BRI &lt; 5,0 → <strong>Gate</strong> · fiança + escrow obrigatórios</span></div>
+      <div class="seg-rule"><span class="ico">⚠</span><span>BRI 5,0–6,5 → <strong>Restrição</strong> · covenant + trava recebíveis</span></div>
+      <div class="seg-rule"><span class="ico">✅</span><span>BRI 6,5–8,0 → <strong>Padrão</strong> · monitoramento semestral</span></div>
+      <div class="seg-rule"><span class="ico">⭐</span><span>BRI ≥ 8,0 → <strong>Premium</strong> · limite +20% · argumento comitê</span></div>
+      <div class="seg-div"></div>
+      <div class="seg-note">→ Preencher no VF Analyzer v4 · aba Behavioral BRI</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ PROPOSTA ═══ -->
+<div class="panel" id="panel-proposta">
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+    <div style="flex:1;min-width:280px;max-width:400px">
+      <div class="section-title">Gerador de Proposta</div>
+      <div class="section-sub">Modelo V&amp;F com PI e sigilo automático</div>
+      <div class="card">
+        <div class="card-hdr">Dados da Operação</div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Empresa / Tomador</label><input type="text" id="p_emp" placeholder="Razão Social" oninput="renderProp()"/></div>
+          <div class="field"><label>CNPJ</label><input type="text" id="p_cnpj" placeholder="00.000.000/0001-00" oninput="renderProp()"/></div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Valor da Dívida (R$)</label><input type="number" id="p_div" placeholder="0" oninput="renderProp()"/></div>
+          <div class="field"><label>Prazo Apólice (anos)</label><input type="number" id="p_prazo" value="2" oninput="renderProp()"/></div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Seguradora</label>
+            <select id="p_seg" onchange="renderProp()">
+              <option>Sancor</option><option>Berkley</option><option>Zurich / Swiss Re / Chubb</option>
+            </select>
+          </div>
+          <div class="field"><label>Tipo de Garantia</label>
+            <select id="p_tipo" onchange="renderProp()">
+              <option>Garantia Judicial — Embargos à Execução</option>
+              <option>Garantia Judicial — Ação Anulatória</option>
+              <option>Garantia de Parcelamento PGFN</option>
+              <option>Substituição de Penhora</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Taxa Negociada (% a.a.)</label><input type="number" id="p_taxa" step="0.01" value="0.80" oninput="renderProp()"/></div>
+          <div class="field"><label>Comissão V&amp;F (%)</label><input type="number" id="p_com" value="20" oninput="renderProp()"/></div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Teto / Orçamento cliente (R$)</label><input type="number" id="p_teto" placeholder="Custo máximo aceito" oninput="renderProp()"/></div>
+          <div class="field"><label>Data da Proposta</label><input type="date" id="p_data" oninput="renderProp()"/></div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Responsável</label>
+            <select id="p_resp" onchange="renderProp()">
+              <option>Rodrigo Vazquez</option><option>Anna Fonseca</option>
+            </select>
+          </div>
+          <div class="field"><label>Referência interna</label><input type="text" id="p_ref" placeholder="VF-2025-001" oninput="renderProp()"/></div>
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Situação PGFN / Contexto</label>
+          <textarea id="p_sit" rows="3" placeholder="Ex: Execução fiscal ajuizada. Primeira inscrição. Urgência média." oninput="renderProp()"></textarea>
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Condicionantes / Contragarantia</label>
+          <textarea id="p_cond" rows="2" placeholder="Covenants, escrow, fiança, step-in..." oninput="renderProp()"></textarea>
+        </div>
+        <div class="sep"></div>
+        <div class="btn-row">
+          <button class="btn pri" onclick="window.print()">🖨 Imprimir / PDF</button>
+          <button class="btn sec" onclick="saveProp()">💾 Salvar na Biblioteca</button>
+          <button class="btn sec sm" onclick="copyProp()">📋 Copiar</button>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1.5;min-width:340px">
+      <div id="prop_preview"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BIBLIOTECA ═══ -->
+<div class="panel" id="panel-biblioteca">
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+    <div>
+      <div class="section-title">Biblioteca de Documentos</div>
+      <div class="section-sub">Modelos, propostas, contratos e checklists — com controle de sigilo</div>
+    </div>
+    <button class="btn pri" onclick="document.getElementById('ov-doc').classList.add('open')">+ Adicionar</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap" id="bib_filt">
+    <button class="btn sec sm active-filter" onclick="bibFilter('')">Todos</button>
+    <button class="btn sec sm" onclick="bibFilter('proposta')">📄 Propostas</button>
+    <button class="btn sec sm" onclick="bibFilter('contrato')">📝 Contratos</button>
+    <button class="btn sec sm" onclick="bibFilter('checklist')">✅ Checklists</button>
+    <button class="btn sec sm" onclick="bibFilter('modelo')">📋 Modelos</button>
+    <button class="btn sec sm" onclick="bibFilter('interno')">🔒 Interno V&amp;F</button>
+  </div>
+  <div id="bib_list"></div>
+</div>
+
+<!-- ═══ CONFIG ═══ -->
+<div class="panel" id="panel-config">
+  <div class="section-title">Configurações &amp; Google Sheets</div>
+  <div class="section-sub">Conecte o CRM à planilha Google e configure dados da empresa</div>
+  <div class="g2">
+    <div>
+      <div class="cfg-block">
+        <div class="cfg-title">🏢 Dados da Empresa</div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Nome</label><input type="text" id="c_emp" value="Vazquez &amp; Fonseca" oninput="saveCfg()"/></div>
+          <div class="field"><label>CNPJ</label><input type="text" id="c_cnpj" placeholder="00.000.000/0001-00" oninput="saveCfg()"/></div>
+        </div>
+        <div class="row" style="margin-bottom:10px">
+          <div class="field"><label>Email</label><input type="email" id="c_email" placeholder="contato@vf.com.br" oninput="saveCfg()"/></div>
+          <div class="field"><label>Telefone</label><input type="text" id="c_tel" placeholder="(11) 99999-9999" oninput="saveCfg()"/></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Registro OAB / SUSEP parceiro</label><input type="text" id="c_oab" oninput="saveCfg()"/></div>
+        </div>
+      </div>
+
+      <div class="cfg-block">
+        <div class="cfg-title">🔒 Propriedade Intelectual &amp; Sigilo</div>
+        <div class="alert blue" style="margin-bottom:10px">
+          <strong>PI V&amp;F:</strong> O VF CRM, VF Analyzer v4.0 e toda a metodologia de scoring são de propriedade exclusiva de Vazquez &amp; Fonseca. Proibida reprodução ou cessão sem autorização expressa.
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>Cláusula de confidencialidade padrão</label>
+          <textarea id="c_sigilo" rows="4" oninput="saveCfg()">Este documento é CONFIDENCIAL e de uso exclusivo do destinatário identificado. As informações contidas, incluindo a metodologia de análise, precificação e estruturação de operações de seguro garantia tributário, são propriedade intelectual exclusiva de Vazquez &amp; Fonseca e não podem ser reproduzidas, divulgadas ou utilizadas sem autorização prévia e expressa por escrito. A violação sujeita o infrator às sanções civis e penais cabíveis nos termos da Lei 9.610/98 e do Código Civil Brasileiro.</textarea>
+        </div>
+        <div class="field">
+          <label>Rodapé padrão das propostas</label>
+          <input type="text" id="c_rodape" value="V&amp;F · Vazquez &amp; Fonseca · Seguro Garantia Tributário · Documento confidencial · Uso restrito" oninput="saveCfg()"/>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="cfg-block">
+        <div class="cfg-title">📊 Google Sheets — Conexão</div>
+        <div class="alert info" style="margin-bottom:12px">
+          Conecte uma planilha Google como banco de dados. O CRM sincroniza via Google Apps Script (gratuito, sem servidor).
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>ID da Planilha Google</label>
+          <input type="text" id="c_sheetid" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" oninput="saveCfg()"/>
+          <span style="font-size:11px;color:var(--g400)">docs.google.com/spreadsheets/d/<strong>[ID_AQUI]</strong>/edit</span>
+        </div>
+        <div class="field" style="margin-bottom:10px">
+          <label>URL do Apps Script Web App</label>
+          <input type="text" id="c_scripturl" placeholder="https://script.google.com/macros/s/..." oninput="saveCfg()"/>
+        </div>
+        <div class="btn-row">
+          <button class="btn pri sm" onclick="testSheets()">🔌 Testar</button>
+          <button class="btn sec sm" onclick="syncUp()">⬆ Enviar → Sheets</button>
+          <button class="btn sec sm" onclick="syncDown()">⬇ Importar ← Sheets</button>
+        </div>
+        <div id="sheets_st" style="margin-top:10px"></div>
+      </div>
+
+      <div class="cfg-block">
+        <div class="cfg-title">📋 Código Apps Script — Deploy</div>
+        <p style="font-size:12px;color:var(--g600);margin-bottom:8px">
+          1. Acesse <a href="https://script.google.com" target="_blank" style="color:var(--cherry)">script.google.com</a> &gt; Novo projeto<br/>
+          2. Cole o código abaixo e substitua o SHEET_ID<br/>
+          3. Implantar &gt; Web App &gt; Acesso: <strong>Qualquer pessoa</strong><br/>
+          4. Copie a URL gerada no campo acima
+        </p>
+        <div class="code-block" id="apps_code">// VF CRM — Apps Script Backend v1.0
+// Vazquez &amp; Fonseca | Uso interno exclusivo
+
+const SHEET_ID = 'SEU_SHEET_ID_AQUI';
+
+function doGet(e) {
+  const tab = e.parameter.tab || 'pipeline';
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(tab);
+  if (!sheet) return ContentService
+    .createTextOutput(JSON.stringify([]))
+    .setMimeType(ContentService.MimeType.JSON);
+  const data = sheet.getDataRange().getValues();
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const payload = JSON.parse(e.postData.contents);
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  let sheet = ss.getSheetByName(payload.tab);
+  if (!sheet) sheet = ss.insertSheet(payload.tab);
+  sheet.clearContents();
+  if (payload.rows &amp;&amp; payload.rows.length)
+    sheet.getRange(1,1,payload.rows.length,
+      payload.rows[0].length).setValues(payload.rows);
+  return ContentService
+    .createTextOutput(JSON.stringify({ok:true,rows:payload.rows.length}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+        <div class="btn-row" style="margin-top:8px">
+          <button class="btn sec sm" onclick="copyScript()">📋 Copiar código</button>
+        </div>
+      </div>
+
+      <div class="cfg-block" style="border-color:var(--cherry20)">
+        <div class="cfg-title" style="color:var(--cherry)">📥 Importar Planilha PGFN (.xlsx)</div>
+        <div class="alert blue" style="margin-bottom:10px">
+          Selecione o arquivo <strong>VF_PGFN_4T2025_Carteira_Completa.xlsx</strong>. O CRM vai ler todas as abas (Sancor, Berkley, Zurich) e importar as empresas automaticamente, sem duplicar quem já está cadastrado.
+        </div>
+        <div class="btn-row" style="margin-bottom:10px">
+          <button class="btn pri" onclick="document.getElementById('imp_xlsx').click()">📂 Selecionar arquivo .xlsx</button>
+          <input type="file" id="imp_xlsx" accept=".xlsx,.xls" style="display:none" onchange="importXLSX(event)"/>
+        </div>
+        <div id="xlsx_status"></div>
+      </div>
+
+      <div class="cfg-block">
+        <div class="cfg-title">💾 Backup Local</div>
+        <div class="btn-row">
+          <button class="btn sec" onclick="exportJSON()">⬇ Exportar JSON</button>
+          <button class="btn sec" onclick="document.getElementById('imp_json').click()">⬆ Importar JSON</button>
+          <input type="file" id="imp_json" accept=".json" style="display:none" onchange="importJSON(event)"/>
+          <button class="btn danger sm" onclick="clearAll()">🗑 Limpar dados</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div><!-- /app -->
+
+<!-- ══════════ MODAL EMPRESA ══════════ -->
+<div class="overlay" id="ov-emp">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="emp_modal_title">Nova Empresa</span>
+      <button class="modal-close" onclick="closeOv('ov-emp')">×</button>
+    </div>
+    <div id="emp_modal_body"></div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL DOCUMENTO ══════════ -->
+<div class="overlay" id="ov-doc">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Adicionar Documento à Biblioteca</span>
+      <button class="modal-close" onclick="closeOv('ov-doc')">×</button>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Nome</label><input type="text" id="d_nome" placeholder="Ex: Proposta Padrão Sancor v3"/></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Categoria</label>
+        <select id="d_cat">
+          <option value="proposta">📄 Proposta</option>
+          <option value="contrato">📝 Contrato</option>
+          <option value="checklist">✅ Checklist</option>
+          <option value="modelo">📋 Modelo</option>
+          <option value="interno">🔒 Interno V&amp;F</option>
+        </select>
+      </div>
+      <div class="field"><label>Sigilo</label>
+        <select id="d_sig">
+          <option value="interno">🔒 Interno — só V&amp;F</option>
+          <option value="restrito">⚠ Restrito — com NDA</option>
+          <option value="cliente">👤 Compartilhável</option>
+        </select>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:10px">
+      <label>URL / Link (Google Drive, Docs...)</label>
+      <input type="text" id="d_url" placeholder="https://drive.google.com/..."/>
+    </div>
+    <div class="field" style="margin-bottom:14px">
+      <label>Descrição / Versão</label>
+      <textarea id="d_desc" rows="2" placeholder="v2.1 — atualizado jan/2026 · inclui cláusula step-in"></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn pri" onclick="saveDoc()">Salvar</button>
+      <button class="btn sec" onclick="closeOv('ov-doc')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// STATE & PERSISTENCE
+// ══════════════════════════════════════════════════════
+const STORE_KEY = 'vf_crm_v1';
+
+let S = {
+  user: 'Rodrigo',
+  empresas: [],
+  docs: [],
+  cfg: {
+    emp: 'Vazquez & Fonseca',
+    cnpj: '', oab: '', email: '', tel: '',
+    sheet_id: '', script_url: '',
+    sigilo: 'Este documento é CONFIDENCIAL e de uso exclusivo do destinatário identificado. As informações contidas, incluindo a metodologia de análise, precificação e estruturação de operações de seguro garantia tributário, são propriedade intelectual exclusiva de Vazquez & Fonseca e não podem ser reproduzidas, divulgadas ou utilizadas sem autorização prévia e expressa por escrito. A violação sujeita o infrator às sanções civis e penais cabíveis nos termos da Lei 9.610/98 e do Código Civil Brasileiro.',
+    rodape: 'V&F · Vazquez & Fonseca · Seguro Garantia Tributário · Documento confidencial · Uso restrito'
+  }
+};
+
+function loadS(){
+  try{ const d=localStorage.getItem(STORE_KEY); if(d) S={...S,...JSON.parse(d)}; }catch(e){}
+}
+function saveS(){
+  try{ localStorage.setItem(STORE_KEY,JSON.stringify(S)); }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+const fBRL = v => (isNaN(v)||!v||v==='')?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0});
+const today = () => new Date().toISOString().split('T')[0];
+const uid   = () => Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const g     = id => document.getElementById(id)?.value||'';
+const g_el  = id => document.getElementById(id);
+
+// ══════════════════════════════════════════════════════
+// PIPELINE STAGES
+// ══════════════════════════════════════════════════════
+const STAGES = [
+  {id:'identificado', lbl:'🎯 Identificado',  col:'#8a8a9e', resp:'Anna'},
+  {id:'contato',      lbl:'📞 Contato',        col:'#2a7ecc', resp:'Anna'},
+  {id:'qualificacao', lbl:'📋 Qualificação',   col:'#6a4fc4', resp:'Anna'},
+  {id:'analise',      lbl:'🔬 Análise VF',     col:'#b87a00', resp:'Rodrigo'},
+  {id:'proposta',     lbl:'📄 Proposta',       col:'#b5152b', resp:'Rodrigo'},
+  {id:'negociacao',   lbl:'🤝 Negociação',     col:'#e8784a', resp:'Ambos'},
+  {id:'emissao',      lbl:'✅ Emissão',         col:'#1a7a50', resp:'Rodrigo'},
+  {id:'posvenda',     lbl:'🔄 Pós-venda',      col:'#2a7ecc', resp:'Anna'},
+];
+
+// ══════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════
+function showTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active'));
+  g_el('panel-'+id).classList.add('active');
+  document.querySelector(`[data-p="${id}"]`).classList.add('active');
+  if(id==='pipeline')    renderPipe();
+  if(id==='empresa')     { populateEmpSel(); loadEmpCard(); }
+  if(id==='biblioteca')  renderBib();
+  if(id==='config')      loadCfgForm();
+  if(id==='proposta')    { if(!g('p_data')) g_el('p_data').value=today(); renderProp(); }
+}
+
+// ══════════════════════════════════════════════════════
+// USER
+// ══════════════════════════════════════════════════════
+function setUser(u){
+  S.user=u;
+  g_el('badge_anna').className='user-btn'+(u==='Anna'?' active':'');
+  g_el('badge_rodrigo').className='user-btn'+(u==='Rodrigo'?' active':'');
+  saveS();
+}
+
+// ══════════════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════════════
+function closeOv(id){ g_el(id).classList.remove('open'); }
+document.querySelectorAll('.overlay').forEach(o=>{
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
+});
+
+// ══════════════════════════════════════════════════════
+// PIPELINE — RENDER
+// ══════════════════════════════════════════════════════
+function renderPipe(){
+  const fr = g('f_resp'), fs = g('f_seg');
+  let emps = S.empresas;
+  if(fr) emps = emps.filter(e=>e.resp_inst===fr||e.resp_tec===fr);
+  if(fs) emps = emps.filter(e=>e.seguradora===fs);
+
+  // KPIs
+  const total = S.empresas.length;
+  const emissoes = S.empresas.filter(e=>e.estagio==='emissao').length;
+  const propostas = S.empresas.filter(e=>e.estagio==='proposta').length;
+  const valorTotal = S.empresas.reduce((a,b)=>a+(parseFloat(b.valor_divida)||0),0);
+  g_el('pipe_kpis').innerHTML = `
+    <div class="kpi"><div class="lbl">Empresas na Carteira</div><div class="val">${total}</div></div>
+    <div class="kpi cherry"><div class="lbl">Em Proposta</div><div class="val">${propostas}</div></div>
+    <div class="kpi ok"><div class="lbl">Emitidas</div><div class="val">${emissoes}</div></div>
+    <div class="kpi blue"><div class="lbl">Valor Total</div><div class="val" style="font-size:15px">${fBRL(valorTotal)}</div></div>
+  `;
+  g_el('nb_pipe').textContent = total;
+
+  // Kanban
+  const board = g_el('kanban');
+  board.innerHTML = '';
+  STAGES.forEach(st=>{
+    const cards = emps.filter(e=>e.estagio===st.id);
+    const col = document.createElement('div');
+    col.className = 'k-col';
+    col.innerHTML = `
+      <div class="k-col-hdr">
+        <span><span class="k-dot" style="background:${st.col}"></span>${st.lbl}</span>
+        <span style="font-size:10px;color:var(--g400)">${cards.length}</span>
+      </div>
+      ${cards.map(e=>`
+        <div class="k-card" onclick="openEmpresaModal('${e.id}')">
+          <div class="k-empresa">${e.nome||'—'}</div>
+          <div class="k-meta">${fBRL(e.valor_divida)}</div>
+          <div class="k-meta" style="font-size:10px">${e.cnpj||''}</div>
+          <div class="k-tags">
+            ${e.seguradora?`<span class="tag ${segClass(e.seguradora)}">${e.seguradora}</span>`:''}
+            ${e.resp_inst?`<span class="tag ${e.resp_inst.toLowerCase()}">${e.resp_inst}</span>`:''}
+            ${e.urgente?`<span class="tag urgente">⚡</span>`:''}
+          </div>
+        </div>
+      `).join('')}
+      <button class="btn ghost" style="width:100%;font-size:11px;margin-top:4px" onclick="addToStage('${st.id}')">+ Adicionar</button>
+    `;
+    board.appendChild(col);
+  });
+}
+
+function segClass(s){
+  if(!s) return '';
+  const l = s.toLowerCase();
+  if(l.startsWith('sancor')) return 'sancor';
+  if(l.startsWith('berkley')) return 'berkley';
+  if(l.startsWith('zurich')||l.startsWith('swiss')||l.startsWith('chubb')) return 'zurich';
+  return '';
+}
+
+function addToStage(stageId){
+  openEmpresaModal('', stageId);
+}
+
+// ══════════════════════════════════════════════════════
+// EMPRESA MODAL
+// ══════════════════════════════════════════════════════
+function openEmpresaModal(empId, defaultStage='identificado'){
+  const e = empId ? S.empresas.find(x=>x.id===empId) : null;
+  g_el('emp_modal_title').textContent = e ? `Editar — ${e.nome}` : 'Nova Empresa';
+
+  const stOpts = STAGES.map(s=>`<option value="${s.id}"${(e?.estagio||defaultStage)===s.id?' selected':''}>${s.lbl}</option>`).join('');
+  const UFS = ['SP','RJ','MG','RS','PR','SC','BA','GO','DF','ES','PE','CE','MT','MS','PA','AM','RN','PB','AL','SE','PI','MA','RO','TO','AC','AP','RR'];
+  const ufOpts = UFS.map(u=>`<option${e?.uf===u?' selected':''}>${u}</option>`).join('');
+  const SITU = ['AJUIZADA_SEM_GAR','AJUIZADA_COM_GAR','EM_ABERTO','PARCELADA','TRANSACAO_TRIBUTARIA','EMBARGADA'];
+  const situOpts = SITU.map(s=>`<option${e?.situacao===s?' selected':''}>${s}</option>`).join('');
+  const REGS = ['Lucro Real','Lucro Presumido','Simples Nacional','MEI'];
+  const regOpts = REGS.map(r=>`<option${e?.regime===r?' selected':''}>${r}</option>`).join('');
+  const SEGS = ['Sancor','Berkley','Zurich/Swiss/Chubb','A definir'];
+  const segOpts = SEGS.map(s=>`<option${e?.seguradora===s?' selected':''}>${s}</option>`).join('');
+
+  g_el('emp_modal_body').innerHTML = `
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);margin-bottom:10px">📋 Identificação</div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Razão Social</label><input type="text" id="me_nome" value="${e?.nome||''}" placeholder="Nome completo"/></div>
+      <div class="field"><label>CNPJ Raiz</label><input type="text" id="me_cnpj" value="${e?.cnpj||''}" placeholder="00.000.000"/></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>UF</label><select id="me_uf">${ufOpts}</select></div>
+      <div class="field"><label>Setor / Atividade</label><input type="text" id="me_setor" value="${e?.setor||''}" placeholder="Ex: Construção civil"/></div>
+    </div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="field"><label>Email decisor</label><input type="email" id="me_email" value="${e?.email||''}" placeholder="decisor@empresa.com.br"/></div>
+      <div class="field"><label>Telefone</label><input type="text" id="me_tel" value="${e?.tel||''}" placeholder="(11) 99999-9999"/></div>
+    </div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);margin-bottom:10px">📂 Dados PGFN</div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Valor Dívida PGFN (R$)</label><input type="number" id="me_div" value="${e?.valor_divida||''}" placeholder="0"/></div>
+      <div class="field"><label>Faixa</label>
+        <select id="me_faixa">${['R$1-5M','R$5-10M','R$10-20M','R$20-30M','R$30-50M','R$50M+'].map(f=>`<option${e?.faixa===f?' selected':''}>${f}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Score VF (PGFN)</label><input type="number" id="me_score" value="${e?.score_pgfn||''}" placeholder="0-100"/></div>
+      <div class="field"><label>Anos na PGFN</label><input type="number" id="me_anos" value="${e?.anos_pgfn||''}" placeholder="0"/></div>
+    </div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="field"><label>Situação Processual</label><select id="me_situ">${situOpts}</select></div>
+      <div class="field"><label>Natureza da Receita</label><input type="text" id="me_rec" value="${e?.receita_principal||''}" placeholder="Ex: IRPJ/CSLL auto de infração"/></div>
+    </div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);margin-bottom:10px">💰 Enriquecimento Financeiro</div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Faturamento Anual (R$)</label><input type="number" id="me_fat" value="${e?.faturamento||''}" placeholder="0"/></div>
+      <div class="field"><label>Patrimônio Líquido (R$)</label><input type="number" id="me_pl" value="${e?.pl||''}" placeholder="0"/></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>EBITDA TTM (R$)</label><input type="number" id="me_ebitda" value="${e?.ebitda||''}" placeholder="0"/></div>
+      <div class="field"><label>Regime Tributário</label><select id="me_reg">${regOpts}</select></div>
+    </div>
+    <div class="row" style="margin-bottom:14px">
+      <div class="field"><label>Fonte de enriquecimento</label><input type="text" id="me_fonte" value="${e?.fonte||''}" placeholder="Econodata, LinkedIn, site..."/></div>
+      <div class="field"><label>Data enriquecimento</label><input type="date" id="me_data_enr" value="${e?.data_enriquecimento||today()}"/></div>
+    </div>
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--g600);margin-bottom:10px">📊 Pipeline & Gestão</div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Estágio</label><select id="me_estagio">${stOpts}</select></div>
+      <div class="field"><label>Seguradora Alvo</label><select id="me_seg">${segOpts}</select></div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Responsável Institucional</label>
+        <select id="me_ri"><option${e?.resp_inst==='Anna'?' selected':''}>Anna</option><option${e?.resp_inst==='Rodrigo'?' selected':''}>Rodrigo</option></select>
+      </div>
+      <div class="field"><label>Responsável Técnico</label>
+        <select id="me_rt"><option${e?.resp_tec==='Rodrigo'?' selected':''}>Rodrigo</option><option${e?.resp_tec==='Anna'?' selected':''}>Anna</option></select>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:10px">
+      <div class="field"><label>Entrada no pipeline</label><input type="date" id="me_entrada" value="${e?.data_entrada||today()}"/></div>
+      <div class="field"><label>Próximo follow-up</label><input type="date" id="me_followup" value="${e?.followup||''}"/></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <input type="checkbox" id="me_urg" ${e?.urgente?'checked':''} style="width:auto;accent-color:var(--cherry)"/>
+      <label for="me_urg" style="font-size:13px;cursor:pointer;text-transform:none">⚡ Urgente — AJUIZADA sem garantia (ação imediata)</label>
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Notas / Histórico de contatos</label>
+      <textarea id="me_notas" rows="3" placeholder="Observações, histórico, condicionantes especiais...">${e?.notas||''}</textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn pri" onclick="saveEmpresa('${empId||''}')">💾 Salvar</button>
+      ${e?`<button class="btn danger sm" onclick="delEmpresa('${e.id}')">🗑 Excluir</button>`:''}
+      <button class="btn sec" onclick="closeOv('ov-emp')">Cancelar</button>
+    </div>
+  `;
+  g_el('ov-emp').classList.add('open');
+}
+
+function saveEmpresa(existingId){
+  const e = {
+    id: existingId || uid(),
+    nome:            g('me_nome'),
+    cnpj:            g('me_cnpj'),
+    uf:              g('me_uf'),
+    setor:           g('me_setor'),
+    email:           g('me_email'),
+    tel:             g('me_tel'),
+    valor_divida:    g('me_div'),
+    faixa:           g('me_faixa'),
+    score_pgfn:      g('me_score'),
+    anos_pgfn:       g('me_anos'),
+    situacao:        g('me_situ'),
+    receita_principal: g('me_rec'),
+    faturamento:     g('me_fat'),
+    pl:              g('me_pl'),
+    ebitda:          g('me_ebitda'),
+    regime:          g('me_reg'),
+    fonte:           g('me_fonte'),
+    data_enriquecimento: g('me_data_enr'),
+    estagio:         g('me_estagio'),
+    seguradora:      g('me_seg'),
+    resp_inst:       g('me_ri'),
+    resp_tec:        g('me_rt'),
+    data_entrada:    g('me_entrada'),
+    followup:        g('me_followup'),
+    urgente:         g_el('me_urg')?.checked||false,
+    notas:           g('me_notas'),
+    updated:         today()
+  };
+  if(existingId){
+    const i = S.empresas.findIndex(x=>x.id===existingId);
+    if(i>=0) S.empresas[i]=e; else S.empresas.push(e);
+  } else {
+    S.empresas.push(e);
+  }
+  saveS();
+  closeOv('ov-emp');
+  renderPipe();
+  populateEmpSel();
+}
+
+function delEmpresa(id){
+  if(!confirm('Remover empresa do CRM?')) return;
+  S.empresas = S.empresas.filter(x=>x.id!==id);
+  saveS(); closeOv('ov-emp'); renderPipe(); populateEmpSel();
+  g_el('emp_card').innerHTML='<div class="alert info">Empresa removida. Selecione ou crie outra.</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// EMPRESA PANEL
+// ══════════════════════════════════════════════════════
+function populateEmpSel(){
+  const sel = g_el('sel_emp');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    S.empresas.map(e=>`<option value="${e.id}"${cur===e.id?' selected':''}>${e.nome||e.cnpj} — ${fBRL(e.valor_divida)}</option>`).join('');
+}
+
+function loadEmpCard(){
+  const id = g('sel_emp');
+  if(!id){ g_el('emp_card').innerHTML='<div class="alert info">Selecione uma empresa ou crie uma nova.</div>'; return; }
+  const e = S.empresas.find(x=>x.id===id);
+  if(!e) return;
+
+  const div = parseFloat(e.valor_divida)||0;
+  const pl  = parseFloat(e.pl)||0;
+  const fat = parseFloat(e.faturamento)||0;
+  const isSimples = e.regime==='Simples Nacional'||e.regime==='MEI';
+  const sancorOK  = div>0 && div<=20e6 && (pl===0||pl>=20e6) && !isSimples;
+  const berkleyOK = div>0 && div<=30e6 && (fat===0||fat>=100e6) && !isSimples;
+  const zurichOK  = div>30e6 && (fat===0||fat>=300e6) && (pl===0||pl>=100e6);
+
+  const hasFin = e.faturamento||e.pl||e.ebitda;
+  const hasPGFN= e.valor_divida;
+  const enrSt  = hasFin&&hasPGFN?'ok':hasPGFN?'parcial':'vazio';
+  const enrLbl = enrSt==='ok'?'✅ Completo':enrSt==='parcial'?'⚠ Parcial':'⬜ Sem dados';
+
+  g_el('emp_card').innerHTML = `
+    <div class="kpi-row">
+      <div class="kpi"><div class="lbl">Empresa</div><div class="val" style="font-size:14px;font-weight:800">${e.nome||'—'}</div><div class="sub">${e.cnpj||''} · ${e.uf||''}</div></div>
+      <div class="kpi cherry"><div class="lbl">Dívida PGFN</div><div class="val" style="font-size:15px">${fBRL(e.valor_divida)}</div><div class="sub">${e.faixa||''}</div></div>
+      <div class="kpi"><div class="lbl">Estágio</div><div class="val" style="font-size:12px">${STAGES.find(s=>s.id===e.estagio)?.lbl||e.estagio||'—'}</div></div>
+      <div class="kpi"><div class="lbl">Score PGFN</div><div class="val">${e.score_pgfn||'—'}</div></div>
+    </div>
+    <div class="g2">
+      <div class="card">
+        <div class="card-hdr">Dados PGFN <span class="enr-badge ${hasPGFN?'ok':'vazio'}">${hasPGFN?'✅ Preenchido':'⬜ Vazio'}</span></div>
+        <table><tbody>
+          <tr><td style="color:var(--g400);width:180px">Situação processual</td><td><strong>${e.situacao||'—'}</strong></td></tr>
+          <tr><td style="color:var(--g400)">Natureza da receita</td><td>${e.receita_principal||'—'}</td></tr>
+          <tr><td style="color:var(--g400)">Anos na PGFN</td><td>${e.anos_pgfn||'—'}</td></tr>
+          <tr><td style="color:var(--g400)">Urgente</td><td>${e.urgente?'<strong style="color:var(--cherry)">⚡ Sim</strong>':'Não'}</td></tr>
+        </tbody></table>
+      </div>
+      <div class="card">
+        <div class="card-hdr">Enriquecimento Financeiro <span class="enr-badge ${enrSt}">${enrLbl}</span></div>
+        <table><tbody>
+          <tr><td style="color:var(--g400);width:180px">Faturamento</td><td><strong>${fBRL(e.faturamento)}</strong></td></tr>
+          <tr><td style="color:var(--g400)">Patrimônio Líquido</td><td><strong>${fBRL(e.pl)}</strong></td></tr>
+          <tr><td style="color:var(--g400)">EBITDA TTM</td><td>${fBRL(e.ebitda)}</td></tr>
+          <tr><td style="color:var(--g400)">Regime tributário</td><td>${e.regime||'—'}</td></tr>
+          <tr><td style="color:var(--g400)">Fonte / Data</td><td>${e.fonte||'—'} · ${e.data_enriquecimento||'—'}</td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Elegibilidade por Seguradora</div>
+      <div class="g3">
+        <div class="alert ${sancorOK?'ok':isSimples?'danger':'warn'}">
+          <div><strong>Sancor</strong><br/>${isSimples?'❌ Simples/MEI — inelegível':sancorOK?'✅ Elegível — Frente 1':'⚠ Verificar: PL ≥ R$20M e dívida ≤ R$20M'}</div>
+        </div>
+        <div class="alert ${berkleyOK?'ok':'warn'}">
+          <div><strong>Berkley</strong><br/>${berkleyOK?'✅ Elegível':'⚠ Verificar: fat ≥ R$100M e dívida ≤ R$30M'}</div>
+        </div>
+        <div class="alert ${zurichOK?'ok':'warn'}">
+          <div><strong>Zurich / Swiss / Chubb</strong><br/>${zurichOK?'✅ Elegível — Frente 2':'⚠ Verificar: fat ≥ R$300M, PL ≥ R$100M, dívida > R$30M'}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">Pipeline & Responsáveis</div>
+      <table><tbody>
+        <tr><td style="color:var(--g400);width:200px">Resp. institucional</td><td>${e.resp_inst||'—'}</td></tr>
+        <tr><td style="color:var(--g400)">Resp. técnico</td><td>${e.resp_tec||'—'}</td></tr>
+        <tr><td style="color:var(--g400)">Seguradora alvo</td><td>${e.seguradora||'—'}</td></tr>
+        <tr><td style="color:var(--g400)">Entrada no pipeline</td><td>${e.data_entrada||'—'}</td></tr>
+        <tr><td style="color:var(--g400)">Próximo follow-up</td><td><strong>${e.followup||'—'}</strong></td></tr>
+        <tr><td style="color:var(--g400)">Notas</td><td style="white-space:pre-wrap">${e.notas||'—'}</td></tr>
+      </tbody></table>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn pri sm" onclick="openEmpresaModal('${e.id}')">✏ Editar</button>
+        <button class="btn sec sm" onclick="preencheProp('${e.id}')">📄 Gerar Proposta</button>
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════
+// PROPOSTA
+// ══════════════════════════════════════════════════════
+function renderProp(){
+  const empresa = g('p_emp')||'[EMPRESA]';
+  const cnpj    = g('p_cnpj')||'[CNPJ]';
+  const div     = parseFloat(g('p_div'))||0;
+  const prazo   = parseFloat(g('p_prazo'))||2;
+  const seg     = g('p_seg')||'Seguradora';
+  const tipo    = g('p_tipo')||'Garantia Judicial';
+  const taxa    = parseFloat(g('p_taxa'))||0;
+  const com     = parseFloat(g('p_com'))||20;
+  const teto    = parseFloat(g('p_teto'))||0;
+  const resp    = g('p_resp')||'Rodrigo Vazquez';
+  const ref     = g('p_ref')||`VF-${today().replace(/-/g,'').slice(2)}`;
+  const data    = g('p_data')||today();
+  const sit     = g('p_sit')||'—';
+  const cond    = g('p_cond');
+
+  const premio   = div*(taxa/100)*prazo;
+  const comissao = premio*(com/100);
+  const honor    = teto>0 ? Math.max(0, teto-premio) : premio*0.5;
+  const custo    = premio+honor;
+  const receita  = comissao+honor;
+
+  const dataFmt = data ? new Date(data+'T12:00').toLocaleDateString('pt-BR') : '—';
+  const sigilo  = S.cfg.sigilo || '';
+  const rodape  = S.cfg.rodape || '';
+  const nomeVF  = S.cfg.emp   || 'Vazquez & Fonseca';
+
+  g_el('prop_preview').innerHTML = `
+    <div class="proposta-wrap" id="prop_content">
+      <div class="prop-hdr">
+        <div>
+          <div class="prop-logo">V<span>&</span>F</div>
+          <div style="font-size:11px;color:var(--g400);margin-top:3px;font-family:Inter,sans-serif">${nomeVF} · Seguro Garantia Tributário</div>
+        </div>
+        <div style="text-align:right">
+          <div class="prop-conf">CONFIDENCIAL<br/>Propriedade Intelectual V&F</div>
+          <div style="font-size:11px;color:var(--g400);margin-top:6px;font-family:Inter,sans-serif">Data: ${dataFmt}</div>
+          <div style="font-size:11px;color:var(--g400);font-family:Inter,sans-serif">Ref.: ${ref}</div>
+        </div>
+      </div>
+
+      <div class="prop-section">DESTINATÁRIO</div>
+      <p><strong>${empresa}</strong><br/>CNPJ: ${cnpj}</p>
+
+      <div class="prop-section">OBJETO</div>
+      <p>Estruturação e intermediação de <strong>${tipo}</strong> junto à <strong>${seg}</strong>, para garantia/substituição de dívida inscrita na PGFN no valor de <strong>${fBRL(div)}</strong>, com vigência de <strong>${prazo} ano${prazo>1?'s':''}</strong>.</p>
+
+      <div class="prop-section">SITUAÇÃO ATUAL</div>
+      <p>${sit}</p>
+
+      <div class="prop-section">ESTRUTURA FINANCEIRA</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0">
+        <thead><tr style="background:#f5f5f8">
+          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:1px solid var(--g100)">Item</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:1px solid var(--g100)">Valor</th>
+          <th style="padding:8px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--g600);border-bottom:1px solid var(--g100)">Observação</th>
+        </tr></thead>
+        <tbody>
+          <tr><td style="padding:7px 12px;border-bottom:1px dashed #f0f0f4">Valor garantido (dívida PGFN)</td><td style="padding:7px 12px;text-align:right;font-weight:700;color:var(--cherry);border-bottom:1px dashed #f0f0f4">${fBRL(div)}</td><td style="padding:7px 12px;font-size:11px;color:var(--g400);border-bottom:1px dashed #f0f0f4">Principal + encargos</td></tr>
+          <tr><td style="padding:7px 12px;border-bottom:1px dashed #f0f0f4">Prêmio de seguro</td><td style="padding:7px 12px;text-align:right;border-bottom:1px dashed #f0f0f4">${fBRL(premio)}</td><td style="padding:7px 12px;font-size:11px;color:var(--g400);border-bottom:1px dashed #f0f0f4">Taxa ${taxa.toFixed(2)}% a.a. × ${prazo} anos</td></tr>
+          <tr><td style="padding:7px 12px;border-bottom:1px dashed #f0f0f4">Honorários V&F</td><td style="padding:7px 12px;text-align:right;border-bottom:1px dashed #f0f0f4">${fBRL(honor)}</td><td style="padding:7px 12px;font-size:11px;color:var(--g400);border-bottom:1px dashed #f0f0f4">Estruturação, análise e gestão da apólice</td></tr>
+          <tr style="background:#f5f5f8"><td style="padding:8px 12px;font-weight:700">Custo total ao cliente</td><td style="padding:8px 12px;text-align:right;font-weight:700;color:var(--cherry)">${fBRL(custo)}</td><td style="padding:8px 12px;font-size:11px;color:var(--g600)">Pagamento único no início da vigência</td></tr>
+          ${receita>0?`<tr style="background:rgba(26,122,80,.04)"><td style="padding:7px 12px;font-size:11px">Receita V&F (referência)</td><td style="padding:7px 12px;text-align:right;font-size:11px;color:var(--ok)">${fBRL(receita)}</td><td style="padding:7px 12px;font-size:11px;color:var(--g400)">Comissão + honorários</td></tr>`:''}
+        </tbody>
+      </table>
+
+      <div class="prop-section">VANTAGENS DA ESTRUTURA</div>
+      <p>✔ Suspende imediatamente a execução fiscal, preservando a operação da empresa.<br/>
+      ✔ Substitui penhora de imóveis ou bloqueio de ativos — libera capital de giro.<br/>
+      ✔ Custo único programável, sem impacto no caixa operacional recorrente.<br/>
+      ✔ Permite contestação judicial simultânea da dívida sem risco de constrição adicional.</p>
+
+      ${cond?`<div class="prop-section">CONDIÇÕES ESPECÍFICAS</div><p>${cond}</p>`:''}
+
+      <div class="prop-section">RESPONSÁVEL TÉCNICO</div>
+      <p>${resp} · ${nomeVF}<br/>
+      ${S.cfg.email||''}${S.cfg.tel?' · '+S.cfg.tel:''}</p>
+
+      <div class="prop-footer">
+        <div style="margin-bottom:6px;color:var(--cherry);font-weight:700;font-size:9.5px;letter-spacing:.08em">AVISO DE CONFIDENCIALIDADE E PROPRIEDADE INTELECTUAL</div>
+        <div>${sigilo}</div>
+        <div style="margin-top:10px;border-top:1px solid var(--g100);padding-top:8px">${rodape}</div>
+      </div>
+    </div>
+  `;
+}
+
+function preencheProp(id){
+  const e = S.empresas.find(x=>x.id===id);
+  if(!e) return;
+  g_el('p_emp').value   = e.nome||'';
+  g_el('p_cnpj').value  = e.cnpj||'';
+  g_el('p_div').value   = e.valor_divida||'';
+  if(e.seguradora){ const v=e.seguradora.split('/')[0].trim(); g_el('p_seg').value=v; }
+  g_el('p_data').value  = today();
+  g_el('p_ref').value   = `VF-${today().replace(/-/g,'').slice(2)}-${(e.cnpj||'').slice(0,4)}`;
+  renderProp();
+  showTab('proposta');
+}
+
+function saveProp(){
+  const nome = `Proposta — ${g('p_emp')||'?'} — ${today()}`;
+  S.docs.push({ id:uid(), nome, categoria:'proposta', sigilo:'interno', url:'', desc:'Gerada no CRM · '+today(), data:today() });
+  saveS();
+  g_el('nb_bib').textContent = S.docs.length;
+  alert('✅ Proposta salva na Biblioteca!');
+}
+
+function copyProp(){
+  const txt = g_el('prop_content')?.innerText||'';
+  navigator.clipboard?.writeText(txt).then(()=>alert('Copiado!')).catch(()=>alert('Use Ctrl+A para selecionar o texto da proposta.'));
+}
+
+// ══════════════════════════════════════════════════════
+// BIBLIOTECA
+// ══════════════════════════════════════════════════════
+let _bibF = '';
+const catIco = {proposta:'📄',contrato:'📝',checklist:'✅',modelo:'📋',interno:'🔒'};
+const sigLbl = {interno:'🔒 Interno',restrito:'⚠ Restrito',cliente:'👤 Compartilhável'};
+
+function bibFilter(cat){
+  _bibF = cat;
+  document.querySelectorAll('#bib_filt .btn').forEach(b=>{
+    b.classList.toggle('active-filter', b.getAttribute('onclick').includes(`'${cat}'`));
+  });
+  renderBib();
+}
+
+function renderBib(){
+  const docs = _bibF ? S.docs.filter(d=>d.categoria===_bibF) : S.docs;
+  g_el('nb_bib').textContent = S.docs.length;
+  if(!docs.length){
+    g_el('bib_list').innerHTML='<div class="alert info">Nenhum documento nesta categoria. Adicione modelos, propostas ou contratos.</div>';
+    return;
+  }
+  g_el('bib_list').innerHTML = docs.map(d=>`
+    <div class="doc-card" onclick="${d.url?`window.open('${d.url}','_blank')`:'void(0)'}">
+      <div class="doc-ico">${catIco[d.categoria]||'📄'}</div>
+      <div class="doc-info">
+        <div class="doc-name">${d.nome}</div>
+        <div class="doc-meta">${d.desc||''} · ${d.data||''}</div>
+      </div>
+      <span class="doc-tag">${sigLbl[d.sigilo]||d.sigilo}</span>
+      <button class="btn ghost sm" onclick="event.stopPropagation();delDoc('${d.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function saveDoc(){
+  if(!g('d_nome')) return alert('Nome obrigatório.');
+  S.docs.push({ id:uid(), nome:g('d_nome'), categoria:g('d_cat'), sigilo:g('d_sig'), url:g('d_url'), desc:g('d_desc'), data:today() });
+  saveS();
+  closeOv('ov-doc');
+  renderBib();
+  ['d_nome','d_url','d_desc'].forEach(id=>{ const el=g_el(id); if(el) el.value=''; });
+}
+
+function delDoc(id){
+  if(!confirm('Remover documento?')) return;
+  S.docs = S.docs.filter(d=>d.id!==id);
+  saveS(); renderBib();
+}
+
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+function loadCfgForm(){
+  const c = S.cfg;
+  const sv = (id,v) => { const el=g_el(id); if(el) el.value=v||''; };
+  sv('c_emp',    c.emp);    sv('c_cnpj',  c.cnpj);
+  sv('c_oab',   c.oab);    sv('c_email', c.email);
+  sv('c_tel',   c.tel);    sv('c_sheetid', c.sheet_id);
+  sv('c_scripturl', c.script_url);
+  sv('c_sigilo', c.sigilo); sv('c_rodape', c.rodape);
+}
+
+function saveCfg(){
+  S.cfg = {
+    emp:       g('c_emp'),   cnpj:   g('c_cnpj'),
+    oab:       g('c_oab'),   email:  g('c_email'),
+    tel:       g('c_tel'),   sheet_id: g('c_sheetid'),
+    script_url: g('c_scripturl'),
+    sigilo:    g('c_sigilo'), rodape: g('c_rodape')
+  };
+  saveS();
+}
+
+// ══════════════════════════════════════════════════════
+// GOOGLE SHEETS SYNC
+// ══════════════════════════════════════════════════════
+const HEADERS = ['id','nome','cnpj','uf','setor','email','tel','valor_divida','faixa','score_pgfn','anos_pgfn','situacao','receita_principal','faturamento','pl','ebitda','regime','fonte','data_enriquecimento','estagio','seguradora','resp_inst','resp_tec','data_entrada','followup','urgente','notas','updated'];
+
+async function testSheets(){
+  const url = S.cfg.script_url;
+  if(!url){ stStatus('warn','Configure a URL do Apps Script primeiro.'); return; }
+  stStatus('info','Testando conexão...');
+  try{
+    const r = await fetch(`${url}?tab=pipeline`);
+    r.ok ? stStatus('ok','✅ Conexão OK — Google Sheets acessível.') : stStatus('warn',`⚠ HTTP ${r.status} — verifique o deploy.`);
+  }catch(err){ stStatus('danger','❌ Falha. Verifique se o Web App está publicado como público: '+err.message); }
+}
+
+async function syncUp(){
+  const url = S.cfg.script_url;
+  if(!url){ stStatus('warn','Configure a URL do Apps Script.'); return; }
+  stStatus('info','Enviando dados...');
+  try{
+    const rows = [HEADERS, ...S.empresas.map(e=>HEADERS.map(h=>String(e[h]??'')))];
+    const r = await fetch(url, {method:'POST', body:JSON.stringify({tab:'pipeline',rows})});
+    const j = await r.json();
+    j.ok ? stStatus('ok',`✅ ${S.empresas.length} empresas enviadas para o Sheets (aba: pipeline).`) : stStatus('danger','❌ Erro ao gravar: '+JSON.stringify(j));
+  }catch(err){ stStatus('danger','❌ '+err.message); }
+}
+
+async function syncDown(){
+  const url = S.cfg.script_url;
+  if(!url){ stStatus('warn','Configure a URL do Apps Script.'); return; }
+  stStatus('info','Importando...');
+  try{
+    const r = await fetch(`${url}?tab=pipeline`);
+    const data = await r.json();
+    if(!data||!data.length){ stStatus('warn','Planilha vazia ou sem dados.'); return; }
+    const hdrs = data[0];
+    S.empresas = data.slice(1).filter(row=>row[0]).map(row=>{
+      const o={};
+      hdrs.forEach((h,i)=>o[h]=row[i]||'');
+      o.urgente = o.urgente==='true'||o.urgente===true;
+      return o;
+    });
+    saveS(); renderPipe(); populateEmpSel();
+    stStatus('ok',`✅ ${S.empresas.length} empresas importadas do Sheets.`);
+  }catch(err){ stStatus('danger','❌ '+err.message); }
+}
+
+function stStatus(cls,msg){ g_el('sheets_st').innerHTML=`<div class="alert ${cls}">${msg}</div>`; }
+
+// ══════════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ══════════════════════════════════════════════════════
+function exportCSV(){
+  const rows = [HEADERS, ...S.empresas.map(e=>HEADERS.map(h=>`"${String(e[h]??'').replace(/"/g,'""')}"` ))];
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  dlFile('\uFEFF'+csv, `VF_CRM_${today()}.csv`, 'text/csv');
+}
+
+function exportJSON(){
+  dlFile(JSON.stringify(S,null,2), `VF_CRM_Backup_${today()}.json`, 'application/json');
+}
+
+function dlFile(content,name,type){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([content],{type}));
+  a.download=name; a.click();
+}
+
+function importJSON(event){
+  const f=event.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.empresas) S.empresas=d.empresas;
+      if(d.docs)     S.docs=d.docs;
+      if(d.cfg)      S.cfg={...S.cfg,...d.cfg};
+      saveS(); renderPipe(); populateEmpSel();
+      alert(`✅ Importado: ${S.empresas.length} empresas, ${S.docs.length} documentos.`);
+    }catch(err){ alert('Erro: '+err.message); }
+  };
+  r.readAsText(f);
+}
+
+function clearAll(){
+  if(!confirm('⚠ ATENÇÃO: Limpar TODOS os dados do CRM? Ação irreversível.')) return;
+  S.empresas=[]; S.docs=[];
+  saveS(); renderPipe(); populateEmpSel();
+  g_el('emp_card').innerHTML='<div class="alert info">Dados limpos.</div>';
+}
+
+// ══════════════════════════════════════════════════════
+// IMPORTAR XLSX — PGFN CARTEIRA COMPLETA
+// ══════════════════════════════════════════════════════
+function importXLSX(event){
+  const file = event.target.files[0];
+  if(!file){ return; }
+  const st = g_el('xlsx_status');
+  st.innerHTML = '<div class="alert info">⏳ Lendo arquivo...</div>';
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb   = XLSX.read(data, {type:'array'});
+
+      // Mapa: nome da aba → seguradora
+      const tabMap = {
+        'Sancor':                   'Sancor',
+        'Berkley':                  'Berkley',
+        'Zurich':                   'Zurich/Swiss/Chubb',
+        'Zurich-Swiss-Chubb':       'Zurich/Swiss/Chubb',
+        'Zurich/Swiss/Chubb':       'Zurich/Swiss/Chubb',
+      };
+
+      // Detecta abas relevantes (ignora Painel, Base Completa, etc.)
+      const targetSheets = wb.SheetNames.filter(name => {
+        const n = name.replace(/[🔴🟣🟢📋📊\s]/g,'');
+        return Object.keys(tabMap).some(k => n.toLowerCase().includes(k.toLowerCase()));
+      });
+
+      if(!targetSheets.length){
+        st.innerHTML = '<div class="alert warn">⚠ Nenhuma aba reconhecida. Verifique se o arquivo é o VF_PGFN_4T2025_Carteira_Completa.xlsx</div>';
+        return;
+      }
+
+      let total = 0, duplicados = 0, importados = 0;
+      const cnpjsExistentes = new Set(S.empresas.map(x=>(x.cnpj||'').replace(/\D/g,'')));
+
+      targetSheets.forEach(sheetName => {
+        // Detectar seguradora pelo nome da aba
+        let seguradora = 'A definir';
+        const cleanName = sheetName.replace(/[🔴🟣🟢📋📊\s]/g,'');
+        for(const [k,v] of Object.entries(tabMap)){
+          if(cleanName.toLowerCase().includes(k.toLowerCase())){ seguradora = v; break; }
+        }
+
+        const ws   = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+        total += rows.length;
+
+        rows.forEach(row => {
+          // Pula linha de título
+          if(!row['Empresa'] && !row['CNPJ Completo']) return;
+          if(String(row['Empresa']).startsWith('V&F |')) return;
+
+          const cnpjRaw = String(row['CNPJ Completo']||row['CNPJ Raiz']||'').replace(/\D/g,'');
+
+          // Deduplicação por CNPJ
+          if(cnpjRaw && cnpjsExistentes.has(cnpjRaw)){ duplicados++; return; }
+
+          // Mapear situação → urgente
+          const sit     = String(row['Situações Presentes']||'');
+          const urgente = sit.includes('AJUIZADA_SEM_GAR');
+
+          // Mapear Simples Nacional
+          const simplesStr = String(row['Simples Nacional']||'').toLowerCase();
+          const regime  = simplesStr==='sim'||simplesStr==='s' ? 'Simples Nacional' : 'Lucro Real';
+
+          // Mapear estágio (se vier preenchido, respeitar; senão padrão)
+          const estagioXls = String(row['Estágio Pipeline']||'').toLowerCase();
+          let estagio = 'identificado';
+          if(estagioXls.includes('contato'))      estagio = 'contato';
+          else if(estagioXls.includes('qualif'))  estagio = 'qualificacao';
+          else if(estagioXls.includes('análise')||estagioXls.includes('analise')) estagio = 'analise';
+          else if(estagioXls.includes('proposta')) estagio = 'proposta';
+          else if(estagioXls.includes('emissao')||estagioXls.includes('emissão')) estagio = 'emissao';
+
+          const empresa = {
+            id:                 uid(),
+            nome:               String(row['Empresa']||''),
+            cnpj:               String(row['CNPJ Completo']||row['CNPJ Raiz']||''),
+            uf:                 String(row['UF']||''),
+            setor:              '',
+            email:              String(row['E-mail']||''),
+            tel:                String(row['Telefone']||''),
+            valor_divida:       String(row['Valor Aberto (R$)']||''),
+            faixa:              String(row['Faixa Valor']||''),
+            score_pgfn:         String(row['Score']||''),
+            anos_pgfn:          String(row['Anos na PGFN']||''),
+            situacao:           sit||'AJUIZADA_SEM_GAR',
+            receita_principal:  String(row['Receita Principal']||''),
+            faturamento:        '',
+            pl:                 '',
+            ebitda:             '',
+            regime:             regime,
+            fonte:              'PGFN 4T2025',
+            data_enriquecimento: today(),
+            estagio:            estagio,
+            seguradora:         seguradora,
+            resp_inst:          String(row['Responsável V&F']||'Anna')||'Anna',
+            resp_tec:           'Rodrigo',
+            data_entrada:       today(),
+            followup:           String(row['Próximo Follow-up']||''),
+            urgente:            urgente,
+            notas:              String(row['Observações']||''),
+            updated:            today()
+          };
+
+          S.empresas.push(empresa);
+          if(cnpjRaw) cnpjsExistentes.add(cnpjRaw);
+          importados++;
+        });
+      });
+
+      saveS();
+      renderPipe();
+      populateEmpSel();
+
+      st.innerHTML = `<div class="alert ok">
+        ✅ <strong>Importação concluída!</strong><br/>
+        ${importados} empresas importadas de ${targetSheets.length} aba(s): ${targetSheets.join(', ')}<br/>
+        ${duplicados > 0 ? `${duplicados} duplicatas ignoradas (CNPJ já existia no CRM).` : ''}
+        <br/><strong>Pipeline atualizado — vá para a aba 📊 Pipeline para ver.</strong>
+      </div>`;
+
+      // Reset input
+      event.target.value = '';
+
+    } catch(err){
+      g_el('xlsx_status').innerHTML = '<div class="alert danger">❌ Erro ao ler o arquivo: '+err.message+'</div>';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function copyScript(){
+  const code = g_el('apps_code')?.textContent||'';
+  navigator.clipboard?.writeText(code).then(()=>alert('Código copiado! Cole em script.google.com')).catch(()=>alert('Selecione e copie manualmente o bloco de código.'));
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+loadS();
+setUser(S.user||'Rodrigo');
+renderPipe();
+g_el('nb_bib').textContent = S.docs.length;
+</script>
+</body>
+</html>
