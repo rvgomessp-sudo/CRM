@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VF CRM v2.0 — Seguro Garantia Tributário</title>
+<style>
+/* ─── Reset & Base ────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117;
+  --bg-card: #1a1d27;
+  --bg-card-hover: #222633;
+  --border: #2a2e3d;
+  --text: #e4e4e7;
+  --text-muted: #8b8fa3;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.12);
+  --yellow: #eab308;
+  --yellow-bg: rgba(234,179,8,0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --blue: #3b82f6;
+  --blue-bg: rgba(59,130,246,0.12);
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+html { font-size: 14px; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+a { color: var(--accent-light); text-decoration: none; }
+
+/* ─── Layout ──────────────────────────────────────────────────────────────── */
+.app-container { display: flex; min-height: 100vh; }
+
+/* Sidebar */
+.sidebar {
+  width: 220px;
+  background: var(--bg-card);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.sidebar-logo {
+  padding: 20px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-light);
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo span { color: var(--text-muted); font-weight: 400; font-size: 0.8rem; display: block; margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 12px 0; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 0.93rem;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: var(--bg-card-hover); color: var(--text); }
+.nav-item.active {
+  color: var(--accent-light);
+  background: rgba(99,102,241,0.08);
+  border-left-color: var(--accent);
+}
+.nav-item svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-user {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.user-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 600; font-size: 0.85rem; color: #fff;
+}
+.user-info { font-size: 0.85rem; }
+.user-info .name { font-weight: 600; }
+.user-info .role { color: var(--text-muted); font-size: 0.75rem; }
+
+/* Main content */
+.main-content {
+  margin-left: 220px;
+  flex: 1;
+  padding: 24px 32px;
+  min-height: 100vh;
+}
+
+/* Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.page-title { font-size: 1.5rem; font-weight: 700; }
+.page-subtitle { color: var(--text-muted); font-size: 0.85rem; margin-top: 2px; }
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Buttons */
+.btn {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { background: var(--bg-card-hover); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-light); }
+.btn-sm { padding: 5px 10px; font-size: 0.8rem; }
+
+/* Select / Input */
+select, input[type="text"], input[type="number"], input[type="date"] {
+  padding: 7px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.85rem;
+}
+select:focus, input:focus { outline: none; border-color: var(--accent); }
+
+/* ─── Dashboard ───────────────────────────────────────────────────────────── */
+.dashboard-user-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+.toggle-btn {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s;
+}
+.toggle-btn.active { background: var(--accent); color: #fff; }
+
+/* KPI Cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color 0.15s;
+}
+.kpi-card:hover { border-color: var(--accent); }
+.kpi-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.kpi-change {
+  font-size: 0.78rem;
+  margin-top: 6px;
+}
+.kpi-change.positive { color: var(--green); }
+.kpi-change.negative { color: var(--red); }
+.kpi-change.neutral { color: var(--text-muted); }
+.kpi-value.green { color: var(--green); }
+.kpi-value.yellow { color: var(--yellow); }
+.kpi-value.red { color: var(--red); }
+.kpi-value.blue { color: var(--blue); }
+.kpi-value.accent { color: var(--accent-light); }
+
+/* Dashboard sections */
+.dash-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.dash-row.three { grid-template-columns: 1fr 1fr 1fr; }
+.dash-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.dash-panel-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dash-panel-title .badge {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+/* Funnel bars */
+.funnel-stage {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+}
+.funnel-label {
+  width: 140px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.funnel-bar-wrap {
+  flex: 1;
+  height: 22px;
+  background: rgba(99,102,241,0.08);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.funnel-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  min-width: 2px;
+  transition: width 0.5s ease;
+}
+.funnel-count {
+  width: 40px;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Follow-up list */
+.followup-list { max-height: 280px; overflow-y: auto; }
+.followup-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: 0.82rem;
+}
+.followup-item:hover { background: var(--bg-card-hover); }
+.followup-item .company { font-weight: 500; flex: 1; }
+.followup-item .date {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+.followup-item .date.overdue { color: var(--red); font-weight: 600; }
+
+/* Seguradora distribution */
+.dist-bar-group { margin-bottom: 10px; }
+.dist-bar-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 3px;
+}
+.dist-bar-label span:first-child { color: var(--text-muted); }
+.dist-bar-label span:last-child { font-weight: 600; }
+.dist-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.dist-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.dist-bar-fill.sancor { background: var(--green); }
+.dist-bar-fill.berkley { background: var(--blue); }
+.dist-bar-fill.zurich { background: var(--yellow); }
+.dist-bar-fill.chubb { background: #a855f7; }
+.dist-bar-fill.swiss { background: #ec4899; }
+
+/* Rating badges */
+.rating-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rating-badge {
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  text-align: center;
+  flex: 1;
+  min-width: 60px;
+}
+.rating-badge .label { font-size: 0.75rem; color: var(--text-muted); }
+.rating-badge .value { font-size: 1.2rem; font-weight: 700; margin-top: 2px; }
+.rating-badge.a-plus { background: rgba(34,197,94,0.1); }
+.rating-badge.a-plus .value { color: var(--green); }
+.rating-badge.a { background: rgba(59,130,246,0.1); }
+.rating-badge.a .value { color: var(--blue); }
+.rating-badge.a-minus { background: rgba(99,102,241,0.1); }
+.rating-badge.a-minus .value { color: var(--accent-light); }
+.rating-badge.b-plus { background: rgba(234,179,8,0.1); }
+.rating-badge.b-plus .value { color: var(--yellow); }
+.rating-badge.b { background: rgba(239,68,68,0.1); }
+.rating-badge.b .value { color: var(--red); }
+
+/* Receita chart placeholder */
+.receita-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.receita-block { flex: 1; text-align: center; }
+.receita-block .label { font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+.receita-block .value { font-size: 1.6rem; font-weight: 700; }
+.receita-block .value.proj { color: var(--accent-light); }
+.receita-block .value.real { color: var(--green); }
+.receita-divider {
+  width: 1px;
+  height: 50px;
+  background: var(--border);
+}
+
+/* ─── Page sections (hidden by default, shown via nav) ────────────────────── */
+.page-section { display: none; }
+.page-section.active { display: block; }
+
+/* Loading state */
+.loading-spinner {
+  display: inline-block;
+  width: 20px; height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--text-muted);
+}
+.empty-state svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+.empty-state p { margin-top: 8px; font-size: 0.85rem; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dash-row { grid-template-columns: 1fr; }
+  .dash-row.three { grid-template-columns: 1fr; }
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- ─── Sidebar ──────────────────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      V&F CRM
+      <span>Seguro Garantia v2.0</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-page="pipeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h12v4H3zM3 17h8v4H3z"/></svg>
+        Pipeline
+      </div>
+      <div class="nav-item" data-page="solver">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16M4 20V4m0 16l4-4v4m4 0V10m0 10l4-8v8m4 0V6"/></svg>
+        VF Solver
+      </div>
+      <div class="nav-item" data-page="import">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Importar
+      </div>
+      <div class="nav-item" data-page="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+        Settings
+      </div>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="userAvatar">R</div>
+      <div class="user-info">
+        <div class="name" id="userName">Rodrigo</div>
+        <div class="role">Sócio</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content ─────────────────────────────────────────────────── -->
+  <main class="main-content">
+
+    <!-- ═══ PAGE: Dashboard ═══════════════════════════════════════════════ -->
+    <section class="page-section active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Dashboard</div>
+          <div class="page-subtitle" id="dashSubtitle">Visão consolidada — atualizado agora</div>
+        </div>
+        <div class="header-actions">
+          <div class="dashboard-user-toggle">
+            <button class="toggle-btn" data-view="anna" onclick="setDashView('anna')">Anna</button>
+            <button class="toggle-btn active" data-view="rodrigo" onclick="setDashView('rodrigo')">Rodrigo</button>
+            <button class="toggle-btn" data-view="todos" onclick="setDashView('todos')">Todos</button>
+          </div>
+          <button class="btn btn-sm" onclick="loadDashboard()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards row -->
+      <div class="kpi-grid" id="kpiGrid">
+        <div class="kpi-card">
+          <div class="kpi-label">Empresas ativas</div>
+          <div class="kpi-value accent" id="kpiActive">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Follow-ups vencidos</div>
+          <div class="kpi-value red" id="kpiFollowups">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Empresas a triar</div>
+          <div class="kpi-value yellow" id="kpiTriar">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Propostas pendentes</div>
+          <div class="kpi-value blue" id="kpiPropostas">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Receita projetada</div>
+          <div class="kpi-value accent" id="kpiReceitaProj">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Receita realizada</div>
+          <div class="kpi-value green" id="kpiReceitaReal">—</div>
+        </div>
+      </div>
+
+      <!-- Funnel F1 + F2 -->
+      <div class="dash-row">
+        <div class="dash-panel">
+          <div class="dash-panel-title">
+            Funil Frente 1 — Sancor
+            <span class="badge" style="background:var(--green-bg);color:var(--green)">Alto giro</span>
+          </div>
+          <div id="funnelF1"></div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-title">
+            Funil Frente 2 — Zurich/Swiss Re/Chubb
+            <span class="badge" style="background:var(--blue-bg);color:var(--blue)">Complexas</span>
+          </div>
+          <div id="funnelF2"></div>
+        </div>
+      </div>
+
+      <!-- Follow-ups + Receita -->
+      <div class="dash-row">
+        <div class="dash-panel">
+          <div class="dash-panel-title">Follow-ups pendentes</div>
+          <div class="followup-list" id="followupList">
+            <div class="empty-state"><p>Nenhum follow-up pendente</p></div>
+          </div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-title">Receita — Mês atual</div>
+          <div class="receita-row">
+            <div class="receita-block">
+              <div class="label">Projetada</div>
+              <div class="value proj" id="receitaProjBlock">R$ 0</div>
+            </div>
+            <div class="receita-divider"></div>
+            <div class="receita-block">
+              <div class="label">Realizada</div>
+              <div class="value real" id="receitaRealBlock">R$ 0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seguradora + Rating -->
+      <div class="dash-row">
+        <div class="dash-panel">
+          <div class="dash-panel-title">Distribuição por seguradora</div>
+          <div id="seguradoraDist"></div>
+        </div>
+        <div class="dash-panel">
+          <div class="dash-panel-title">Distribuição por rating VF</div>
+          <div class="rating-grid" id="ratingGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: Pipeline (placeholder) ═════════════════════════════════ -->
+    <section class="page-section" id="page-pipeline">
+      <div class="page-header">
+        <div class="page-title">Pipeline</div>
+      </div>
+      <div class="empty-state"><p>Módulo Pipeline — em construção</p></div>
+    </section>
+
+    <!-- ═══ PAGE: VF Solver (placeholder) ════════════════════════════════ -->
+    <section class="page-section" id="page-solver">
+      <div class="page-header">
+        <div class="page-title">VF Solver</div>
+      </div>
+      <div class="empty-state"><p>Módulo VF Solver — em construção</p></div>
+    </section>
+
+    <!-- ═══ PAGE: Import (placeholder) ═══════════════════════════════════ -->
+    <section class="page-section" id="page-import">
+      <div class="page-header">
+        <div class="page-title">Importar</div>
+      </div>
+      <div class="empty-state"><p>Módulo Importação — em construção</p></div>
+    </section>
+
+    <!-- ═══ PAGE: Settings (placeholder) ═════════════════════════════════ -->
+    <section class="page-section" id="page-settings">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+      </div>
+      <div class="empty-state"><p>Módulo Settings — em construção</p></div>
+    </section>
+
+  </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   VF CRM v2.0 — Frontend Application
+   Module 1: Dashboard + KPIs
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ─── Config ──────────────────────────────────────────────────────────────────
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8000'
+  : '';  // Same origin in production
+
+let currentUser = 'Rodrigo';
+let dashView = 'rodrigo';
+let dashboardData = null;
+let followupsData = [];
+
+// ─── Navigation ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    const page = document.getElementById('page-' + item.dataset.page);
+    if (page) page.classList.add('active');
+
+    if (item.dataset.page === 'dashboard') loadDashboard();
+  });
+});
+
+// ─── User toggle ─────────────────────────────────────────────────────────────
+function setDashView(view) {
+  dashView = view;
+  document.querySelectorAll('.toggle-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.view === view);
+  });
+  if (view === 'anna') {
+    currentUser = 'Anna';
+  } else if (view === 'rodrigo') {
+    currentUser = 'Rodrigo';
+  } else {
+    currentUser = 'Todos';
+  }
+  document.getElementById('userAvatar').textContent = currentUser[0];
+  document.getElementById('userName').textContent = currentUser;
+  loadDashboard();
+}
+
+// ─── API helpers ─────────────────────────────────────────────────────────────
+async function apiFetch(path) {
+  try {
+    const resp = await fetch(API_BASE + path);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return await resp.json();
+  } catch (e) {
+    console.warn('API unavailable, using demo data:', e.message);
+    return null;
+  }
+}
+
+function formatCurrency(val) {
+  if (val == null || isNaN(val)) return 'R$ 0';
+  return 'R$ ' + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+}
+
+// ─── Demo data (when API not available) ──────────────────────────────────────
+function getDemoData() {
+  return {
+    total_companies: 847,
+    total_active: 312,
+    followups_vencidos: 8,
+    empresas_triar: 45,
+    propostas_pendentes: 12,
+    receita_projetada: 1850000,
+    receita_realizada: 420000,
+    pipeline_f1: {
+      'Base PGFN': 180, 'Enriquecimento': 42, 'Abordagem': 35,
+      'Interesse Manifesto': 18, 'Análise Rápida': 12, 'Proposta Enviada': 8,
+      'Submetido Sancor': 5, 'Aprovado': 3, 'Fechado': 2, 'Receita Realizada': 7
+    },
+    pipeline_f2: {
+      'Qualificação': 15, 'Diagnóstico': 8, 'Engenharia de Balanço': 5,
+      'Narrativa/Dossiê': 3, 'Comitê': 2, 'Aprovado': 1, 'Fechado': 1, 'Receita Realizada': 2
+    },
+    por_seguradora: { 'Sancor': 180, 'Berkley': 45, 'Zurich': 28, 'Swiss Re': 12, 'Chubb': 8 },
+    por_rating: { 'A+': 25, 'A': 68, 'A-': 92, 'B+': 78, 'B': 49 }
+  };
+}
+
+function getDemoFollowups() {
+  const today = new Date();
+  const names = [
+    'Construtora Alpha Ltda', 'Metalúrgica Beta S/A', 'Indústrias Gama',
+    'Transportes Delta', 'Tech Epsilon', 'Agro Zeta', 'Comercial Eta', 'Pharma Theta'
+  ];
+  return names.map((name, i) => {
+    const d = new Date(today);
+    d.setDate(d.getDate() - (i > 3 ? i - 3 : 0) + (i <= 3 ? 0 : 0));
+    return {
+      id: 'demo-' + i,
+      razao_social: name,
+      cnpj: '00.000.000/0001-0' + i,
+      proximo_followup: d.toISOString().split('T')[0],
+      estagio_pipeline: ['Abordagem', 'Interesse Manifesto', 'Proposta Enviada', 'Diagnóstico'][i % 4],
+      responsavel: i % 2 === 0 ? 'Anna' : 'Rodrigo',
+      frente: i < 5 ? 1 : 2
+    };
+  });
+}
+
+// ─── Render Dashboard ────────────────────────────────────────────────────────
+async function loadDashboard() {
+  // Fetch data
+  const apiData = await apiFetch('/api/dashboard');
+  dashboardData = apiData || getDemoData();
+
+  // Fetch follow-ups
+  const respParam = dashView !== 'todos' ? `?responsavel=${currentUser}` : '';
+  const apiFollowups = await apiFetch('/api/followups' + respParam);
+  followupsData = apiFollowups || getDemoFollowups().filter(f =>
+    dashView === 'todos' || f.responsavel === currentUser
+  );
+
+  renderKPIs();
+  renderFunnels();
+  renderFollowups();
+  renderSeguradora();
+  renderRating();
+
+  document.getElementById('dashSubtitle').textContent =
+    `Visão ${currentUser === 'Todos' ? 'consolidada' : 'de ' + currentUser} — atualizado ${new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`;
+}
+
+function renderKPIs() {
+  const d = dashboardData;
+  document.getElementById('kpiActive').textContent = d.total_active.toLocaleString('pt-BR');
+  document.getElementById('kpiFollowups').textContent = d.followups_vencidos;
+  document.getElementById('kpiTriar').textContent = d.empresas_triar;
+  document.getElementById('kpiPropostas').textContent = d.propostas_pendentes;
+  document.getElementById('kpiReceitaProj').textContent = formatCurrency(d.receita_projetada);
+  document.getElementById('kpiReceitaReal').textContent = formatCurrency(d.receita_realizada);
+  document.getElementById('receitaProjBlock').textContent = formatCurrency(d.receita_projetada);
+  document.getElementById('receitaRealBlock').textContent = formatCurrency(d.receita_realizada);
+}
+
+function renderFunnels() {
+  renderFunnel('funnelF1', dashboardData.pipeline_f1);
+  renderFunnel('funnelF2', dashboardData.pipeline_f2);
+}
+
+function renderFunnel(containerId, stages) {
+  const container = document.getElementById(containerId);
+  const max = Math.max(...Object.values(stages), 1);
+  container.innerHTML = Object.entries(stages).map(([stage, count]) => {
+    const pct = (count / max) * 100;
+    return `
+      <div class="funnel-stage">
+        <div class="funnel-label" title="${stage}">${stage}</div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${pct}%"></div>
+        </div>
+        <div class="funnel-count">${count}</div>
+      </div>`;
+  }).join('');
+}
+
+function renderFollowups() {
+  const container = document.getElementById('followupList');
+  if (!followupsData || followupsData.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Nenhum follow-up pendente</p></div>';
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  container.innerHTML = followupsData.slice(0, 15).map(f => {
+    const isOverdue = f.proximo_followup <= today;
+    const dateStr = new Date(f.proximo_followup + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    return `
+      <div class="followup-item" onclick="openCompany('${f.id}')">
+        <span class="company">${f.razao_social || f.cnpj}</span>
+        <span class="date ${isOverdue ? 'overdue' : ''}">${dateStr}${isOverdue ? ' (vencido)' : ''}</span>
+      </div>`;
+  }).join('');
+}
+
+function renderSeguradora() {
+  const container = document.getElementById('seguradoraDist');
+  const data = dashboardData.por_seguradora || {};
+  const total = Object.values(data).reduce((s, v) => s + v, 0) || 1;
+  const colors = { 'Sancor': 'sancor', 'Berkley': 'berkley', 'Zurich': 'zurich', 'Swiss Re': 'swiss', 'Chubb': 'chubb' };
+
+  container.innerHTML = Object.entries(data).map(([name, count]) => {
+    const pct = (count / total) * 100;
+    const cls = colors[name] || 'sancor';
+    return `
+      <div class="dist-bar-group">
+        <div class="dist-bar-label"><span>${name}</span><span>${count} (${pct.toFixed(0)}%)</span></div>
+        <div class="dist-bar-track"><div class="dist-bar-fill ${cls}" style="width:${pct}%"></div></div>
+      </div>`;
+  }).join('');
+}
+
+function renderRating() {
+  const container = document.getElementById('ratingGrid');
+  const data = dashboardData.por_rating || {};
+  const classes = { 'A+': 'a-plus', 'A': 'a', 'A-': 'a-minus', 'B+': 'b-plus', 'B': 'b' };
+
+  container.innerHTML = Object.entries(classes).map(([label, cls]) => {
+    const count = data[label] || 0;
+    return `
+      <div class="rating-badge ${cls}">
+        <div class="label">${label}</div>
+        <div class="value">${count}</div>
+      </div>`;
+  }).join('');
+}
+
+// ─── Company open (placeholder for Module 2) ────────────────────────────────
+function openCompany(id) {
+  console.log('Open company:', id);
+  // Will be implemented in Module 2
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadDashboard();
+});
+</script>
+</body>
+</html>
