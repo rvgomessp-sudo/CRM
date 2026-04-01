@@ -5,5 +5,10 @@ __pycache__/
 *.png
 *.txt
 !requirements.txt
+!backend/requirements.txt
 !README.md
 .env
+.env.*
+!.env.example
+venv/
+*.egg-info/
