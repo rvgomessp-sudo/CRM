@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VF CRM — Vazquez & Fonseca | Seguro Garantia Tributário</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0f0f13;
+  --bg2: #16161d;
+  --bg3: #1e1e28;
+  --bg4: #252530;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e8f0;
+  --text2: #9090a8;
+  --text3: #5a5a72;
+  --cherry: #e8203a;
+  --cherry2: #ff3d54;
+  --cherry-dim: rgba(232,32,58,0.12);
+  --cherry-glow: rgba(232,32,58,0.25);
+  --ok: #22c97a;
+  --ok-dim: rgba(34,201,122,0.12);
+  --warn: #f5a623;
+  --warn-dim: rgba(245,166,35,0.12);
+  --blue: #4d9fff;
+  --blue-dim: rgba(77,159,255,0.12);
+  --purple: #9b6dff;
+  --purple-dim: rgba(155,109,255,0.12);
+  --r: 10px;
+  --rsm: 6px;
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'DM Mono', monospace;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13.5px;line-height:1.55;min-height:100vh;overflow-x:hidden}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:99px}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.main-wrap{display:flex;flex:1;overflow:hidden}
+.content{flex:1;overflow-y:auto;padding:24px;max-width:1600px;width:100%}
+.panel{display:none}.panel.active{display:block}
+
+/* ── HEADER ── */
+.header{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;
+  position:sticky;top:0;z-index:300;flex-shrink:0;
+}
+.logo{
+  width:30px;height:30px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cherry),#b0001a);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:12px;color:#fff;letter-spacing:-0.5px;
+  box-shadow:0 0 12px var(--cherry-glow);
+}
+.hdr-info{flex:1}
+.hdr-title{font-weight:700;font-size:14px;color:var(--text)}
+.hdr-sub{font-size:10.5px;color:var(--text3);margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.user-pill{
+  display:flex;gap:2px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:99px;padding:3px;
+}
+.user-btn{
+  padding:3px 12px;border-radius:99px;font-size:11px;font-weight:600;
+  cursor:pointer;color:var(--text2);transition:all .15s;border:none;background:none;
+  font-family:var(--font);
+}
+.user-btn.active{background:var(--cherry);color:#fff;box-shadow:0 0 8px var(--cherry-glow)}
+.sync-status{font-size:10px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.sync-dot.err{background:var(--cherry)}
+.sync-dot.loading{background:var(--warn);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:200px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);
+  padding:12px 0;overflow-y:auto;
+}
+.nav-section{padding:0 10px;margin-bottom:4px}
+.nav-label{font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);padding:8px 8px 4px}
+.nav-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:var(--rsm);
+  cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text2);
+  transition:all .12s;margin-bottom:1px;
+}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--cherry-dim);color:var(--cherry);border:1px solid rgba(232,32,58,0.2)}
+.nav-icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--cherry);color:#fff;border-radius:99px;padding:1px 6px;font-size:9.5px;font-weight:700}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;margin-bottom:14px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:20px}
+.kpi{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;position:relative;overflow:hidden;
+}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--cherry))}
+.kpi-val{font-size:26px;font-weight:700;color:var(--text);line-height:1;margin:4px 0}
+.kpi-label{font-size:10.5px;color:var(--text3);font-weight:500}
+.kpi-sub{font-size:10px;color:var(--text3);margin-top:4px}
+.kpi-alert{--accent:var(--cherry)}
+.kpi-ok{--accent:var(--ok)}
+.kpi-blue{--accent:var(--blue)}
+.kpi-warn{--accent:var(--warn)}
+.kpi-purple{--accent:var(--purple)}
+
+/* ── FUNIL / BAR ── */
+.funnel{display:flex;flex-direction:column;gap:4px}
+.funnel-row{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.funnel-label{width:160px;flex-shrink:0;color:var(--text2);text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.funnel-bar-wrap{flex:1;background:var(--bg4);border-radius:99px;height:6px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:99px;background:var(--cherry);transition:width .4s ease}
+.funnel-count{width:30px;text-align:right;color:var(--text3);font-size:11px}
+
+/* ── PIPELINE KANBAN ── */
+.kanban-tabs{display:flex;gap:8px;margin-bottom:16px}
+.ktab{
+  padding:5px 14px;border-radius:var(--rsm);font-size:12px;font-weight:600;
+  cursor:pointer;color:var(--text2);background:var(--bg3);border:1px solid var(--border);
+  transition:all .12s;
+}
+.ktab.active{background:var(--cherry-dim);color:var(--cherry);border-color:rgba(232,32,58,.3)}
+.kanban-board{display:flex;gap:10px;overflow-x:auto;padding-bottom:12px;min-height:400px}
+.kanban-col{flex-shrink:0;width:200px}
+.kanban-col-hdr{
+  padding:8px 10px;border-radius:var(--rsm) var(--rsm) 0 0;
+  background:var(--bg3);border:1px solid var(--border);border-bottom:none;
+  font-size:10.5px;font-weight:700;color:var(--text2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.kanban-col-body{
+  background:var(--bg3);border:1px solid var(--border);border-top:none;
+  border-radius:0 0 var(--rsm) var(--rsm);padding:6px;min-height:200px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.k-card{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:9px 10px;cursor:pointer;transition:all .12s;
+}
+.k-card:hover{border-color:var(--cherry);box-shadow:0 0 12px var(--cherry-dim)}
+.k-card.alerta{border-left:2px solid var(--cherry)}
+.k-name{font-size:11.5px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.k-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.k-tag{font-size:9.5px;padding:1px 6px;border-radius:99px;font-weight:600}
+.tag-score{background:var(--cherry-dim);color:var(--cherry)}
+.tag-valor{background:var(--blue-dim);color:var(--blue)}
+.tag-dias{background:var(--warn-dim);color:var(--warn)}
+.tag-dias.ok{background:var(--ok-dim);color:var(--ok)}
+.k-resp{font-size:10px;color:var(--text3);margin-top:4px}
+
+/* ── COMPANY LIST / TABLE ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;padding:8px 12px;font-size:10px;font-weight:700;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--text3);
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text2)}
+tr:hover td{background:var(--bg3);cursor:pointer}
+tr:hover td:first-child{color:var(--text)}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700;white-space:nowrap}
+.badge-ajuizada{background:var(--cherry-dim);color:var(--cherry)}
+.badge-cobranca{background:var(--warn-dim);color:var(--warn)}
+.badge-ok{background:var(--ok-dim);color:var(--ok)}
+.badge-blue{background:var(--blue-dim);color:var(--blue)}
+.badge-purple{background:var(--purple-dim);color:var(--purple)}
+.badge-gray{background:var(--bg4);color:var(--text3)}
+.score-high{color:var(--ok);font-weight:700;font-family:var(--mono)}
+.score-mid{color:var(--warn);font-weight:700;font-family:var(--mono)}
+.score-low{color:var(--cherry);font-weight:700;font-family:var(--mono)}
+
+/* ── FILTERS ── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.filter-input{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:6px 10px;font-size:12px;color:var(--text);font-family:var(--font);
+  outline:none;transition:border-color .15s;
+}
+.filter-input:focus{border-color:var(--cherry)}
+.filter-select{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:6px 10px;font-size:12px;color:var(--text);font-family:var(--font);
+  outline:none;cursor:pointer;
+}
+.btn{
+  padding:6px 14px;border-radius:var(--rsm);font-size:12px;font-weight:600;
+  cursor:pointer;border:none;font-family:var(--font);transition:all .12s;
+}
+.btn-primary{background:var(--cherry);color:#fff}
+.btn-primary:hover{background:var(--cherry2);box-shadow:0 0 12px var(--cherry-glow)}
+.btn-ghost{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--bg4);color:var(--text)}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn-ok{background:var(--ok-dim);color:var(--ok);border:1px solid rgba(34,201,122,.2)}
+
+/* ── MODAL / FICHA ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:500;
+  display:none;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);
+  width:100%;max-width:800px;box-shadow:var(--shadow);margin:auto;
+  animation:slideUp .2s ease;
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-hdr{
+  padding:18px 22px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+.modal-title{font-size:16px;font-weight:700;color:var(--text)}
+.modal-sub{font-size:11px;color:var(--text3);margin-top:2px;font-family:var(--mono)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 22px;overflow-x:auto}
+.modal-tab{
+  padding:9px 14px;font-size:12px;font-weight:600;color:var(--text3);
+  cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;
+  transition:all .12s;
+}
+.modal-tab.active{color:var(--cherry);border-bottom-color:var(--cherry)}
+.modal-body{padding:20px 22px;max-height:60vh;overflow-y:auto}
+.modal-tab-content{display:none}.modal-tab-content.active{display:block}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field-full{grid-column:1/-1}
+.field-group{display:flex;flex-direction:column;gap:4px}
+.field-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3)}
+.field-value{font-size:13px;color:var(--text);padding:6px 0}
+.field-input{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:7px 10px;font-size:12.5px;color:var(--text);font-family:var(--font);
+  outline:none;width:100%;transition:border-color .15s;
+}
+.field-input:focus{border-color:var(--cherry)}
+.field-select{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:7px 10px;font-size:12.5px;color:var(--text);font-family:var(--font);
+  outline:none;width:100%;cursor:pointer;
+}
+.field-textarea{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:8px 10px;font-size:12.5px;color:var(--text);font-family:var(--font);
+  outline:none;width:100%;resize:vertical;min-height:70px;
+}
+.modal-footer{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── LOG DE INTERAÇÕES ── */
+.log-list{display:flex;flex-direction:column;gap:8px}
+.log-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:10px 12px;
+}
+.log-hdr{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.log-canal{font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px}
+.log-data{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.log-resp{font-size:10px;color:var(--text3)}
+.log-text{font-size:12px;color:var(--text2)}
+.log-proxima{font-size:11px;color:var(--blue);margin-top:4px}
+
+/* ── VF SOLVER ── */
+.solver-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.solver-inputs{display:flex;flex-direction:column;gap:12px}
+.solver-result{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:20px}
+.solver-metric{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.solver-metric:last-child{border-bottom:none}
+.solver-metric-label{font-size:12px;color:var(--text2)}
+.solver-metric-val{font-size:14px;font-weight:700;color:var(--text);font-family:var(--mono)}
+.solver-metric-val.highlight{color:var(--ok);font-size:18px}
+.solver-metric-val.alert{color:var(--cherry)}
+.solver-ratio{margin-top:12px;padding:10px 12px;border-radius:var(--rsm);font-size:12px;font-weight:600}
+.ratio-ok{background:var(--ok-dim);color:var(--ok)}
+.ratio-warn{background:var(--warn-dim);color:var(--warn)}
+.ratio-bad{background:var(--cherry-dim);color:var(--cherry)}
+.sensitivity-table{width:100%;margin-top:16px;border-collapse:collapse}
+.sensitivity-table th{background:var(--bg4);padding:6px 10px;font-size:10px;color:var(--text3);text-align:right}
+.sensitivity-table th:first-child{text-align:left}
+.sensitivity-table td{padding:6px 10px;font-size:11px;border-bottom:1px solid var(--border);text-align:right;font-family:var(--mono)}
+.sensitivity-table td:first-child{text-align:left;color:var(--text2)}
+.sensitivity-table tr.optimal td{background:var(--ok-dim);color:var(--ok);font-weight:700}
+
+/* ── IMPORT ── */
+.drop-zone{
+  border:2px dashed var(--border2);border-radius:var(--r);padding:40px;
+  text-align:center;cursor:pointer;transition:all .15s;
+}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--cherry);background:var(--cherry-dim)}
+.drop-icon{font-size:36px;margin-bottom:12px}
+.import-result{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-top:14px}
+
+/* ── FOLLOWUP LIST ── */
+.followup-list{display:flex;flex-direction:column;gap:6px}
+.followup-item{
+  background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);
+  padding:10px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;
+  transition:all .12s;
+}
+.followup-item:hover{border-color:var(--cherry)}
+.followup-item.vencido{border-left:2px solid var(--cherry)}
+.followup-data{font-size:11px;font-family:var(--mono);color:var(--cherry);font-weight:700;width:80px;flex-shrink:0}
+.followup-empresa{flex:1;font-size:12.5px;font-weight:600;color:var(--text)}
+.followup-estagio{font-size:10.5px;color:var(--text3)}
+.followup-resp{font-size:10.5px;font-weight:600;width:60px;flex-shrink:0;text-align:right}
+
+/* ── SETTINGS ── */
+.settings-section{margin-bottom:24px}
+.settings-title{font-size:12px;font-weight:700;color:var(--text2);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.api-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.api-name{width:200px;flex-shrink:0;font-size:12px;font-weight:600;color:var(--text)}
+.api-desc{flex:1;font-size:11px;color:var(--text3)}
+.api-status{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700}
+.api-configured{background:var(--ok-dim);color:var(--ok)}
+.api-not-configured{background:var(--bg4);color:var(--text3)}
+
+/* ── LOADING ── */
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--cherry);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-wrap{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text3);gap:10px}
+
+/* ── TOAST ── */
+#toast-container{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px}
+.toast{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rsm);
+  padding:10px 16px;font-size:12.5px;color:var(--text);box-shadow:var(--shadow);
+  animation:toastIn .2s ease;max-width:300px;
+}
+.toast.ok{border-left:3px solid var(--ok)}
+.toast.err{border-left:3px solid var(--cherry)}
+@keyframes toastIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:13px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">V&F</div>
+  <div class="hdr-info">
+    <div class="hdr-title">VF CRM</div>
+    <div class="hdr-sub">Vazquez & Fonseca · Seguro Garantia Tributário</div>
+  </div>
+  <div class="hdr-right">
+    <div class="sync-status">
+      <div class="sync-dot" id="sync_dot"></div>
+      <span id="sync_label">conectando...</span>
+    </div>
+    <div class="user-pill">
+      <button class="user-btn active" onclick="setUser('Anna')" id="btn_anna">Anna</button>
+      <button class="user-btn" onclick="setUser('Rodrigo')" id="btn_rodrigo">Rodrigo</button>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrap">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="nav-section">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active" onclick="nav('dashboard')" id="nav_dashboard">
+      <span class="nav-icon">◈</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="nav('pipeline')" id="nav_pipeline">
+      <span class="nav-icon">⬡</span> Pipeline
+      <span class="nav-badge" id="badge_pipeline">—</span>
+    </div>
+    <div class="nav-item" onclick="nav('base')" id="nav_base">
+      <span class="nav-icon">◉</span> Base PGFN
+    </div>
+    <div class="nav-item" onclick="nav('followups')" id="nav_followups">
+      <span class="nav-icon">◷</span> Follow-ups
+      <span class="nav-badge" id="badge_followups">—</span>
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Ferramentas</div>
+    <div class="nav-item" onclick="nav('solver')" id="nav_solver">
+      <span class="nav-icon">∑</span> VF Solver
+    </div>
+    <div class="nav-item" onclick="nav('import')" id="nav_import">
+      <span class="nav-icon">↑</span> Importar
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Sistema</div>
+    <div class="nav-item" onclick="nav('settings')" id="nav_settings">
+      <span class="nav-icon">⚙</span> Configurações
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="content">
+
+<!-- DASHBOARD -->
+<div class="panel active" id="panel_dashboard">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <h1 style="font-size:20px;font-weight:700;color:var(--text)">Dashboard</h1>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px" id="dash_user_label">Visão Anna</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Atualizar</button>
+  </div>
+  <div class="kpi-grid" id="kpi_grid"><div class="loading-wrap"><div class="spinner"></div></div></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">Pipeline Frente 1 — Sancor</div>
+      </div>
+      <div class="funnel" id="funnel_f1"><div class="loading-wrap"><div class="spinner"></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title">Pipeline Frente 2 — Complexa</div>
+      </div>
+      <div class="funnel" id="funnel_f2"></div>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">Follow-ups Vencidos</div></div>
+      <div id="dash_followups_list"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title">F2 em Andamento</div></div>
+      <div id="dash_f2_list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PIPELINE KANBAN -->
+<div class="panel" id="panel_pipeline">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <h1 style="font-size:20px;font-weight:700">Pipeline</h1>
+  </div>
+  <div class="kanban-tabs">
+    <div class="ktab active" onclick="switchKanban(1,this)">Frente 1 — Sancor</div>
+    <div class="ktab" onclick="switchKanban(2,this)">Frente 2 — Complexa</div>
+  </div>
+  <div class="kanban-board" id="kanban_board"></div>
+</div>
+
+<!-- BASE PGFN -->
+<div class="panel" id="panel_base">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h1 style="font-size:20px;font-weight:700">Base PGFN</h1>
+    <div style="font-size:12px;color:var(--text3)" id="base_total_label"></div>
+  </div>
+  <div class="filters">
+    <input class="filter-input" placeholder="Buscar empresa ou CNPJ..." style="width:220px" id="f_search" oninput="debounceLoad()">
+    <select class="filter-select" id="f_frente" onchange="loadBase()">
+      <option value="">Todas as frentes</option>
+      <option value="1">Frente 1 — Sancor</option>
+      <option value="2">Frente 2 — Complexa</option>
+    </select>
+    <select class="filter-select" id="f_resp" onchange="loadBase()">
+      <option value="">Todos responsáveis</option>
+      <option value="Anna">Anna</option>
+      <option value="Rodrigo">Rodrigo</option>
+    </select>
+    <select class="filter-select" id="f_estagio" onchange="loadBase()">
+      <option value="">Todos estágios</option>
+      <option>Base PGFN</option><option>Enriquecimento</option><option>Abordagem</option>
+      <option>Interesse Manifesto</option><option>Análise Rápida</option>
+      <option>Proposta Enviada</option><option>Submetido Sancor</option>
+      <option>Qualificação</option><option>Diagnóstico</option>
+      <option>Aprovado</option><option>Fechado</option><option>Receita Realizada</option>
+    </select>
+    <select class="filter-select" id="f_seg" onchange="loadBase()">
+      <option value="">Todas seguradoras</option>
+      <option>Sancor</option><option>Berkley</option><option>Zurich/Swiss Re/Chubb</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="clearFilters()">✕ Limpar</button>
+  </div>
+  <div class="card" style="padding:0">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Empresa</th><th>CNPJ</th><th>Score</th>
+            <th>Valor</th><th>Situação</th><th>Seguradora</th>
+            <th>Estágio</th><th>Responsável</th><th>Enriquecimento</th>
+          </tr>
+        </thead>
+        <tbody id="base_tbody"><tr><td colspan="9"><div class="loading-wrap"><div class="spinner"></div></div></td></tr></tbody>
+      </table>
+    </div>
+    <div style="padding:12px 16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px" id="base_pagination"></div>
+  </div>
+</div>
+
+<!-- FOLLOW-UPS -->
+<div class="panel" id="panel_followups">
+  <h1 style="font-size:20px;font-weight:700;margin-bottom:20px">Follow-ups</h1>
+  <div class="card">
+    <div class="card-hdr"><div class="card-title">Pendentes</div></div>
+    <div class="followup-list" id="followup_list"></div>
+  </div>
+</div>
+
+<!-- VF SOLVER -->
+<div class="panel" id="panel_solver">
+  <h1 style="font-size:20px;font-weight:700;margin-bottom:6px">VF Solver de Precificação Ótima</h1>
+  <p style="font-size:12px;color:var(--text3);margin-bottom:20px">Calcula taxa ótima, honorários máximos e receita V&F dado o teto de percepção do cliente.</p>
+  <div class="card">
+    <div class="solver-wrap">
+      <div class="solver-inputs">
+        <div class="field-group">
+          <div class="field-label">Valor da Garantia (R$)</div>
+          <input class="field-input" type="number" id="s_valor" value="2000000" oninput="calcSolver()">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Prazo (anos)</div>
+          <input class="field-input" type="number" id="s_prazo" value="5" min="1" max="10" oninput="calcSolver()">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Taxa mínima seguradora (% a.a.)</div>
+          <input class="field-input" type="number" id="s_taxa_min" value="0.50" step="0.05" oninput="calcSolver()">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Teto de percepção do cliente (R$)</div>
+          <input class="field-input" type="number" id="s_teto" value="100000" oninput="calcSolver()">
+        </div>
+        <div class="field-group">
+          <div class="field-label">Comissão V&F (%)</div>
+          <input class="field-input" type="number" id="s_comissao" value="20" oninput="calcSolver()">
+        </div>
+        <div style="padding:12px;background:var(--bg4);border-radius:var(--rsm);font-size:11px;color:var(--text3)">
+          <strong style="color:var(--text2)">Lógica:</strong> Para maximizar receita V&F dado teto fixo, a taxa ótima é a <em>mínima</em> aceita pela seguradora. Honorários absorvem a diferença com margem superior à comissão.
+        </div>
+      </div>
+      <div>
+        <div class="solver-result" id="solver_result"></div>
+        <div style="margin-top:14px">
+          <div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Tabela de Sensibilidade</div>
+          <div class="table-wrap"><table class="sensitivity-table" id="sensitivity_table"></table></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORTAR -->
+<div class="panel" id="panel_import">
+  <h1 style="font-size:20px;font-weight:700;margin-bottom:6px">Importar Base</h1>
+  <p style="font-size:12px;color:var(--text3);margin-bottom:20px">Importe o XLSX exportado da pipeline PGFN ou CSV do segmentacao_universo.py</p>
+  <div class="card">
+    <div class="drop-zone" id="drop_zone" onclick="document.getElementById('file_input').click()"
+         ondragover="event.preventDefault();this.classList.add('drag')"
+         ondragleave="this.classList.remove('drag')"
+         ondrop="handleDrop(event)">
+      <div class="drop-icon">↑</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text)">Clique ou arraste o arquivo aqui</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:6px">Suporta .xlsx e .csv · VF_PGFN_4T2025_Carteira_Completa.xlsx</div>
+      <input type="file" id="file_input" accept=".xlsx,.csv" style="display:none" onchange="handleFile(this.files[0])">
+    </div>
+    <div id="import_preview" style="display:none;margin-top:16px">
+      <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px" id="preview_title"></div>
+      <div class="table-wrap" style="max-height:200px;overflow-y:auto">
+        <table>
+          <thead id="preview_head"></thead>
+          <tbody id="preview_body"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <button class="btn btn-primary" id="import_btn" onclick="doImport()">Importar para CRM</button>
+        <button class="btn btn-ghost" onclick="cancelImport()">Cancelar</button>
+        <span style="font-size:11px;color:var(--text3)" id="import_info"></span>
+      </div>
+    </div>
+    <div id="import_result" style="display:none" class="import-result"></div>
+  </div>
+</div>
+
+<!-- CONFIGURAÇÕES -->
+<div class="panel" id="panel_settings">
+  <h1 style="font-size:20px;font-weight:700;margin-bottom:20px">Configurações</h1>
+  <div class="card">
+    <div class="settings-section">
+      <div class="settings-title">Banco de Dados</div>
+      <div class="field-group" style="max-width:500px">
+        <div class="field-label">API Backend URL</div>
+        <input class="field-input" id="cfg_api_url" placeholder="http://localhost:8000">
+        <div style="font-size:10px;color:var(--text3);margin-top:4px">URL do servidor FastAPI. Deixe vazio para usar localStorage.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="saveApiUrl()">Salvar URL</button>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">Integrações de Dados</div>
+      <div id="api_integrations_list"></div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-title">Backup</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-sm" onclick="exportData()">↓ Exportar JSON</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('import_backup').click()">↑ Importar JSON</button>
+        <input type="file" id="import_backup" accept=".json" style="display:none" onchange="importBackup(this)">
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /main-wrap -->
+</div><!-- /app -->
+
+<!-- MODAL FICHA DA EMPRESA -->
+<div class="modal-overlay" id="modal_company">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title" id="modal_company_name">—</div>
+        <div class="modal-sub" id="modal_company_cnpj">—</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <div class="modal-tab active" onclick="switchModalTab('pgfn',this)">PGFN</div>
+      <div class="modal-tab" onclick="switchModalTab('seguradora',this)">Seguradora</div>
+      <div class="modal-tab" onclick="switchModalTab('financeiro',this)">Financeiro</div>
+      <div class="modal-tab" onclick="switchModalTab('decisor',this)">Decisor</div>
+      <div class="modal-tab" onclick="switchModalTab('pipeline',this)">Pipeline</div>
+      <div class="modal-tab" onclick="switchModalTab('proposta',this)">Proposta</div>
+    </div>
+    <div class="modal-body">
+      <!-- PGFN -->
+      <div class="modal-tab-content active" id="mtab_pgfn">
+        <div class="field-grid">
+          <div class="field-group"><div class="field-label">Score VF</div><div class="field-value" id="mf_score">—</div></div>
+          <div class="field-group"><div class="field-label">Prioridade</div><div class="field-value" id="mf_prioridade">—</div></div>
+          <div class="field-group"><div class="field-label">Faixa de Valor</div><div class="field-value" id="mf_faixa">—</div></div>
+          <div class="field-group"><div class="field-label">Valor Aberto</div><div class="field-value" id="mf_valor">—</div></div>
+          <div class="field-group"><div class="field-label">Situação Processual</div><div class="field-value" id="mf_situacao">—</div></div>
+          <div class="field-group"><div class="field-label">Qtd. Inscrições</div><div class="field-value" id="mf_inscricoes">—</div></div>
+          <div class="field-group"><div class="field-label">Anos PGFN</div><div class="field-value" id="mf_anos">—</div></div>
+          <div class="field-group"><div class="field-label">Receita Principal</div><div class="field-value" id="mf_receita">—</div></div>
+          <div class="field-group"><div class="field-label">Simples Nacional</div>
+            <select class="field-select" id="mf_simples" onchange="updateField('simples_nacional',this.value==='true')">
+              <option value="false">Não</option><option value="true">Sim</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">UF</div><div class="field-value" id="mf_uf">—</div></div>
+        </div>
+      </div>
+      <!-- SEGURADORA -->
+      <div class="modal-tab-content" id="mtab_seguradora">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-ghost btn-sm" onclick="enrichCNPJ()">↺ BrasilAPI</button>
+          <button class="btn btn-ghost btn-sm" onclick="enrichSeguradora()">◉ Consultar Seguradora</button>
+        </div>
+        <div class="field-grid">
+          <div class="field-group"><div class="field-label">Seguradora Consultada</div>
+            <select class="field-select" id="mf_seg_consultada" onchange="updateField('seguradora_consultada',this.value)">
+              <option value="">—</option><option>Sancor</option><option>Berkley</option><option>Zurich</option><option>Swiss Re</option><option>Chubb</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Status Consulta</div>
+            <select class="field-select" id="mf_status_consulta" onchange="updateField('status_consulta',this.value)">
+              <option value="">—</option><option>Pendente</option><option>Em análise</option><option>Aprovado</option><option>Negado</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Limite Aprovado (R$)</div>
+            <input class="field-input" type="number" id="mf_limite" onchange="updateField('limite_aprovado',parseFloat(this.value))">
+          </div>
+          <div class="field-group"><div class="field-label">Taxa Mínima (% a.a.)</div>
+            <input class="field-input" type="number" step="0.05" id="mf_taxa_min" onchange="updateField('taxa_minima',parseFloat(this.value))">
+          </div>
+          <div class="field-group field-full"><div class="field-label">Observações Underwriter</div>
+            <textarea class="field-textarea" id="mf_obs_uw" onchange="updateField('obs_underwriter',this.value)"></textarea>
+          </div>
+        </div>
+      </div>
+      <!-- FINANCEIRO -->
+      <div class="modal-tab-content" id="mtab_financeiro">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-ghost btn-sm" onclick="enrichFinanceiro()">↺ Buscar Serasa/Neoway</button>
+        </div>
+        <div class="field-grid-3">
+          <div class="field-group"><div class="field-label">PL (R$)</div><input class="field-input" type="number" id="mf_pl" onchange="updateField('pl',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Faturamento (R$)</div><input class="field-input" type="number" id="mf_fat" onchange="updateField('faturamento',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">EBITDA (R$)</div><input class="field-input" type="number" id="mf_ebitda" onchange="updateField('ebitda',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Regime Tributário</div>
+            <select class="field-select" id="mf_regime" onchange="updateField('regime_tributario',this.value)">
+              <option value="">—</option><option>Lucro Real</option><option>Lucro Presumido</option><option>Simples Nacional</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Porte</div>
+            <select class="field-select" id="mf_porte" onchange="updateField('porte',this.value)">
+              <option value="">—</option><option>MEI</option><option>Micro</option><option>Pequeno</option><option>Médio</option><option>Grande</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Capital Social (R$)</div><input class="field-input" type="number" id="mf_capital" onchange="updateField('capital_social',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Data Balanço</div><input class="field-input" type="date" id="mf_balanco" onchange="updateField('data_balanco',this.value)"></div>
+          <div class="field-group"><div class="field-label">Fonte dos Dados</div>
+            <select class="field-select" id="mf_fonte" onchange="updateField('fonte_dados',this.value)">
+              <option value="">—</option><option>BrasilAPI</option><option>Serasa</option><option>Neoway</option><option>CVM</option><option>Manual</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- DECISOR -->
+      <div class="modal-tab-content" id="mtab_decisor">
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <button class="btn btn-ghost btn-sm" onclick="enrichDecisor()">↺ Buscar Apollo.io</button>
+          <button class="btn btn-ghost btn-sm" onclick="openLinkedIn()">↗ LinkedIn</button>
+        </div>
+        <div class="field-grid">
+          <div class="field-group"><div class="field-label">Nome</div><input class="field-input" id="mf_dec_nome" onchange="updateField('decisor_nome',this.value)"></div>
+          <div class="field-group"><div class="field-label">Cargo</div><input class="field-input" id="mf_dec_cargo" onchange="updateField('decisor_cargo',this.value)"></div>
+          <div class="field-group"><div class="field-label">E-mail</div><input class="field-input" type="email" id="mf_dec_email" onchange="updateField('decisor_email',this.value)"></div>
+          <div class="field-group"><div class="field-label">E-mail Confirmado</div>
+            <select class="field-select" id="mf_dec_email_conf" onchange="updateField('decisor_email_confirmado',this.value==='true')">
+              <option value="false">Não</option><option value="true">Sim ✓</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Telefone</div><input class="field-input" id="mf_dec_tel" onchange="updateField('decisor_telefone',this.value)"></div>
+          <div class="field-group"><div class="field-label">LinkedIn URL</div><input class="field-input" id="mf_dec_linkedin" onchange="updateField('decisor_linkedin',this.value)"></div>
+        </div>
+        <div style="margin-top:14px">
+          <button class="btn btn-ghost btn-sm" onclick="openEmail()" id="btn_email">✉ Abrir template no e-mail</button>
+        </div>
+      </div>
+      <!-- PIPELINE -->
+      <div class="modal-tab-content" id="mtab_pipeline">
+        <div class="field-grid" style="margin-bottom:16px">
+          <div class="field-group"><div class="field-label">Frente</div>
+            <select class="field-select" id="mf_frente" onchange="updateField('frente',parseInt(this.value))">
+              <option value="1">Frente 1 — Sancor</option><option value="2">Frente 2 — Complexa</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Responsável</div>
+            <select class="field-select" id="mf_responsavel" onchange="updateField('responsavel',this.value)">
+              <option>Anna</option><option>Rodrigo</option><option>Ambos</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Estágio</div>
+            <select class="field-select" id="mf_estagio_sel" onchange="updateField('estagio_pipeline',this.value)">
+              <option>Base PGFN</option><option>Enriquecimento</option><option>Abordagem</option>
+              <option>Interesse Manifesto</option><option>Análise Rápida</option>
+              <option>Proposta Enviada</option><option>Submetido Sancor</option>
+              <option>Qualificação</option><option>Diagnóstico</option>
+              <option>Engenharia de Balanço</option><option>Narrativa/Dossiê</option>
+              <option>Comitê</option><option>Aprovado</option>
+              <option>Fechado</option><option>Receita Realizada</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Próximo Follow-up</div>
+            <input class="field-input" type="date" id="mf_followup" onchange="updateField('proximo_followup',this.value)">
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div class="field-label">Registrar Interação</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <select class="field-select" id="int_canal">
+              <option>LinkedIn</option><option>E-mail</option><option>Telefone</option><option>Reunião</option><option>Interno</option>
+            </select>
+            <select class="field-select" id="int_estagio_novo">
+              <option value="">Manter estágio atual</option>
+              <option>Enriquecimento</option><option>Abordagem</option>
+              <option>Interesse Manifesto</option><option>Análise Rápida</option>
+              <option>Proposta Enviada</option><option>Submetido Sancor</option>
+              <option>Aprovado</option><option>Fechado</option><option>Receita Realizada</option>
+            </select>
+          </div>
+          <textarea class="field-textarea" id="int_resumo" placeholder="Resumo da interação..." style="margin-bottom:6px"></textarea>
+          <input class="field-input" id="int_proxima" placeholder="Próxima ação..." style="margin-bottom:8px">
+          <button class="btn btn-primary btn-sm" onclick="saveInteraction()">Registrar</button>
+        </div>
+        <div class="field-label" style="margin-bottom:8px">Histórico</div>
+        <div class="log-list" id="modal_log_list"></div>
+      </div>
+      <!-- PROPOSTA -->
+      <div class="modal-tab-content" id="mtab_proposta">
+        <div style="margin-bottom:14px;padding:12px;background:var(--bg3);border-radius:var(--rsm)">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Calcule com o VF Solver abaixo ou preencha manualmente</div>
+          <button class="btn btn-ghost btn-sm" onclick="openSolverForCompany()">∑ Abrir VF Solver para esta empresa</button>
+        </div>
+        <div class="field-grid">
+          <div class="field-group"><div class="field-label">Valor Garantia (R$)</div><input class="field-input" type="number" id="mf_prop_valor" onchange="updateField('valor_garantia',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Prazo (anos)</div><input class="field-input" type="number" id="mf_prop_prazo" onchange="updateField('prazo_anos',parseInt(this.value))"></div>
+          <div class="field-group"><div class="field-label">Taxa Negociada (% a.a.)</div><input class="field-input" type="number" step="0.05" id="mf_prop_taxa" onchange="updateField('taxa_negociada',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Prêmio Calculado (R$)</div><input class="field-input" type="number" id="mf_prop_premio" onchange="updateField('premio_calculado',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Honorários (R$)</div><input class="field-input" type="number" id="mf_prop_honorarios" onchange="updateField('honorarios',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Receita V&F Total (R$)</div><input class="field-input" type="number" id="mf_prop_receita" onchange="updateField('receita_vf',parseFloat(this.value))"></div>
+          <div class="field-group"><div class="field-label">Status Proposta</div>
+            <select class="field-select" id="mf_prop_status" onchange="updateField('status_proposta',this.value)">
+              <option value="">—</option><option>Elaborando</option><option>Enviada</option><option>Em negociação</option><option>Aceita</option><option>Recusada</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Data Proposta</div><input class="field-input" type="date" id="mf_prop_data" onchange="updateField('data_proposta',this.value)"></div>
+          <div class="field-group"><div class="field-label">Número Apólice</div><input class="field-input" id="mf_prop_apolice" onchange="updateField('numero_apolice',this.value)"></div>
+          <div class="field-group"><div class="field-label">Data Emissão</div><input class="field-input" type="date" id="mf_prop_emissao" onchange="updateField('data_emissao',this.value)"></div>
+          <div class="field-group"><div class="field-label">Comissão Recebida</div>
+            <select class="field-select" id="mf_prop_com" onchange="updateField('comissao_recebida',this.value==='true')">
+              <option value="false">Não</option><option value="true">Sim ✓</option>
+            </select>
+          </div>
+          <div class="field-group"><div class="field-label">Honorários Recebidos</div>
+            <select class="field-select" id="mf_prop_hon" onchange="updateField('honorarios_recebidos',this.value==='true')">
+              <option value="false">Não</option><option value="true">Sim ✓</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════════════
+let API_URL = localStorage.getItem('vf_api_url') || '';
+let currentUser = localStorage.getItem('vf_user') || 'Anna';
+let currentCompany = null;
+let baseOffset = 0;
+const BASE_LIMIT = 50;
+let debounceTimer = null;
+let importFile = null;
+let currentKanbanFrente = 1;
+
+const ESTAGIOS_F1 = ['Base PGFN','Enriquecimento','Abordagem','Interesse Manifesto','Análise Rápida','Proposta Enviada','Submetido Sancor','Aprovado','Fechado','Receita Realizada'];
+const ESTAGIOS_F2 = ['Qualificação','Diagnóstico','Engenharia de Balanço','Narrativa/Dossiê','Comitê','Aprovado','Fechado','Receita Realizada'];
+
+// LocalStorage fallback
+const LS_KEY = 'vf_crm_data';
+function lsGet() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '{"companies":[],"interactions":[]}'); } catch { return {companies:[],interactions:[]}; } }
+function lsSet(data) { localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+
+// ═══════════════════════════════════════════════════════
+// API LAYER — usa backend se configurado, senão localStorage
+// ═══════════════════════════════════════════════════════
+async function apiGet(path, params={}) {
+  if (!API_URL) return lsFallbackGet(path, params);
+  const url = new URL(API_URL + path);
+  Object.entries(params).forEach(([k,v]) => v !== undefined && v !== '' && url.searchParams.set(k, v));
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function apiPost(path, body={}) {
+  if (!API_URL) return lsFallbackPost(path, body);
+  const r = await fetch(API_URL + path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function apiPut(path, body={}) {
+  if (!API_URL) return lsFallbackPut(path, body);
+  const r = await fetch(API_URL + path, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// LocalStorage fallbacks
+function lsFallbackGet(path, params) {
+  const data = lsGet();
+  if (path === '/api/dashboard') return buildLocalDashboard(data);
+  if (path.startsWith('/api/companies/') && path.split('/').length === 4) {
+    const id = path.split('/')[3];
+    const c = data.companies.find(x => x.id === id);
+    if (c) { c.interactions = data.interactions.filter(i => i.company_id === id); return c; }
+    throw new Error('Not found');
+  }
+  if (path === '/api/companies') {
+    let items = data.companies.filter(c => c.status !== 'archived');
+    if (params.search) items = items.filter(c => (c.razao_social||'').toLowerCase().includes(params.search.toLowerCase()) || (c.cnpj||'').includes(params.search));
+    if (params.frente) items = items.filter(c => c.frente == params.frente);
+    if (params.responsavel) items = items.filter(c => c.responsavel === params.responsavel);
+    if (params.estagio) items = items.filter(c => c.estagio_pipeline === params.estagio);
+    if (params.seguradora) items = items.filter(c => c.seguradora_elegivel === params.seguradora);
+    items.sort((a,b) => (b.score_vf||0) - (a.score_vf||0));
+    const total = items.length;
+    const offset = parseInt(params.offset||0);
+    return {total, items: items.slice(offset, offset + BASE_LIMIT)};
+  }
+  if (path.startsWith('/api/interactions/')) {
+    const cid = path.split('/')[3];
+    return data.interactions.filter(i => i.company_id === cid).sort((a,b) => b.data_hora > a.data_hora ? 1 : -1);
+  }
+  if (path === '/api/settings') return JSON.parse(localStorage.getItem('vf_settings')||'{}');
+  return {};
+}
+
+function lsFallbackPost(path, body) {
+  const data = lsGet();
+  if (path === '/api/companies') {
+    if (data.companies.find(c => c.cnpj === body.cnpj)) throw new Error('CNPJ já cadastrado');
+    const c = {...body, id: crypto.randomUUID(), created_at: new Date().toISOString(), status:'active'};
+    data.companies.push(c); lsSet(data); return c;
+  }
+  if (path === '/api/interactions') {
+    const int = {...body, id: crypto.randomUUID(), data_hora: new Date().toISOString()};
+    data.interactions.push(int);
+    if (body.estagio_novo) {
+      const c = data.companies.find(x => x.id === body.company_id);
+      if (c) { c.estagio_pipeline = body.estagio_novo; c.data_entrada_estagio = new Date().toISOString(); }
+    }
+    lsSet(data); return int;
+  }
+  return {};
+}
+
+function lsFallbackPut(path, body) {
+  const data = lsGet();
+  const id = path.split('/')[3];
+  const idx = data.companies.findIndex(c => c.id === id);
+  if (idx === -1) throw new Error('Not found');
+  data.companies[idx] = {...data.companies[idx], ...body, updated_at: new Date().toISOString()};
+  lsSet(data); return data.companies[idx];
+}
+
+function buildLocalDashboard(data) {
+  const active = data.companies.filter(c => c.status !== 'archived');
+  const today = new Date().toISOString().slice(0,10);
+  const pf1 = {}, pf2 = {};
+  ESTAGIOS_F1.forEach(e => pf1[e] = active.filter(c => c.frente==1 && c.estagio_pipeline===e).length);
+  ESTAGIOS_F2.forEach(e => pf2[e] = active.filter(c => c.frente==2 && c.estagio_pipeline===e).length);
+  const fvenc = active.filter(c => c.proximo_followup && c.proximo_followup < today);
+  const receita = active.filter(c=>c.receita_vf).reduce((s,c)=>s+(c.receita_vf||0),0);
+  return {
+    resumo: {
+      total_empresas: active.length,
+      total_f1: active.filter(c=>c.frente==1).length,
+      total_f2: active.filter(c=>c.frente==2).length,
+      followups_vencidos: fvenc.length,
+      a_triar_semana: active.filter(c=>c.frente==1&&c.score_vf>=70&&c.estagio_pipeline==='Base PGFN'&&!c.simples_nacional).length,
+      analises_pendentes: active.filter(c=>c.estagio_pipeline==='Interesse Manifesto'&&c.frente==1).length,
+      propostas_pendentes: active.filter(c=>c.estagio_pipeline==='Análise Rápida').length,
+      receita_projetada: receita,
+      receita_realizada_mes: active.filter(c=>c.estagio_pipeline==='Receita Realizada').reduce((s,c)=>s+(c.receita_vf||0),0),
+    },
+    metas: {f1:{triagem_semana:15,propostas_mes:8,operacoes_mes:3,receita_mes:120000},f2:{propostas_mes:1,operacoes_mes:1,receita_mes:300000}},
+    pipeline_f1: pf1, pipeline_f2: pf2,
+    followups_vencidos: fvenc.slice(0,20).map(c=>({id:c.id,razao_social:c.razao_social,data:c.proximo_followup,estagio:c.estagio_pipeline,responsavel:c.responsavel})),
+    f2_em_andamento: active.filter(c=>c.frente==2&&c.estagio_pipeline&&c.estagio_pipeline!=='Base PGFN').map(c=>({id:c.id,razao_social:c.razao_social,estagio:c.estagio_pipeline,dias_estagio:0,alerta:false})),
+    por_seguradora: {Sancor:active.filter(c=>c.seguradora_elegivel==='Sancor').length,Berkley:active.filter(c=>c.seguradora_elegivel==='Berkley').length,'Zurich/Swiss Re/Chubb':active.filter(c=>c.seguradora_elegivel==='Zurich/Swiss Re/Chubb').length},
+    por_rating: {'A+':0,'A':0,'A-':0,'B+':0,'B':0,'C':0,'N/A':0},
+  };
+}
+
+// ═══════════════════════════════════════════════════════
+// SYNC STATUS
+// ═══════════════════════════════════════════════════════
+async function checkSync() {
+  const dot = document.getElementById('sync_dot');
+  const label = document.getElementById('sync_label');
+  if (!API_URL) { dot.className='sync-dot'; label.textContent='local (offline)'; return; }
+  dot.className='sync-dot loading'; label.textContent='conectando...';
+  try {
+    const r = await fetch(API_URL + '/api/health', {signal: AbortSignal.timeout(3000)});
+    if (r.ok) { dot.className='sync-dot'; label.textContent='online'; }
+    else throw new Error();
+  } catch { dot.className='sync-dot err'; label.textContent='erro de conexão'; }
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function nav(panel) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel_'+panel).classList.add('active');
+  document.getElementById('nav_'+panel)?.classList.add('active');
+  if (panel === 'dashboard') loadDashboard();
+  if (panel === 'pipeline') loadKanban(currentKanbanFrente);
+  if (panel === 'base') { baseOffset = 0; loadBase(); }
+  if (panel === 'followups') loadFollowups();
+  if (panel === 'solver') calcSolver();
+  if (panel === 'settings') loadSettings();
+}
+
+function setUser(user) {
+  currentUser = user;
+  localStorage.setItem('vf_user', user);
+  document.getElementById('btn_anna').classList.toggle('active', user==='Anna');
+  document.getElementById('btn_rodrigo').classList.toggle('active', user==='Rodrigo');
+  document.getElementById('dash_user_label').textContent = `Visão ${user}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════
+async function loadDashboard() {
+  try {
+    const d = await apiGet('/api/dashboard');
+    renderKPIs(d);
+    renderFunnel('funnel_f1', d.pipeline_f1, ESTAGIOS_F1);
+    renderFunnel('funnel_f2', d.pipeline_f2, ESTAGIOS_F2);
+    renderFollowupsWidget(d.followups_vencidos);
+    renderF2Widget(d.f2_em_andamento);
+    document.getElementById('badge_followups').textContent = d.resumo.followups_vencidos || '0';
+    document.getElementById('badge_pipeline').textContent = (d.resumo.total_f1 + d.resumo.total_f2) || '0';
+  } catch(e) { toast('Erro ao carregar dashboard: '+e.message, 'err'); }
+}
+
+function renderKPIs(d) {
+  const r = d.resumo;
+  const kpis = [
+    {label:'Total Empresas', val: r.total_empresas, sub:`F1: ${r.total_f1} · F2: ${r.total_f2}`, cls:'kpi-blue'},
+    {label:'Follow-ups Vencidos', val: r.followups_vencidos, sub:'Ação imediata', cls: r.followups_vencidos>0?'kpi-alert':'kpi-ok'},
+    {label:'A Triar esta Semana', val: r.a_triar_semana, sub:'Score ≥ 70, Base PGFN', cls:'kpi-warn'},
+    {label:'Análises Pendentes (F1)', val: r.analises_pendentes, sub:'Rodrigo · Interesse Manifesto', cls:'kpi-purple'},
+    {label:'Propostas Pendentes', val: r.propostas_pendentes, sub:'Estágio Análise Rápida', cls:'kpi-warn'},
+    {label:'Receita Projetada', val: fmtBRL(r.receita_projetada), sub:'Pipeline ativo total', cls:'kpi-ok', isStr:true},
+    {label:'Receita Realizada/Mês', val: fmtBRL(r.receita_realizada_mes), sub:'Fechados este mês', cls:'kpi-blue', isStr:true},
+  ];
+  document.getElementById('kpi_grid').innerHTML = kpis.map(k => `
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val">${k.isStr ? k.val : k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+function renderFunnel(id, data, estagios) {
+  const max = Math.max(...Object.values(data), 1);
+  document.getElementById(id).innerHTML = estagios.map(e => `
+    <div class="funnel-row">
+      <div class="funnel-label" title="${e}">${e}</div>
+      <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${(data[e]||0)/max*100}%"></div></div>
+      <div class="funnel-count">${data[e]||0}</div>
+    </div>`).join('');
+}
+
+function renderFollowupsWidget(items) {
+  const el = document.getElementById('dash_followups_list');
+  if (!items.length) { el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhum follow-up vencido ✓</div>'; return; }
+  el.innerHTML = items.slice(0,6).map(f => `
+    <div class="followup-item vencido" onclick="openCompany('${f.id}')">
+      <div class="followup-data">${f.data}</div>
+      <div><div class="followup-empresa">${f.razao_social||'—'}</div><div class="followup-estagio">${f.estagio||''}</div></div>
+      <div class="followup-resp">${f.responsavel||''}</div>
+    </div>`).join('');
+}
+
+function renderF2Widget(items) {
+  const el = document.getElementById('dash_f2_list');
+  if (!items.length) { el.innerHTML='<div style="color:var(--text3);font-size:12px;padding:8px 0">Nenhuma operação F2 ativa</div>'; return; }
+  el.innerHTML = items.map(f => `
+    <div class="followup-item ${f.alerta?'vencido':''}" onclick="openCompany('${f.id}')">
+      <div><div class="followup-empresa">${f.razao_social||'—'}</div><div class="followup-estagio">${f.estagio}</div></div>
+      <div class="k-tag ${f.alerta?'tag-score':'tag-dias ok'}" style="margin-left:auto">${f.dias_estagio}d</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// PIPELINE KANBAN
+// ═══════════════════════════════════════════════════════
+function switchKanban(frente, el) {
+  currentKanbanFrente = frente;
+  document.querySelectorAll('.ktab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  loadKanban(frente);
+}
+
+async function loadKanban(frente) {
+  const board = document.getElementById('kanban_board');
+  board.innerHTML = '<div class="loading-wrap"><div class="spinner"></div></div>';
+  try {
+    const estagios = frente === 1 ? ESTAGIOS_F1 : ESTAGIOS_F2;
+    const data = await apiGet('/api/companies', {frente, limit: 500});
+    const byStage = {};
+    estagios.forEach(e => byStage[e] = []);
+    data.items.forEach(c => { if (byStage[c.estagio_pipeline]) byStage[c.estagio_pipeline].push(c); });
+
+    board.innerHTML = estagios.map(e => `
+      <div class="kanban-col">
+        <div class="kanban-col-hdr">
+          <span>${e}</span>
+          <span style="background:var(--bg4);padding:1px 7px;border-radius:99px;font-size:10px">${byStage[e].length}</span>
+        </div>
+        <div class="kanban-col-body">
+          ${byStage[e].map(c => {
+            const dias = c.data_entrada_estagio ? Math.floor((Date.now() - new Date(c.data_entrada_estagio))/86400000) : 0;
+            const alerta = frente===1 ? dias>7 : dias>14;
+            return `<div class="k-card ${alerta?'alerta':''}" onclick="openCompany('${c.id}')">
+              <div class="k-name" title="${c.razao_social||'—'}">${c.razao_social||'—'}</div>
+              <div class="k-meta">
+                ${c.score_vf ? `<span class="k-tag tag-score">${c.score_vf.toFixed(1)}</span>` : ''}
+                ${c.valor_aberto ? `<span class="k-tag tag-valor">${fmtM(c.valor_aberto)}</span>` : ''}
+                <span class="k-tag ${alerta?'tag-score':'tag-dias ok'}">${dias}d</span>
+              </div>
+              <div class="k-resp">${c.responsavel||''}</div>
+            </div>`;
+          }).join('')}
+          ${byStage[e].length===0?'<div style="color:var(--text3);font-size:11px;padding:8px;text-align:center">—</div>':''}
+        </div>
+      </div>`).join('');
+  } catch(e) { board.innerHTML=`<div class="loading-wrap" style="color:var(--cherry)">Erro: ${e.message}</div>`; }
+}
+
+// ═══════════════════════════════════════════════════════
+// BASE PGFN — TABELA
+// ═══════════════════════════════════════════════════════
+function debounceLoad() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(loadBase, 400);
+}
+
+function clearFilters() {
+  ['f_search','f_frente','f_resp','f_estagio','f_seg'].forEach(id => document.getElementById(id).value='');
+  baseOffset = 0; loadBase();
+}
+
+async function loadBase() {
+  const tbody = document.getElementById('base_tbody');
+  tbody.innerHTML = '<tr><td colspan="9"><div class="loading-wrap"><div class="spinner"></div></div></td></tr>';
+  try {
+    const params = {
+      search: document.getElementById('f_search').value,
+      frente: document.getElementById('f_frente').value,
+      responsavel: document.getElementById('f_resp').value,
+      estagio: document.getElementById('f_estagio').value,
+      seguradora: document.getElementById('f_seg').value,
+      limit: BASE_LIMIT, offset: baseOffset
+    };
+    const data = await apiGet('/api/companies', params);
+    document.getElementById('base_total_label').textContent = `${data.total} empresas`;
+
+    if (!data.items.length) {
+      tbody.innerHTML = '<tr><td colspan="9"><div class="empty"><div class="empty-icon">◉</div><div class="empty-text">Nenhuma empresa encontrada</div></div></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.items.map(c => `
+      <tr onclick="openCompany('${c.id}')">
+        <td style="font-weight:600;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.razao_social||'—'}</td>
+        <td style="font-family:var(--mono);font-size:11px">${c.cnpj||'—'}</td>
+        <td><span class="${scoreClass(c.score_vf)}">${c.score_vf?.toFixed(1)||'—'}</span></td>
+        <td style="font-family:var(--mono)">${c.valor_aberto?fmtBRL(c.valor_aberto):'—'}</td>
+        <td>${situacaoBadge(c.situacao_processual)}</td>
+        <td><span class="badge badge-blue">${c.seguradora_elegivel||'—'}</span></td>
+        <td><span class="badge badge-gray">${c.estagio_pipeline||'—'}</span></td>
+        <td>${c.responsavel||'—'}</td>
+        <td>${enrichBadge(c.enrichment_status)}</td>
+      </tr>`).join('');
+
+    // Paginação
+    const pages = Math.ceil(data.total / BASE_LIMIT);
+    const currentPage = Math.floor(baseOffset / BASE_LIMIT);
+    const pag = document.getElementById('base_pagination');
+    pag.innerHTML = `
+      <span style="font-size:11px;color:var(--text3)">${baseOffset+1}–${Math.min(baseOffset+BASE_LIMIT,data.total)} de ${data.total}</span>
+      <button class="btn btn-ghost btn-sm" ${currentPage===0?'disabled':''} onclick="baseOffset=Math.max(0,baseOffset-${BASE_LIMIT});loadBase()">← Anterior</button>
+      <button class="btn btn-ghost btn-sm" ${currentPage>=pages-1?'disabled':''} onclick="baseOffset+=${BASE_LIMIT};loadBase()">Próximo →</button>
+    `;
+  } catch(e) { tbody.innerHTML=`<tr><td colspan="9" style="color:var(--cherry);padding:16px">Erro: ${e.message}</td></tr>`; }
+}
+
+// ═══════════════════════════════════════════════════════
+// FOLLOW-UPS
+// ═══════════════════════════════════════════════════════
+async function loadFollowups() {
+  try {
+    const data = await apiGet('/api/companies', {followup_vencido: true, limit: 100});
+    const el = document.getElementById('followup_list');
+    if (!data.items.length) { el.innerHTML='<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">Nenhum follow-up vencido</div></div>'; return; }
+    const today = new Date().toISOString().slice(0,10);
+    el.innerHTML = data.items.map(c => `
+      <div class="followup-item vencido" onclick="openCompany('${c.id}')">
+        <div class="followup-data">${c.proximo_followup||'—'}</div>
+        <div style="flex:1"><div class="followup-empresa">${c.razao_social||'—'}</div><div class="followup-estagio">${c.estagio_pipeline||''}</div></div>
+        <div class="followup-resp" style="color:${c.responsavel==='Anna'?'var(--blue)':'var(--purple)'}">${c.responsavel||'—'}</div>
+      </div>`).join('');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL FICHA DA EMPRESA
+// ═══════════════════════════════════════════════════════
+async function openCompany(id) {
+  try {
+    const c = await apiGet(`/api/companies/${id}`);
+    currentCompany = c;
+    document.getElementById('modal_company_name').textContent = c.razao_social || '—';
+    document.getElementById('modal_company_cnpj').textContent = c.cnpj || '—';
+    // PGFN
+    document.getElementById('mf_score').textContent = c.score_vf?.toFixed(2) || '—';
+    document.getElementById('mf_prioridade').textContent = c.prioridade || '—';
+    document.getElementById('mf_faixa').textContent = c.faixa_valor || '—';
+    document.getElementById('mf_valor').textContent = c.valor_aberto ? fmtBRL(c.valor_aberto) : '—';
+    document.getElementById('mf_situacao').textContent = c.situacao_processual || '—';
+    document.getElementById('mf_inscricoes').textContent = c.qtd_inscricoes || '—';
+    document.getElementById('mf_anos').textContent = c.anos_pgfn || '—';
+    document.getElementById('mf_receita').textContent = c.receita_principal || '—';
+    document.getElementById('mf_uf').textContent = c.uf || '—';
+    document.getElementById('mf_simples').value = c.simples_nacional ? 'true' : 'false';
+    // Seguradora
+    setSelect('mf_seg_consultada', c.seguradora_consultada);
+    setSelect('mf_status_consulta', c.status_consulta);
+    setInput('mf_limite', c.limite_aprovado);
+    setInput('mf_taxa_min', c.taxa_minima);
+    setInput('mf_obs_uw', c.obs_underwriter, true);
+    // Financeiro
+    setInput('mf_pl', c.pl); setInput('mf_fat', c.faturamento); setInput('mf_ebitda', c.ebitda);
+    setSelect('mf_regime', c.regime_tributario); setSelect('mf_porte', c.porte);
+    setInput('mf_capital', c.capital_social); setInput('mf_balanco', c.data_balanco);
+    setSelect('mf_fonte', c.fonte_dados);
+    // Decisor
+    setInput('mf_dec_nome', c.decisor_nome); setInput('mf_dec_cargo', c.decisor_cargo);
+    setInput('mf_dec_email', c.decisor_email); setInput('mf_dec_tel', c.decisor_telefone);
+    setInput('mf_dec_linkedin', c.decisor_linkedin);
+    document.getElementById('mf_dec_email_conf').value = c.decisor_email_confirmado ? 'true' : 'false';
+    // Pipeline
+    setSelect('mf_frente', c.frente ? String(c.frente) : '1');
+    setSelect('mf_responsavel', c.responsavel || currentUser);
+    setSelect('mf_estagio_sel', c.estagio_pipeline);
+    setInput('mf_followup', c.proximo_followup);
+    // Proposta
+    setInput('mf_prop_valor', c.valor_garantia); setInput('mf_prop_prazo', c.prazo_anos);
+    setInput('mf_prop_taxa', c.taxa_negociada); setInput('mf_prop_premio', c.premio_calculado);
+    setInput('mf_prop_honorarios', c.honorarios); setInput('mf_prop_receita', c.receita_vf);
+    setSelect('mf_prop_status', c.status_proposta); setInput('mf_prop_data', c.data_proposta);
+    setInput('mf_prop_apolice', c.numero_apolice); setInput('mf_prop_emissao', c.data_emissao);
+    document.getElementById('mf_prop_com').value = c.comissao_recebida ? 'true' : 'false';
+    document.getElementById('mf_prop_hon').value = c.honorarios_recebidos ? 'true' : 'false';
+    // Log
+    renderLog(c.interactions || []);
+    // Abre modal na aba PGFN
+    switchModalTab('pgfn', document.querySelector('.modal-tab'));
+    document.getElementById('modal_company').classList.add('open');
+  } catch(e) { toast('Erro ao abrir empresa: '+e.message,'err'); }
+}
+
+function closeModal() {
+  document.getElementById('modal_company').classList.remove('open');
+  currentCompany = null;
+}
+
+function switchModalTab(tab, el) {
+  document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.modal-tab-content').forEach(t => t.classList.remove('active'));
+  document.getElementById('mtab_'+tab).classList.add('active');
+  if (el) el.classList.add('active');
+  else document.querySelector(`.modal-tab[onclick*="${tab}"]`)?.classList.add('active');
+}
+
+function renderLog(interactions) {
+  const el = document.getElementById('modal_log_list');
+  if (!interactions.length) { el.innerHTML='<div style="color:var(--text3);font-size:12px">Nenhuma interação registrada</div>'; return; }
+  const canalColors = {LinkedIn:'var(--blue)',Email:'var(--ok)',Telefone:'var(--warn)',Reunião:'var(--purple)',Interno:'var(--text3)'};
+  el.innerHTML = interactions.map(i => `
+    <div class="log-item">
+      <div class="log-hdr">
+        <span class="log-canal" style="background:${canalColors[i.canal]||'var(--bg4)'}20;color:${canalColors[i.canal]||'var(--text3)'}">${i.canal}</span>
+        <span class="log-data">${i.data_hora?.slice(0,16).replace('T',' ')||'—'}</span>
+        <span class="log-resp">· ${i.responsavel||''}</span>
+        ${i.estagio_novo?`<span class="k-tag tag-valor" style="margin-left:auto">→ ${i.estagio_novo}</span>`:''}
+      </div>
+      <div class="log-text">${i.resumo||'—'}</div>
+      ${i.proxima_acao?`<div class="log-proxima">→ ${i.proxima_acao}</div>`:''}
+    </div>`).join('');
+}
+
+async function updateField(field, value) {
+  if (!currentCompany) return;
+  try {
+    await apiPut(`/api/companies/${currentCompany.id}`, {[field]: value, updated_by: currentUser});
+    currentCompany[field] = value;
+  } catch(e) { toast('Erro ao salvar: '+e.message,'err'); }
+}
+
+async function saveInteraction() {
+  if (!currentCompany) return;
+  const resumo = document.getElementById('int_resumo').value.trim();
+  if (!resumo) { toast('Preencha o resumo da interação','err'); return; }
+  try {
+    const novo_estagio = document.getElementById('int_estagio_novo').value;
+    await apiPost('/api/interactions', {
+      company_id: currentCompany.id,
+      responsavel: currentUser,
+      canal: document.getElementById('int_canal').value,
+      resumo,
+      proxima_acao: document.getElementById('int_proxima').value,
+      estagio_anterior: currentCompany.estagio_pipeline,
+      estagio_novo: novo_estagio || undefined,
+    });
+    document.getElementById('int_resumo').value = '';
+    document.getElementById('int_proxima').value = '';
+    document.getElementById('int_estagio_novo').value = '';
+    // Recarrega interações
+    const updated = await apiGet(`/api/companies/${currentCompany.id}`);
+    renderLog(updated.interactions || []);
+    if (novo_estagio) currentCompany.estagio_pipeline = novo_estagio;
+    toast('Interação registrada ✓','ok');
+  } catch(e) { toast('Erro: '+e.message,'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+// ENRIQUECIMENTO
+// ═══════════════════════════════════════════════════════
+async function enrichCNPJ() {
+  if (!currentCompany) return;
+  toast('Consultando BrasilAPI...');
+  try {
+    const d = await apiGet(`/api/enrich/cnpj/${currentCompany.cnpj}`);
+    if (d.status === 'ok') {
+      if (d.porte) { document.getElementById('mf_porte').value = d.porte; await updateField('porte', d.porte); }
+      if (d.capital_social) { document.getElementById('mf_capital').value = d.capital_social; await updateField('capital_social', d.capital_social); }
+      if (d.simples_nacional !== undefined) { document.getElementById('mf_simples').value = d.simples_nacional?'true':'false'; await updateField('simples_nacional', d.simples_nacional); }
+      toast('Dados BrasilAPI atualizados ✓','ok');
+    } else { toast(d.message||'CNPJ não encontrado','err'); }
+  } catch(e) { toast('Erro BrasilAPI: '+e.message,'err'); }
+}
+
+async function enrichSeguradora() {
+  if (!currentCompany) return;
+  const seg = document.getElementById('mf_seg_consultada').value || currentCompany.seguradora_elegivel || 'Sancor';
+  const d = await apiGet(`/api/enrich/seguradora/${currentCompany.cnpj}/${seg}`);
+  toast(d.message || d.status);
+}
+
+async function enrichFinanceiro() {
+  const d = await apiGet(`/api/enrich/financeiro/${currentCompany?.cnpj}`);
+  toast(d.message || d.status);
+}
+
+async function enrichDecisor() {
+  const d = await apiGet(`/api/enrich/decisor/${currentCompany?.cnpj}`);
+  toast(d.message || d.status);
+}
+
+function openLinkedIn() {
+  if (!currentCompany?.razao_social) return;
+  window.open(`https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(currentCompany.razao_social)}`,'_blank');
+}
+
+function openEmail() {
+  if (!currentCompany) return;
+  const email = currentCompany.decisor_email || '';
+  const nome = currentCompany.decisor_nome ? currentCompany.decisor_nome.split(' ')[0] : '[Nome]';
+  const empresa = currentCompany.razao_social || '[Empresa]';
+  const subject = encodeURIComponent(`Execução fiscal PGFN — ${empresa}`);
+  const body = encodeURIComponent(
+    `${nome},\n\nIdentificamos que a ${empresa} possui uma execução fiscal ativa na PGFN. Nossa equipe é especializada em estruturar garantias para suspender execuções como esta antes que a Fazenda promova bloqueio de contas.\n\nPodemos avaliar uma solução para vocês em 48h. Teria 20 minutos esta semana?\n\nAtenciosamente,\n${currentUser}\nVazquez & Fonseca | Seguro Garantia Tributário`
+  );
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`,'_blank');
+}
+
+function openSolverForCompany() {
+  closeModal();
+  nav('solver');
+  if (currentCompany?.valor_aberto) document.getElementById('s_valor').value = currentCompany.valor_aberto;
+  calcSolver();
+}
+
+// ═══════════════════════════════════════════════════════
+// VF SOLVER
+// ═══════════════════════════════════════════════════════
+function calcSolver() {
+  const valor = parseFloat(document.getElementById('s_valor').value) || 0;
+  const prazo = parseFloat(document.getElementById('s_prazo').value) || 1;
+  const taxaMin = parseFloat(document.getElementById('s_taxa_min').value) || 0.5;
+  const teto = parseFloat(document.getElementById('s_teto').value) || 100000;
+  const comissaoPct = parseFloat(document.getElementById('s_comissao').value) || 20;
+
+  function calc(taxa) {
+    const premio = valor * (taxa/100) * prazo;
+    const comissao = premio * (comissaoPct/100);
+    const honorarios = Math.max(0, teto - premio);
+    const receita = comissao + honorarios;
+    const custoCliente = premio + honorarios;
+    const ratio = premio > 0 ? honorarios/premio : 0;
+    return {premio, comissao, honorarios, receita, custoCliente, ratio};
+  }
+
+  const opt = calc(taxaMin);
+
+  document.getElementById('solver_result').innerHTML = `
+    <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);margin-bottom:12px">Ponto Ótimo — Taxa ${taxaMin}% a.a.</div>
+    <div class="solver-metric"><span class="solver-metric-label">Prêmio Bruto</span><span class="solver-metric-val">${fmtBRL(opt.premio)}</span></div>
+    <div class="solver-metric"><span class="solver-metric-label">Comissão V&F (${comissaoPct}%)</span><span class="solver-metric-val">${fmtBRL(opt.comissao)}</span></div>
+    <div class="solver-metric"><span class="solver-metric-label">Honorários Ótimos</span><span class="solver-metric-val">${fmtBRL(opt.honorarios)}</span></div>
+    <div class="solver-metric"><span class="solver-metric-label">Receita V&F Total</span><span class="solver-metric-val highlight">${fmtBRL(opt.receita)}</span></div>
+    <div class="solver-metric"><span class="solver-metric-label">Custo Total Cliente</span><span class="solver-metric-val ${opt.custoCliente>teto?'alert':''}">${fmtBRL(opt.custoCliente)}</span></div>
+    <div class="solver-ratio ${opt.ratio<=1?'ratio-ok':opt.ratio<=2?'ratio-warn':'ratio-bad'}">
+      Relação Hon/Prêmio: ${opt.ratio.toFixed(2)}× ${opt.ratio>2?'⚠ Acima de 2× — ajuste a taxa':opt.ratio>1?'⚠ Atenção':'✓ OK'}
+    </div>`;
+
+  const taxas = [0.50, 0.75, 1.00, 1.25, 1.50];
+  document.getElementById('sensitivity_table').innerHTML = `
+    <thead><tr><th>Taxa a.a.</th><th>Prêmio</th><th>Comissão</th><th>Honorários</th><th>Receita V&F</th><th>Custo Cliente</th></tr></thead>
+    <tbody>${taxas.map(t => {
+      const r = calc(t);
+      const isOpt = t === taxaMin;
+      return `<tr class="${isOpt?'optimal':''}">
+        <td>${t.toFixed(2)}%${isOpt?' ★':''}</td>
+        <td>${fmtBRL(r.premio)}</td><td>${fmtBRL(r.comissao)}</td>
+        <td>${fmtBRL(r.honorarios)}</td><td>${fmtBRL(r.receita)}</td><td>${fmtBRL(r.custoCliente)}</td>
+      </tr>`;
+    }).join('')}</tbody>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// IMPORTAR XLSX/CSV
+// ═══════════════════════════════════════════════════════
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('drop_zone').classList.remove('drag');
+  handleFile(event.dataTransfer.files[0]);
+}
+
+function handleFile(file) {
+  if (!file) return;
+  importFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, {type:'array'});
+      // Busca aba com dados (não Painel)
+      const sheetName = wb.SheetNames.find(n => !n.includes('Painel')) || wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json(ws, {header:1});
+      // Detecta header row
+      let headerRow = 0;
+      for (let i=0; i<Math.min(raw.length,5); i++) {
+        if (raw[i].some(v => String(v).includes('Empresa') || String(v).includes('CNPJ'))) { headerRow = i; break; }
+      }
+      const headers = raw[headerRow];
+      const rows = raw.slice(headerRow+1).filter(r => r.some(v => v));
+      document.getElementById('preview_title').textContent = `${rows.length} registros encontrados em "${sheetName}"`;
+      document.getElementById('import_info').textContent = `${wb.SheetNames.length} abas · ${rows.length} linhas`;
+      // Preview cabeçalho
+      document.getElementById('preview_head').innerHTML = `<tr>${headers.slice(0,8).map(h=>`<th>${h||'—'}</th>`).join('')}</tr>`;
+      document.getElementById('preview_body').innerHTML = rows.slice(0,5).map(r =>
+        `<tr>${headers.slice(0,8).map((_,i)=>`<td>${r[i]||''}</td>`).join('')}</tr>`).join('');
+      document.getElementById('import_preview').style.display='block';
+      document.getElementById('import_result').style.display='none';
+    } catch(e) { toast('Erro ao ler arquivo: '+e.message,'err'); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function doImport() {
+  if (!importFile) return;
+  const btn = document.getElementById('import_btn');
+  btn.textContent = 'Importando...'; btn.disabled = true;
+  try {
+    let result;
+    if (API_URL) {
+      const form = new FormData();
+      form.append('file', importFile);
+      form.append('user', currentUser);
+      const r = await fetch(`${API_URL}/api/companies/import`, {method:'POST', body: form});
+      result = await r.json();
+    } else {
+      // LocalStorage import
+      const reader = new FileReader();
+      result = await new Promise((resolve, reject) => {
+        reader.onload = e => {
+          try {
+            const wb = XLSX.read(e.target.result, {type:'array'});
+            const data = lsGet();
+            let imported=0, duplicates=0, errors=0;
+            wb.SheetNames.filter(n=>!n.includes('Painel')).forEach(sheetName => {
+              const ws = wb.Sheets[sheetName];
+              const raw = XLSX.utils.sheet_to_json(ws, {header:1});
+              let headerRow = 0;
+              for (let i=0; i<Math.min(raw.length,5); i++) {
+                if (raw[i].some(v=>String(v).includes('Empresa')||String(v).includes('CNPJ'))) {headerRow=i;break;}
+              }
+              const headers = raw[headerRow].map(h=>String(h).trim());
+              const rows = raw.slice(headerRow+1);
+              const col = name => headers.findIndex(h=>h===name||h.includes(name));
+              rows.forEach(row => {
+                try {
+                  const cnpj = String(row[col('CNPJ')]||'').trim();
+                  if (!cnpj||cnpj==='undefined') return;
+                  if (data.companies.find(c=>c.cnpj===cnpj)) {duplicates++;return;}
+                  const valor = parseFloat(row[col('Valor')])||0;
+                  data.companies.push({
+                    id: crypto.randomUUID(),
+                    cnpj, status:'active',
+                    razao_social: String(row[col('Empresa')]||'').trim()||undefined,
+                    uf: String(row[col('UF')]||'').trim()||undefined,
+                    score_vf: parseFloat(row[col('Score')])||undefined,
+                    prioridade: String(row[col('Prioridade')]||'').trim()||undefined,
+                    faixa_valor: String(row[col('Faixa')]||'').trim()||undefined,
+                    valor_aberto: valor||undefined,
+                    situacao_processual: String(row[col('Situaç')]||'').trim()||undefined,
+                    frente: valor<=5000000?1:2,
+                    seguradora_elegivel: valor<=20000000?'Sancor':valor<=30000000?'Berkley':'Zurich/Swiss Re/Chubb',
+                    estagio_pipeline:'Base PGFN',
+                    enrichment_status:'pgfn_only',
+                    created_by: currentUser,
+                    created_at: new Date().toISOString(),
+                  });
+                  imported++;
+                } catch { errors++; }
+              });
+            });
+            lsSet(data);
+            resolve({imported,duplicates,errors,message:`${imported} importadas, ${duplicates} duplicatas, ${errors} erros`});
+          } catch(e) { reject(e); }
+        };
+        reader.readAsArrayBuffer(importFile);
+      });
+    }
+    const resEl = document.getElementById('import_result');
+    resEl.style.display='block';
+    resEl.innerHTML = `
+      <div style="font-weight:700;color:var(--ok);margin-bottom:6px">Importação concluída</div>
+      <div style="font-size:12px;color:var(--text2)">${result.message}</div>
+      <div style="margin-top:8px;font-size:11px;display:flex;gap:12px">
+        <span style="color:var(--ok)">✓ ${result.imported} importadas</span>
+        <span style="color:var(--warn)">≈ ${result.duplicates} duplicatas</span>
+        <span style="color:var(--cherry)">${result.errors} erros</span>
+      </div>`;
+    document.getElementById('import_preview').style.display='none';
+    importFile = null;
+    toast('Importação concluída: '+result.imported+' empresas','ok');
+  } catch(e) { toast('Erro na importação: '+e.message,'err'); }
+  finally { btn.textContent='Importar para CRM'; btn.disabled=false; }
+}
+
+function cancelImport() {
+  importFile = null;
+  document.getElementById('import_preview').style.display='none';
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function loadSettings() {
+  document.getElementById('cfg_api_url').value = API_URL || '';
+  const integrations = [
+    {name:'BrasilAPI / CNPJ.ws', key:'', desc:'Dados cadastrais, regime, sócios', free:true},
+    {name:'Apollo.io', key:'APOLLO_API_KEY', desc:'E-mails verificados de decisores'},
+    {name:'Serasa / Neoway', key:'SERASA_API_KEY', desc:'PL estimado, faturamento'},
+    {name:'Sancor API', key:'SANCOR_API_URL', desc:'Consulta de limite e taxa'},
+    {name:'Berkley API', key:'BERKLEY_API_URL', desc:'Consulta de limite e taxa'},
+    {name:'Zurich API', key:'ZURICH_API_URL', desc:'Consulta de limite e taxa'},
+    {name:'Gmail/Outlook', key:'OUTLOOK_CLIENT_ID', desc:'Envio e log automático de e-mails'},
+  ];
+  const settings = JSON.parse(localStorage.getItem('vf_settings')||'{}');
+  document.getElementById('api_integrations_list').innerHTML = integrations.map(i => {
+    const configured = i.free || !!settings[i.key];
+    return `<div class="api-row">
+      <div class="api-name">${i.name}</div>
+      <div class="api-desc">${i.desc}</div>
+      <span class="api-status ${configured?'api-configured':'api-not-configured'}">${i.free?'Gratuita':configured?'Configurada':'Não configurada'}</span>
+      ${!i.free?`<input class="filter-input" style="width:180px" placeholder="API Key / URL" value="${settings[i.key]||''}" onchange="saveSetting('${i.key}',this.value)">`:''}</div>`;
+  }).join('');
+}
+
+function saveApiUrl() {
+  API_URL = document.getElementById('cfg_api_url').value.replace(/\/$/, '');
+  localStorage.setItem('vf_api_url', API_URL);
+  toast('URL salva ✓','ok');
+  checkSync();
+}
+
+function saveSetting(key, value) {
+  const settings = JSON.parse(localStorage.getItem('vf_settings')||'{}');
+  settings[key] = value;
+  localStorage.setItem('vf_settings', JSON.stringify(settings));
+}
+
+function exportData() {
+  const data = lsGet();
+  const blob = new Blob([JSON.stringify({schema_version:'2.0',exported_at:new Date().toISOString(),exported_by:currentUser,...data},null,2)],{type:'application/json'});
+  const a = document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`VF_CRM_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('Backup exportado ✓','ok');
+}
+
+function importBackup(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const d = JSON.parse(e.target.result);
+      lsSet({companies:d.companies||[],interactions:d.interactions||[]});
+      toast(`Backup restaurado: ${d.companies?.length||0} empresas`,'ok');
+    } catch(e) { toast('Arquivo inválido','err'); }
+  };
+  reader.readAsText(file);
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function fmtBRL(v) {
+  if (!v && v!==0) return '—';
+  return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);
+}
+function fmtM(v) {
+  if (!v) return '';
+  if (v >= 1e9) return `R$${(v/1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `R$${(v/1e6).toFixed(1)}M`;
+  if (v >= 1e3) return `R$${(v/1e3).toFixed(0)}K`;
+  return `R$${v}`;
+}
+function scoreClass(s) {
+  if (!s) return '';
+  if (s >= 70) return 'score-high';
+  if (s >= 50) return 'score-mid';
+  return 'score-low';
+}
+function situacaoBadge(s) {
+  if (!s) return '<span class="badge badge-gray">—</span>';
+  if (s.includes('AJUIZADA_SEM_GAR')) return `<span class="badge badge-ajuizada">AJUIZADA</span>`;
+  if (s.includes('COBRANÇA')) return `<span class="badge badge-cobranca">COBRANÇA</span>`;
+  return `<span class="badge badge-gray">${s.slice(0,15)}</span>`;
+}
+function enrichBadge(s) {
+  const map = {
+    pgfn_only:'<span class="badge badge-gray">PGFN</span>',
+    '+ seguradora':'<span class="badge badge-blue">+ Seg</span>',
+    '+ financeiro':'<span class="badge badge-purple">+ Fin</span>',
+    '+ decisor':'<span class="badge badge-ok" style="background:var(--ok-dim);color:var(--ok)">+ Dec</span>',
+    completo:'<span class="badge badge-ok" style="background:var(--ok-dim);color:var(--ok)">Completo</span>',
+  };
+  return map[s] || `<span class="badge badge-gray">${s||'—'}</span>`;
+}
+function setInput(id, val, isTA=false) {
+  const el = document.getElementById(id); if (!el) return;
+  el.value = val || '';
+}
+function setSelect(id, val) {
+  const el = document.getElementById(id); if (!el) return;
+  el.value = val || '';
+}
+function toast(msg, type='') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  setUser(currentUser);
+  checkSync();
+  loadDashboard();
+  // Fecha modal ao clicar fora
+  document.getElementById('modal_company').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeModal();
+  });
+});
+</script>
+</body>
+</html>
