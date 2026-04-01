@@ -200,9 +200,28 @@ async def import_companies(
         if file.filename.endswith(".xlsx"):
             xls = pd.ExcelFile(io.BytesIO(content))
             frames = []
-            for sheet in xls.sheet_names:
-                if "Painel" in sheet:
-                    continue
+
+            # Mapa de aba → seguradora e frente
+            ABA_MAP = {
+                'Sancor': ('Sancor', 1),
+                'Berkley': ('Berkley', 2),
+                'Zurich': ('Zurich/Swiss Re/Chubb', 2),
+                'Base Completa': (None, None),  # usa lógica por valor
+            }
+
+            def detect_seg_frente(sheet_name):
+                for key, val in ABA_MAP.items():
+                    if key in sheet_name:
+                        return val
+                return (None, None)
+
+            # Importa aba "Base Completa" apenas se não houver abas específicas
+            sheet_names = [s for s in xls.sheet_names if 'Painel' not in s]
+            has_specific = any('Sancor' in s or 'Berkley' in s or 'Zurich' in s for s in sheet_names)
+            sheets_to_import = [s for s in sheet_names if 'Base Completa' not in s] if has_specific else sheet_names
+
+            for sheet in sheets_to_import:
+                seg_from_sheet, frente_from_sheet = detect_seg_frente(sheet)
                 df = pd.read_excel(io.BytesIO(content), sheet_name=sheet, header=None)
                 # Detecta linha de header (contém 'Empresa' ou 'CNPJ')
                 header_row = None
@@ -215,7 +234,10 @@ async def import_companies(
                     continue
                 df.columns = df.iloc[header_row]
                 df = df.iloc[header_row+1:].reset_index(drop=True)
+                df['_seg_sheet'] = seg_from_sheet
+                df['_frente_sheet'] = frente_from_sheet
                 frames.append(df)
+
             if frames:
                 df = pd.concat(frames, ignore_index=True)
             else:
@@ -256,15 +278,21 @@ async def import_companies(
                     return cast(val) if cast else str(val)
 
                 score = safe("score_vf", float)
-                # Determina frente e seguradora elegível automaticamente
                 valor = safe("valor_aberto", float) or 0
-                frente = 1 if valor <= 5_000_000 else 2
-                if valor <= 20_000_000:
-                    seg = "Sancor"
-                elif valor <= 30_000_000:
-                    seg = "Berkley"
-                else:
-                    seg = "Zurich/Swiss Re/Chubb"
+
+                # Seguradora e frente: vem da aba; fallback por valor
+                seg = row.get('_seg_sheet')
+                frente = row.get('_frente_sheet')
+                if not seg:
+                    if valor <= 20_000_000:
+                        seg = "Sancor"
+                        frente = 1
+                    elif valor <= 30_000_000:
+                        seg = "Berkley"
+                        frente = 2
+                    else:
+                        seg = "Zurich/Swiss Re/Chubb"
+                        frente = 2
 
                 c = Company(
                     id=str(uuid.uuid4()),
