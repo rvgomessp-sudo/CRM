@@ -338,6 +338,61 @@ tr:hover td:first-child{color:var(--text)}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-wrap{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text3);gap:10px}
 
+/* ── LOGIN ── */
+.login-screen{
+  position:fixed;inset:0;background:var(--bg);z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+}
+.login-box{
+  background:var(--bg2);border:1px solid var(--border2);border-radius:16px;
+  padding:40px;width:360px;text-align:center;box-shadow:var(--shadow);
+}
+.login-logo{
+  width:56px;height:56px;border-radius:14px;margin:0 auto 20px;
+  background:linear-gradient(135deg,var(--cherry),#8b0011);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:18px;color:#fff;box-shadow:0 0 24px var(--cherry-glow);
+}
+.login-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.login-sub{font-size:12px;color:var(--text3);margin-bottom:28px}
+.login-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--rsm);padding:10px 14px;font-size:14px;
+  color:var(--text);font-family:var(--font);outline:none;text-align:center;
+  letter-spacing:3px;margin-bottom:12px;
+}
+.login-input:focus{border-color:var(--cherry)}
+.login-btn{width:100%;padding:10px;border-radius:var(--rsm);font-size:14px;font-weight:700}
+.login-err{font-size:11px;color:var(--cherry);margin-top:8px;min-height:16px}
+
+/* ── SANCOR FORM ── */
+.sancor-status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.sancor-status-btn{
+  padding:10px 8px;border-radius:var(--rsm);border:1.5px solid var(--border);
+  background:var(--bg3);cursor:pointer;text-align:center;transition:all .15s;
+  font-size:11px;font-weight:700;color:var(--text2);font-family:var(--font);
+}
+.sancor-status-btn:hover{border-color:var(--border2)}
+.sancor-status-btn.sel-aprovado{background:var(--ok-dim);border-color:var(--ok);color:var(--ok)}
+.sancor-status-btn.sel-outro{background:var(--warn-dim);border-color:var(--warn);color:var(--warn)}
+.sancor-status-btn.sel-reprovado{background:var(--cherry-dim);border-color:var(--cherry);color:var(--cherry)}
+.sancor-detail{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:14px;margin-bottom:12px}
+.sancor-detail-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+
+/* ── SCRIPT MODAL ── */
+.script-box{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rsm);
+  padding:16px;font-size:13px;line-height:1.7;color:var(--text2);
+  white-space:pre-wrap;max-height:320px;overflow-y:auto;
+  font-family:var(--font);
+}
+.script-canal-tabs{display:flex;gap:6px;margin-bottom:12px}
+.script-canal-tab{
+  padding:4px 12px;border-radius:99px;font-size:11px;font-weight:700;
+  cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text3);
+}
+.script-canal-tab.active{background:var(--cherry-dim);color:var(--cherry);border-color:rgba(232,32,58,.3)}
+
 /* ── TOAST ── */
 #toast-container{position:fixed;bottom:20px;right:20px;z-index:1000;display:flex;flex-direction:column;gap:8px}
 .toast{
@@ -356,7 +411,20 @@ tr:hover td:first-child{color:var(--text)}
 </style>
 </head>
 <body>
-<div class="app">
+<!-- LOGIN -->
+<div class="login-screen" id="login_screen">
+  <div class="login-box">
+    <div class="login-logo">V&F</div>
+    <div class="login-title">VF CRM</div>
+    <div class="login-sub">Vazquez & Fonseca · Seguro Garantia Tributário</div>
+    <input class="login-input" type="password" id="login_pwd" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="login_err"></div>
+  </div>
+</div>
+
+<div class="app" id="app_wrap" style="display:none">
 
 <!-- HEADER -->
 <div class="header">
@@ -669,30 +737,122 @@ tr:hover td:first-child{color:var(--text)}
       </div>
       <!-- SEGURADORA -->
       <div class="modal-tab-content" id="mtab_seguradora">
-        <div style="display:flex;gap:8px;margin-bottom:14px">
+        <!-- Seletor de seguradora -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <select class="field-select" id="seg_ativa" onchange="switchSeguradora(this.value)" style="width:160px">
+            <option value="Sancor">Sancor</option>
+            <option value="Berkley">Berkley</option>
+            <option value="Zurich">Zurich</option>
+            <option value="Swiss Re">Swiss Re</option>
+            <option value="Chubb">Chubb</option>
+          </select>
           <button class="btn btn-ghost btn-sm" onclick="enrichCNPJ()">↺ BrasilAPI</button>
-          <button class="btn btn-ghost btn-sm" onclick="enrichSeguradora()">◉ Consultar Seguradora</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyCNPJ()">⎘ Copiar CNPJ</button>
         </div>
-        <div class="field-grid">
-          <div class="field-group"><div class="field-label">Seguradora Consultada</div>
-            <select class="field-select" id="mf_seg_consultada" onchange="updateField('seguradora_consultada',this.value)">
-              <option value="">—</option><option>Sancor</option><option>Berkley</option><option>Zurich</option><option>Swiss Re</option><option>Chubb</option>
+
+        <!-- STATUS DA CONSULTA -->
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px">Resultado da Consulta</div>
+        <div class="sancor-status-grid">
+          <button class="sancor-status-btn" id="sbtn_aprovado" onclick="setSancorStatus('aprovado')">
+            ✓ Aprovado
+          </button>
+          <button class="sancor-status-btn" id="sbtn_outro" onclick="setSancorStatus('outro_corretor')">
+            ⚑ Outro Corretor
+          </button>
+          <button class="sancor-status-btn" id="sbtn_reprovado" onclick="setSancorStatus('reprovado')">
+            ✕ Reprovado
+          </button>
+        </div>
+
+        <!-- APROVADO -->
+        <div class="sancor-detail" id="sancor_aprovado_detail" style="display:none">
+          <div class="sancor-detail-title">Limites e Taxas</div>
+          <div class="field-grid">
+            <div class="field-group">
+              <div class="field-label">Limite Tradicional (R$)</div>
+              <input class="field-input" type="number" id="mf_lim_trad" onchange="updateField('limite_tradicional',parseFloat(this.value))">
+            </div>
+            <div class="field-group">
+              <div class="field-label">Taxa Tradicional (% a.a.)</div>
+              <input class="field-input" type="number" step="0.05" id="mf_taxa_trad" onchange="updateField('taxa_tradicional',parseFloat(this.value))">
+            </div>
+            <div class="field-group">
+              <div class="field-label">Limite Judicial (R$)</div>
+              <input class="field-input" type="number" id="mf_lim_jud" onchange="updateField('limite_judicial',parseFloat(this.value))">
+            </div>
+            <div class="field-group">
+              <div class="field-label">Taxa Judicial (% a.a.)</div>
+              <input class="field-input" type="number" step="0.05" id="mf_taxa_jud" onchange="updateField('taxa_judicial',parseFloat(this.value))">
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="field-label" style="margin-bottom:6px">CCG Regularizado</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-sm" id="ccg_sim" onclick="setCCG(true)" style="background:var(--bg4);color:var(--text2);border:1px solid var(--border)">Sim ✓</button>
+              <button class="btn btn-sm" id="ccg_nao" onclick="setCCG(false)" style="background:var(--bg4);color:var(--text2);border:1px solid var(--border)">Não ✕</button>
+            </div>
+          </div>
+          <div style="margin-top:12px">
+            <div class="field-label" style="margin-bottom:4px">Data da Consulta</div>
+            <input class="field-input" type="date" id="mf_data_consulta" style="width:160px" onchange="updateField('data_consulta_seguradora',this.value)">
+          </div>
+        </div>
+
+        <!-- OUTRO CORRETOR -->
+        <div class="sancor-detail" id="sancor_outro_detail" style="display:none">
+          <div class="sancor-detail-title">Outro Corretor</div>
+          <div class="field-group">
+            <div class="field-label">Status Carta de Nomeação</div>
+            <select class="field-select" id="mf_carta_nomeacao" onchange="updateField('carta_nomeacao',this.value)">
+              <option value="">—</option>
+              <option>Pendente — ainda não solicitada</option>
+              <option>Solicitada ao tomador</option>
+              <option>Recebida — pronta para submeter</option>
             </select>
           </div>
-          <div class="field-group"><div class="field-label">Status Consulta</div>
-            <select class="field-select" id="mf_status_consulta" onchange="updateField('status_consulta',this.value)">
-              <option value="">—</option><option>Pendente</option><option>Em análise</option><option>Aprovado</option><option>Negado</option>
-            </select>
+          <div style="margin-top:10px;padding:10px;background:var(--warn-dim);border-radius:var(--rsm);font-size:11.5px;color:var(--warn)">
+            ⚑ Tomador possui outro corretor ativo. É necessário carta de nomeação assinada pelo tomador para prosseguir com a V&F.
           </div>
-          <div class="field-group"><div class="field-label">Limite Aprovado (R$)</div>
-            <input class="field-input" type="number" id="mf_limite" onchange="updateField('limite_aprovado',parseFloat(this.value))">
+          <div style="margin-top:10px">
+            <div class="field-label" style="margin-bottom:4px">Data da Consulta</div>
+            <input class="field-input" type="date" id="mf_data_consulta2" style="width:160px" onchange="updateField('data_consulta_seguradora',this.value)">
           </div>
-          <div class="field-group"><div class="field-label">Taxa Mínima (% a.a.)</div>
-            <input class="field-input" type="number" step="0.05" id="mf_taxa_min" onchange="updateField('taxa_minima',parseFloat(this.value))">
+        </div>
+
+        <!-- REPROVADO -->
+        <div class="sancor-detail" id="sancor_reprovado_detail" style="display:none">
+          <div class="sancor-detail-title">Motivo da Reprovação</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px">
+              <input type="radio" name="motivo_repr" value="fora_politica" onchange="updateField('motivo_reprovacao',this.value)"> Fora da política da Cia
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px">
+              <input type="radio" name="motivo_repr" value="expectativa_sinistro" onchange="updateField('motivo_reprovacao',this.value)"> Tomador com expectativa de sinistro
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12.5px">
+              <input type="radio" name="motivo_repr" value="sem_aceitacao" onchange="updateField('motivo_reprovacao',this.value)"> Tomador sem aceitação
+            </label>
           </div>
-          <div class="field-group field-full"><div class="field-label">Observações Underwriter</div>
-            <textarea class="field-textarea" id="mf_obs_uw" onchange="updateField('obs_underwriter',this.value)"></textarea>
+          <div style="margin-top:10px;padding:10px;background:var(--cherry-dim);border-radius:var(--rsm);font-size:11.5px;color:var(--cherry)">
+            ✕ Consultar segunda seguradora para confirmar se é restrição do tomador ou da Cia.
           </div>
+          <div style="margin-top:10px">
+            <div class="field-label" style="margin-bottom:4px">Data da Consulta</div>
+            <input class="field-input" type="date" id="mf_data_consulta3" style="width:160px" onchange="updateField('data_consulta_seguradora',this.value)">
+          </div>
+        </div>
+
+        <!-- Observações underwriter -->
+        <div class="field-group" style="margin-top:4px">
+          <div class="field-label">Observações</div>
+          <textarea class="field-textarea" id="mf_obs_uw" onchange="updateField('obs_underwriter',this.value)"></textarea>
+        </div>
+
+        <!-- Botão gerar script -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+          <button class="btn btn-primary btn-sm" onclick="openScriptModal()" id="btn_gerar_script" style="display:none">
+            ✦ Gerar Script de Abordagem
+          </button>
         </div>
       </div>
       <!-- FINANCEIRO -->
@@ -836,8 +996,39 @@ tr:hover td:first-child{color:var(--text)}
   </div>
 </div>
 
+<!-- MODAL SCRIPT DE ABORDAGEM -->
+<div class="modal-overlay" id="modal_script">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">Script de Primeiro Contato</div>
+        <div class="modal-sub" id="script_company_name">—</div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modal_script').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh">
+      <div class="script-canal-tabs">
+        <div class="script-canal-tab active" onclick="switchScriptCanal('linkedin',this)">LinkedIn</div>
+        <div class="script-canal-tab" onclick="switchScriptCanal('email',this)">E-mail</div>
+        <div class="script-canal-tab" onclick="switchScriptCanal('whatsapp',this)">WhatsApp</div>
+      </div>
+      <div class="script-box" id="script_content"></div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="copyScript()">⎘ Copiar Script</button>
+        <button class="btn btn-ghost btn-sm" onclick="openEmailWithScript()">✉ Abrir no E-mail</button>
+        <button class="btn btn-ghost btn-sm" onclick="openWhatsApp()">↗ WhatsApp</button>
+      </div>
+      <div style="margin-top:14px;padding:10px 12px;background:var(--bg3);border-radius:var(--rsm);font-size:11px;color:var(--text3)">
+        <strong style="color:var(--text2)">Instrução:</strong> O primeiro contato NÃO menciona seguro. Menciona o problema real — execução fiscal ativa — e urgência de resolução antes do bloqueio BACENJUD.
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
+
+</div><!-- /app_wrap -->
 
 <script>
 // ═══════════════════════════════════════════════════════
@@ -1251,6 +1442,8 @@ async function openCompany(id) {
     document.getElementById('mf_prop_hon').value = c.honorarios_recebidos ? 'true' : 'false';
     // Log
     renderLog(c.interactions || []);
+    // Sancor state
+    restoreSancorState(c);
     // Abre modal na aba PGFN
     switchModalTab('pgfn', document.querySelector('.modal-tab'));
     document.getElementById('modal_company').classList.add('open');
@@ -1668,15 +1861,266 @@ function toast(msg, type='') {
 }
 
 // ═══════════════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════════════
+const SENHA_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // "admin" — troque via sha256
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+  const pwd = document.getElementById('login_pwd').value;
+  const hash = await sha256(pwd);
+  // Senha padrão: vf2026 — troque em Configurações
+  const senhaCorreta = localStorage.getItem('vf_senha_hash') || SENHA_HASH;
+  if (hash === senhaCorreta) {
+    sessionStorage.setItem('vf_auth', '1');
+    document.getElementById('login_screen').style.display = 'none';
+    document.getElementById('app_wrap').style.display = 'flex';
+    document.getElementById('app_wrap').style.flexDirection = 'column';
+    setUser(currentUser);
+    checkSync();
+    loadDashboard();
+  } else {
+    document.getElementById('login_err').textContent = 'Senha incorreta';
+    document.getElementById('login_pwd').value = '';
+    setTimeout(() => document.getElementById('login_err').textContent = '', 2000);
+  }
+}
+
+function checkAuth() {
+  if (sessionStorage.getItem('vf_auth') === '1') {
+    document.getElementById('login_screen').style.display = 'none';
+    document.getElementById('app_wrap').style.display = 'flex';
+    document.getElementById('app_wrap').style.flexDirection = 'column';
+    return true;
+  }
+  return false;
+}
+
+// ═══════════════════════════════════════════════════════
+// SANCOR — FORMULÁRIO DE CONSULTA
+// ═══════════════════════════════════════════════════════
+function switchSeguradora(seg) {
+  updateField('seguradora_consultada', seg);
+}
+
+function setSancorStatus(status) {
+  // Reset visual
+  document.getElementById('sbtn_aprovado').className = 'sancor-status-btn';
+  document.getElementById('sbtn_outro').className = 'sancor-status-btn';
+  document.getElementById('sbtn_reprovado').className = 'sancor-status-btn';
+  document.getElementById('sancor_aprovado_detail').style.display = 'none';
+  document.getElementById('sancor_outro_detail').style.display = 'none';
+  document.getElementById('sancor_reprovado_detail').style.display = 'none';
+  document.getElementById('btn_gerar_script').style.display = 'none';
+
+  if (status === 'aprovado') {
+    document.getElementById('sbtn_aprovado').className = 'sancor-status-btn sel-aprovado';
+    document.getElementById('sancor_aprovado_detail').style.display = 'block';
+    document.getElementById('btn_gerar_script').style.display = 'inline-flex';
+    // Atualiza enriquecimento
+    updateField('status_consulta', 'Aprovado');
+    updateField('enrichment_status', '+ seguradora');
+    // Preenche data hoje
+    const hoje = new Date().toISOString().slice(0,10);
+    document.getElementById('mf_data_consulta').value = hoje;
+    updateField('data_consulta_seguradora', hoje);
+  } else if (status === 'outro_corretor') {
+    document.getElementById('sbtn_outro').className = 'sancor-status-btn sel-outro';
+    document.getElementById('sancor_outro_detail').style.display = 'block';
+    updateField('status_consulta', 'Outro corretor');
+    const hoje = new Date().toISOString().slice(0,10);
+    document.getElementById('mf_data_consulta2').value = hoje;
+    updateField('data_consulta_seguradora', hoje);
+  } else if (status === 'reprovado') {
+    document.getElementById('sbtn_reprovado').className = 'sancor-status-btn sel-reprovado';
+    document.getElementById('sancor_reprovado_detail').style.display = 'block';
+    updateField('status_consulta', 'Reprovado');
+    const hoje = new Date().toISOString().slice(0,10);
+    document.getElementById('mf_data_consulta3').value = hoje;
+    updateField('data_consulta_seguradora', hoje);
+  }
+}
+
+function setCCG(val) {
+  updateField('ccg_regularizado', val);
+  document.getElementById('ccg_sim').style.background = val ? 'var(--ok-dim)' : 'var(--bg4)';
+  document.getElementById('ccg_sim').style.color = val ? 'var(--ok)' : 'var(--text2)';
+  document.getElementById('ccg_nao').style.background = !val ? 'var(--cherry-dim)' : 'var(--bg4)';
+  document.getElementById('ccg_nao').style.color = !val ? 'var(--cherry)' : 'var(--text2)';
+}
+
+function copyCNPJ() {
+  if (!currentCompany?.cnpj) return;
+  navigator.clipboard.writeText(currentCompany.cnpj);
+  toast('CNPJ copiado: ' + currentCompany.cnpj, 'ok');
+}
+
+// Restaura estado do formulário Sancor ao abrir ficha
+function restoreSancorState(c) {
+  const status = c.status_consulta;
+  if (status === 'Aprovado') {
+    setSancorStatus('aprovado');
+    setTimeout(() => {
+      if (c.limite_tradicional) document.getElementById('mf_lim_trad').value = c.limite_tradicional;
+      if (c.taxa_tradicional) document.getElementById('mf_taxa_trad').value = c.taxa_tradicional;
+      if (c.limite_judicial) document.getElementById('mf_lim_jud').value = c.limite_judicial;
+      if (c.taxa_judicial) document.getElementById('mf_taxa_jud').value = c.taxa_judicial;
+      if (c.data_consulta_seguradora) document.getElementById('mf_data_consulta').value = c.data_consulta_seguradora;
+      if (c.ccg_regularizado !== undefined) setCCG(c.ccg_regularizado);
+    }, 50);
+  } else if (status === 'Outro corretor') {
+    setSancorStatus('outro_corretor');
+    setTimeout(() => {
+      if (c.carta_nomeacao) document.getElementById('mf_carta_nomeacao').value = c.carta_nomeacao;
+      if (c.data_consulta_seguradora) document.getElementById('mf_data_consulta2').value = c.data_consulta_seguradora;
+    }, 50);
+  } else if (status === 'Reprovado') {
+    setSancorStatus('reprovado');
+    setTimeout(() => {
+      if (c.motivo_reprovacao) {
+        const r = document.querySelector(`input[name="motivo_repr"][value="${c.motivo_reprovacao}"]`);
+        if (r) r.checked = true;
+      }
+      if (c.data_consulta_seguradora) document.getElementById('mf_data_consulta3').value = c.data_consulta_seguradora;
+    }, 50);
+  }
+  if (c.seguradora_consultada) document.getElementById('seg_ativa').value = c.seguradora_consultada;
+  if (c.obs_underwriter) document.getElementById('mf_obs_uw').value = c.obs_underwriter;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCRIPT DE ABORDAGEM
+// ═══════════════════════════════════════════════════════
+let currentScriptCanal = 'linkedin';
+
+function openScriptModal() {
+  if (!currentCompany) return;
+  document.getElementById('script_company_name').textContent = currentCompany.razao_social || '—';
+  document.getElementById('modal_script').classList.add('open');
+  generateScript('linkedin');
+}
+
+function switchScriptCanal(canal, el) {
+  currentScriptCanal = canal;
+  document.querySelectorAll('.script-canal-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  generateScript(canal);
+}
+
+function generateScript(canal) {
+  const c = currentCompany;
+  if (!c) return;
+
+  const empresa = c.razao_social || '[Empresa]';
+  const nomeDecisor = c.decisor_nome ? c.decisor_nome.split(' ')[0] : '[Nome]';
+  const valor = c.valor_aberto ? fmtBRL(c.valor_aberto) : 'valor significativo';
+  const situacao = c.situacao_processual || '';
+  const ajuizada = situacao.includes('AJUIZADA');
+  const anoInscricao = c.ano_ult_inscricao || '';
+  const seguradora = c.seguradora_elegivel || 'Sancor';
+  const limite = c.limite_aprovado ? fmtBRL(c.limite_aprovado) : null;
+
+  // Contexto da operação
+  const urgencia = ajuizada
+    ? `com execução fiscal ativa na PGFN desde ${anoInscricao} — situação que permite à Fazenda promover bloqueio de contas e penhora de ativos a qualquer momento`
+    : `com dívida inscrita na PGFN no valor de ${valor}`;
+
+  const solucao = limite
+    ? `Identificamos limite disponível de ${limite} em ${seguradora} para estruturar a garantia.`
+    : `Nossa equipe é especializada em estruturar garantias para regularizar exatamente este tipo de situação.`;
+
+  const scripts = {
+    linkedin: `${nomeDecisor}, bom dia.
+
+Identifiquei que a ${empresa} possui uma execução fiscal ${urgencia}.
+
+${solucao}
+
+O seguro garantia suspende a execução, preserva os ativos da empresa e evita bloqueio BACENJUD — com custo inferior ao impacto de uma penhora.
+
+Teria 20 minutos esta semana para avaliarmos juntos se conseguimos resolver isso para vocês?
+
+Atenciosamente,
+${currentUser}
+Vazquez & Fonseca | Seguro Garantia Tributário`,
+
+    email: `Assunto: Execução fiscal PGFN — ${empresa} — solução em 48h
+
+${nomeDecisor},
+
+Nossa equipe identificou que a ${empresa} possui ${urgencia}.
+
+${solucao}
+
+O seguro garantia é o instrumento legal que suspende a execução fiscal, libera os ativos da empresa e preserva o crédito bancário — com prêmio mensal inferior ao custo de oportunidade de uma penhora ou bloqueio BACENJUD.
+
+Podemos entregar uma análise completa e proposta em 48 horas.
+
+Teria disponibilidade para uma conversa de 20 minutos esta semana?
+
+Atenciosamente,
+${currentUser}
+Vazquez & Fonseca | Seguro Garantia Tributário
+contato@vfgarantia.com.br`,
+
+    whatsapp: `Olá ${nomeDecisor}, tudo bem?
+
+Sou ${currentUser} da Vazquez & Fonseca, especialistas em seguro garantia tributário.
+
+Identifiquei que a ${empresa} possui ${urgencia}.
+
+Temos uma solução que suspende a execução e protege os ativos da empresa. Poderia conversar 15 minutos?`
+  };
+
+  document.getElementById('script_content').textContent = scripts[canal];
+}
+
+function copyScript() {
+  const text = document.getElementById('script_content').textContent;
+  navigator.clipboard.writeText(text);
+  toast('Script copiado ✓', 'ok');
+}
+
+function openEmailWithScript() {
+  if (!currentCompany) return;
+  const empresa = currentCompany.razao_social || '';
+  const email = currentCompany.decisor_email || '';
+  const subject = encodeURIComponent(`Execução fiscal PGFN — ${empresa} — solução em 48h`);
+  generateScript('email');
+  const body = encodeURIComponent(document.getElementById('script_content').textContent);
+  window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+}
+
+function openWhatsApp() {
+  generateScript('whatsapp');
+  const text = encodeURIComponent(document.getElementById('script_content').textContent);
+  const tel = currentCompany?.decisor_telefone?.replace(/\D/g,'') || '';
+  window.open(`https://wa.me/${tel}?text=${text}`, '_blank');
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // Verifica sessão ativa
+  if (!checkAuth()) {
+    // Foca no campo de senha
+    setTimeout(() => document.getElementById('login_pwd')?.focus(), 100);
+    return;
+  }
   setUser(currentUser);
   checkSync();
   loadDashboard();
-  // Fecha modal ao clicar fora
+  // Fecha modais ao clicar fora
   document.getElementById('modal_company').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
+  });
+  document.getElementById('modal_script').addEventListener('click', e => {
+    if (e.target === e.currentTarget) document.getElementById('modal_script').classList.remove('open');
   });
 });
 </script>
