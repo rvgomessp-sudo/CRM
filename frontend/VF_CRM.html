@@ -404,6 +404,116 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
   .sidebar { display: none; }
   .main-content { margin-left: 0; padding: 16px; }
 }
+
+/* ─── Module 2: Kanban ────────────────────────────────────────────────────── */
+.pipeline-header { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+.view-toggle { display:flex; gap:2px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:2px; }
+.view-toggle .toggle-btn { padding:5px 12px; }
+.kanban-board { display:flex; gap:8px; overflow-x:auto; padding-bottom:12px; min-height:60vh; }
+.kanban-col { min-width:180px; max-width:200px; flex-shrink:0; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); display:flex; flex-direction:column; }
+.kanban-col-header { padding:10px 12px; border-bottom:1px solid var(--border); font-size:0.78rem; font-weight:600; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:var(--bg-card); z-index:1; }
+.kanban-col-header .count { background:var(--accent); color:#fff; font-size:0.7rem; padding:1px 7px; border-radius:10px; }
+.kanban-col-body { flex:1; padding:6px; overflow-y:auto; min-height:80px; }
+.kanban-col.drop-over { border-color:var(--accent); background:rgba(99,102,241,0.05); }
+.k-card { background:var(--bg-card-hover); border:1px solid var(--border); border-radius:6px; padding:10px; margin-bottom:6px; cursor:grab; font-size:0.8rem; transition:border-color 0.15s; }
+.k-card:hover { border-color:var(--accent); }
+.k-card.dragging { opacity:0.4; }
+.k-card.stale { border-color:var(--red); }
+.k-card .k-name { font-weight:600; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.k-card .k-meta { display:flex; justify-content:space-between; align-items:center; color:var(--text-muted); font-size:0.72rem; }
+.k-card .k-score { padding:1px 6px; border-radius:4px; font-weight:600; font-size:0.7rem; }
+.k-card .k-score.high { background:var(--green-bg); color:var(--green); }
+.k-card .k-score.mid { background:var(--yellow-bg); color:var(--yellow); }
+.k-card .k-score.low { background:var(--red-bg); color:var(--red); }
+.k-card .k-days { font-size:0.7rem; }
+.k-card .k-days.alert { color:var(--red); font-weight:700; }
+.k-card .k-valor { color:var(--text-muted); font-size:0.72rem; }
+.badge-alert { background:var(--red); color:#fff; font-size:0.6rem; padding:1px 5px; border-radius:4px; margin-left:4px; }
+
+/* Esteira table */
+.esteira-wrap { overflow-x:auto; }
+.esteira-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+.esteira-table th { text-align:left; padding:8px 10px; border-bottom:2px solid var(--border); color:var(--text-muted); font-weight:600; font-size:0.75rem; text-transform:uppercase; cursor:pointer; white-space:nowrap; }
+.esteira-table td { padding:7px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+.esteira-table tr:hover td { background:var(--bg-card-hover); }
+
+/* ─── Module 2: Company Modal ─────────────────────────────────────────────── */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; display:none; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:var(--bg); border:1px solid var(--border); border-radius:12px; width:90vw; max-width:900px; max-height:88vh; display:flex; flex-direction:column; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border); }
+.modal-header h2 { font-size:1.1rem; font-weight:700; }
+.modal-close { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.3rem; padding:4px 8px; }
+.modal-close:hover { color:var(--text); }
+.modal-tabs { display:flex; border-bottom:1px solid var(--border); padding:0 20px; overflow-x:auto; }
+.modal-tab { padding:10px 16px; font-size:0.82rem; color:var(--text-muted); cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; }
+.modal-tab:hover { color:var(--text); }
+.modal-tab.active { color:var(--accent-light); border-bottom-color:var(--accent); }
+.modal-body { flex:1; overflow-y:auto; padding:20px; }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.form-group { display:flex; flex-direction:column; gap:4px; }
+.form-group label { font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; }
+.form-group input, .form-group select, .form-group textarea { padding:7px 10px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-card); color:var(--text); font-size:0.85rem; }
+.form-group textarea { min-height:60px; resize:vertical; }
+.form-actions { display:flex; gap:8px; margin-top:16px; }
+.interaction-log { max-height:200px; overflow-y:auto; margin-top:12px; }
+.interaction-item { padding:8px; border-left:3px solid var(--accent); margin-bottom:8px; background:var(--bg-card); border-radius:0 6px 6px 0; font-size:0.8rem; }
+.interaction-item .i-header { display:flex; justify-content:space-between; color:var(--text-muted); font-size:0.72rem; margin-bottom:4px; }
+.consulta-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:12px; margin-bottom:8px; }
+.consulta-card .status-badge { padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:600; }
+.status-aprovado { background:var(--green-bg); color:var(--green); }
+.status-indicativo { background:var(--yellow-bg); color:var(--yellow); }
+.status-reprovado { background:var(--red-bg); color:var(--red); }
+.status-pendente { background:rgba(99,102,241,0.1); color:var(--accent-light); }
+.doc-checklist { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:12px 0; }
+.doc-item { display:flex; align-items:center; gap:6px; font-size:0.8rem; padding:6px 8px; background:var(--bg-card); border-radius:6px; }
+.doc-item .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.doc-item .dot.pendente { background:var(--text-muted); }
+.doc-item .dot.recebido { background:var(--yellow); }
+.doc-item .dot.enviado { background:var(--blue); }
+.doc-item .dot.validado { background:var(--green); }
+
+/* ─── Module 3: Solver ────────────────────────────────────────────────────── */
+.solver-inputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:24px; }
+.solver-outputs { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:24px; }
+.solver-output-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; text-align:center; }
+.solver-output-card .s-label { font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px; }
+.solver-output-card .s-value { font-size:1.4rem; font-weight:700; }
+.solver-flag { display:inline-block; padding:6px 16px; border-radius:var(--radius); font-weight:700; font-size:0.9rem; margin-bottom:20px; }
+.solver-flag.aderente { background:var(--green-bg); color:var(--green); }
+.solver-flag.atencao { background:var(--yellow-bg); color:var(--yellow); }
+.solver-flag.fora_politica { background:var(--red-bg); color:var(--red); }
+.sensitivity-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+.sensitivity-table th { padding:8px 12px; border-bottom:2px solid var(--border); text-align:right; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; }
+.sensitivity-table th:first-child { text-align:left; }
+.sensitivity-table td { padding:8px 12px; border-bottom:1px solid var(--border); text-align:right; font-variant-numeric:tabular-nums; }
+.sensitivity-table td:first-child { text-align:left; }
+.sensitivity-table tr.highlight { background:rgba(99,102,241,0.1); }
+.sensitivity-table tr.highlight td { font-weight:600; }
+
+/* ─── Module 4: Import ────────────────────────────────────────────────────── */
+.upload-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:40px; text-align:center; cursor:pointer; transition:border-color 0.2s; margin-bottom:24px; }
+.upload-zone:hover, .upload-zone.dragover { border-color:var(--accent); background:rgba(99,102,241,0.05); }
+.upload-zone svg { width:40px; height:40px; color:var(--text-muted); margin-bottom:8px; }
+.upload-zone p { color:var(--text-muted); font-size:0.85rem; }
+.import-result { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:24px; }
+.import-stats { display:flex; gap:24px; margin-bottom:12px; }
+.import-stat { text-align:center; }
+.import-stat .num { font-size:1.5rem; font-weight:700; }
+.import-stat .lbl { font-size:0.75rem; color:var(--text-muted); }
+.filter-panel { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; }
+.filter-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:16px; }
+.filter-group label { display:block; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:4px; }
+.checkbox-group { display:flex; flex-wrap:wrap; gap:8px; }
+.checkbox-group label { display:flex; align-items:center; gap:4px; font-size:0.82rem; color:var(--text); cursor:pointer; text-transform:none; }
+
+/* ─── Module 5: Settings ──────────────────────────────────────────────────── */
+.settings-section { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:20px; margin-bottom:16px; }
+.settings-section h3 { font-size:0.95rem; font-weight:600; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+.settings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+.settings-grid .form-group input[type="password"] { font-family:monospace; }
 </style>
 </head>
 <body>
@@ -552,39 +662,246 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
       </div>
     </section>
 
-    <!-- ═══ PAGE: Pipeline (placeholder) ═════════════════════════════════ -->
+    <!-- ═══ PAGE: Pipeline ══════════════════════════════════════════════ -->
     <section class="page-section" id="page-pipeline">
       <div class="page-header">
-        <div class="page-title">Pipeline</div>
+        <div>
+          <div class="page-title">Pipeline — Frente 1</div>
+          <div class="page-subtitle" id="pipelineSubtitle">Esteira Sancor</div>
+        </div>
+        <div class="header-actions">
+          <div class="view-toggle">
+            <button class="toggle-btn active" data-pview="kanban" onclick="setPipelineView('kanban')">Kanban</button>
+            <button class="toggle-btn" data-pview="esteira" onclick="setPipelineView('esteira')">Esteira</button>
+          </div>
+          <button class="btn btn-sm" onclick="loadPipeline()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/></svg>
+            Atualizar
+          </button>
+        </div>
       </div>
-      <div class="empty-state"><p>Módulo Pipeline — em construção</p></div>
+      <div id="kanbanView"><div class="kanban-board" id="kanbanBoard"></div></div>
+      <div id="esteiraView" style="display:none"><div class="esteira-wrap"><table class="esteira-table" id="esteiraTable"><thead><tr>
+        <th>Empresa</th><th>CNPJ</th><th>UF</th><th>Valor</th><th>Score</th><th>Situação</th><th>Estágio</th><th>Resp.</th><th>Dias</th>
+      </tr></thead><tbody id="esteiraBody"></tbody></table></div></div>
     </section>
 
-    <!-- ═══ PAGE: VF Solver (placeholder) ════════════════════════════════ -->
+    <!-- ═══ PAGE: VF Solver ══════════════════════════════════════════════ -->
     <section class="page-section" id="page-solver">
       <div class="page-header">
-        <div class="page-title">VF Solver</div>
+        <div>
+          <div class="page-title">VF Solver — Precificação Ótima</div>
+          <div class="page-subtitle">Maximização de receita V&F: taxa mínima + honorários otimizados</div>
+        </div>
       </div>
-      <div class="empty-state"><p>Módulo VF Solver — em construção</p></div>
+      <div class="solver-inputs">
+        <div class="form-group"><label>Valor Garantia (R$)</label><input type="number" id="svValor" value="2000000" oninput="calcSolver()"></div>
+        <div class="form-group"><label>Prazo (anos)</label><input type="number" id="svPrazo" value="5" oninput="calcSolver()"></div>
+        <div class="form-group"><label>Taxa mínima (% a.a.)</label><input type="number" id="svTaxa" value="0.50" step="0.05" oninput="calcSolver()"></div>
+        <div class="form-group"><label>Comissão (%)</label><input type="number" id="svComissao" value="20" oninput="calcSolver()"></div>
+        <div class="form-group"><label>Teto Percepção (R$)</label><input type="number" id="svTeto" value="100000" oninput="calcSolver()"></div>
+      </div>
+      <div id="solverFlag"></div>
+      <div class="solver-outputs" id="solverOutputs"></div>
+      <div class="dash-panel">
+        <div class="dash-panel-title">Tabela de Sensibilidade</div>
+        <table class="sensitivity-table" id="sensitivityTable">
+          <thead><tr><th>Taxa a.a.</th><th>Prêmio</th><th>Comissão 20%</th><th>Honorários</th><th>Receita V&F</th><th>Custo Cliente</th><th>Hon/Prêmio</th><th>Status</th></tr></thead>
+          <tbody id="sensitivityBody"></tbody>
+        </table>
+      </div>
     </section>
 
-    <!-- ═══ PAGE: Import (placeholder) ═══════════════════════════════════ -->
+    <!-- ═══ PAGE: Import ═════════════════════════════════════════════════ -->
     <section class="page-section" id="page-import">
       <div class="page-header">
-        <div class="page-title">Importar</div>
+        <div class="page-title">Importação & Filtros</div>
       </div>
-      <div class="empty-state"><p>Módulo Importação — em construção</p></div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <p>Arraste um arquivo XLSX aqui ou clique para selecionar</p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImport(this.files[0])">
+      </div>
+      <div class="import-result" id="importResult" style="display:none">
+        <div class="import-stats" id="importStats"></div>
+        <div id="importErrors" style="font-size:0.8rem;color:var(--red)"></div>
+      </div>
+      <div class="filter-panel">
+        <h3 style="font-size:0.95rem;font-weight:600;margin-bottom:16px;">Filtros da Base</h3>
+        <div class="filter-grid">
+          <div class="filter-group"><label>Score VF mínimo</label><input type="number" id="fScoreMin" value="0" style="width:100%"></div>
+          <div class="filter-group"><label>Score VF máximo</label><input type="number" id="fScoreMax" value="110" style="width:100%"></div>
+          <div class="filter-group"><label>UF</label><select id="fUf" style="width:100%"><option value="">Todas</option><option>SP</option><option>RJ</option><option>MG</option><option>PR</option><option>RS</option><option>SC</option><option>BA</option><option>GO</option><option>ES</option><option>PE</option></select></div>
+          <div class="filter-group"><label>Responsável</label><select id="fResp" style="width:100%"><option value="">Todos</option><option>Anna</option><option>Rodrigo</option></select></div>
+          <div class="filter-group"><label>Estágio</label><select id="fEstagio" style="width:100%"><option value="">Todos</option></select></div>
+          <div class="filter-group"><label>Seguradora</label><select id="fSeguradora" style="width:100%"><option value="">Todas</option><option>Sancor</option><option>Berkley</option><option>Zurich</option></select></div>
+          <div class="filter-group"><label>Simples Nacional</label><select id="fSimples" style="width:100%"><option value="">Todos</option><option value="false">Não</option><option value="true">Sim</option></select></div>
+          <div class="filter-group"><label>Busca (nome/CNPJ)</label><input type="text" id="fSearch" placeholder="Digite..." style="width:100%"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="applyFilters()">Aplicar Filtros</button>
+          <button class="btn" onclick="clearFilters()">Limpar</button>
+          <span id="filterCount" style="color:var(--text-muted);font-size:0.82rem;align-self:center;margin-left:8px"></span>
+        </div>
+        <div class="esteira-wrap" style="margin-top:16px"><table class="esteira-table"><thead><tr>
+          <th>Empresa</th><th>CNPJ</th><th>UF</th><th>Valor</th><th>Score</th><th>Situação</th><th>Estágio</th><th>Resp.</th>
+        </tr></thead><tbody id="filterResultsBody"></tbody></table></div>
+      </div>
     </section>
 
-    <!-- ═══ PAGE: Settings (placeholder) ═════════════════════════════════ -->
+    <!-- ═══ PAGE: Settings ═══════════════════════════════════════════════ -->
     <section class="page-section" id="page-settings">
-      <div class="page-header">
-        <div class="page-title">Settings</div>
+      <div class="page-header"><div class="page-title">Configurações</div></div>
+      <div class="settings-section">
+        <h3>Parâmetros Econômicos</h3>
+        <div class="settings-grid">
+          <div class="form-group"><label>Comissão padrão (%)</label><input type="number" id="setCom" value="20" step="1"></div>
+          <div class="form-group"><label>Taxa mínima padrão (% a.a.)</label><input type="number" id="setTaxa" value="0.50" step="0.05"></div>
+          <div class="form-group"><label>Teto percepção mín (R$)</label><input type="number" id="setTetoMin" value="80000"></div>
+          <div class="form-group"><label>Teto percepção máx (R$)</label><input type="number" id="setTetoMax" value="120000"></div>
+          <div class="form-group"><label>Relação Hon/Prêmio máx</label><input type="number" id="setHonMax" value="2.0" step="0.1"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()" style="margin-top:12px">Salvar Parâmetros</button>
       </div>
-      <div class="empty-state"><p>Módulo Settings — em construção</p></div>
+      <div class="settings-section">
+        <h3>API Keys</h3>
+        <div class="settings-grid">
+          <div class="form-group"><label>CNPJ.ws / BrasilAPI</label><input type="password" id="setApiCnpj" placeholder="API Key"></div>
+          <div class="form-group"><label>Apollo.io</label><input type="password" id="setApiApollo" placeholder="API Key"></div>
+          <div class="form-group"><label>Serasa / Neoway</label><input type="password" id="setApiSerasa" placeholder="API Key"></div>
+        </div>
+        <button class="btn btn-sm" onclick="testApis()" style="margin-top:12px">Testar Conexões</button>
+      </div>
+      <div class="settings-section">
+        <h3>Filtros da Esteira</h3>
+        <div class="settings-grid">
+          <div class="form-group"><label>Score mín. triagem semanal</label><input type="number" id="setScoreTriagem" value="70"></div>
+          <div class="form-group"><label>Score mín. universo</label><input type="number" id="setScoreUniverso" value="50"></div>
+          <div class="form-group"><label>Safra preferencial</label><input type="text" id="setSafra" value="2023-2025"></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h3>Export / Backup</h3>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">Exportar toda a base de empresas como arquivo JSON para backup.</p>
+        <button class="btn btn-primary btn-sm" onclick="exportBackup()">Exportar JSON</button>
+      </div>
     </section>
 
   </main>
+</div>
+
+<!-- ═══ Company Detail Modal ════════════════════════════════════════════ -->
+<div class="modal-overlay" id="companyModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitle">Empresa</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-tabs">
+      <div class="modal-tab active" onclick="setModalTab(0)">PGFN</div>
+      <div class="modal-tab" onclick="setModalTab(1)">Enriquecimento</div>
+      <div class="modal-tab" onclick="setModalTab(2)">Financeiro</div>
+      <div class="modal-tab" onclick="setModalTab(3)">Pipeline</div>
+      <div class="modal-tab" onclick="setModalTab(4)">Consulta Sancor</div>
+      <div class="modal-tab" onclick="setModalTab(5)">Proposta</div>
+    </div>
+    <div class="modal-body">
+      <!-- Tab 0: PGFN -->
+      <div class="tab-pane active" id="tabPgfn">
+        <div class="form-grid" id="pgfnFields"></div>
+        <h4 style="margin:16px 0 8px;font-size:0.85rem">Inscrições Individuais</h4>
+        <div class="esteira-wrap"><table class="esteira-table"><thead><tr><th>Nº Inscrição</th><th>Valor</th><th>Data</th><th>Situação</th><th>Garantia</th></tr></thead><tbody id="inscricoesBody"></tbody></table></div>
+      </div>
+      <!-- Tab 1: Enriquecimento -->
+      <div class="tab-pane" id="tabEnrich">
+        <div class="form-grid">
+          <div class="form-group"><label>Situação Cadastral (Receita)</label><input type="text" id="mSitReceita"></div>
+          <div class="form-group"><label>Regime Tributário</label><input type="text" id="mRegime"></div>
+          <div class="form-group"><label>Nome do Decisor</label><input type="text" id="mDecNome"></div>
+          <div class="form-group"><label>Cargo</label><input type="text" id="mDecCargo"></div>
+          <div class="form-group"><label>Email</label><input type="text" id="mDecEmail"></div>
+          <div class="form-group"><label>Telefone</label><input type="text" id="mDecTel"></div>
+          <div class="form-group"><label>LinkedIn</label><input type="text" id="mDecLinkedin"></div>
+          <div class="form-group"><label>Confiança do Contato</label><select id="mDecConf"><option value="">—</option><option>baixa</option><option>media</option><option>alta</option></select></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-sm" onclick="enrichCnpj()">Consultar CNPJ</button>
+          <button class="btn btn-sm" onclick="enrichDecisor()">Buscar Decisor</button>
+          <button class="btn btn-primary btn-sm" onclick="saveEnrichment()">Salvar</button>
+        </div>
+      </div>
+      <!-- Tab 2: Financeiro -->
+      <div class="tab-pane" id="tabFinanceiro">
+        <div class="form-grid">
+          <div class="form-group"><label>PL (R$)</label><input type="number" id="mPl"></div>
+          <div class="form-group"><label>Faturamento (R$)</label><input type="number" id="mFat"></div>
+          <div class="form-group"><label>EBITDA (R$)</label><input type="number" id="mEbitda"></div>
+          <div class="form-group"><label>Capital Social (R$)</label><input type="number" id="mCapSoc"></div>
+          <div class="form-group"><label>Porte</label><input type="text" id="mPorte"></div>
+          <div class="form-group"><label>Data do Balanço</label><input type="date" id="mDataBal"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-sm" onclick="enrichFinanceiro()">Buscar Serasa</button>
+          <button class="btn btn-primary btn-sm" onclick="saveFinanceiro()">Salvar</button>
+        </div>
+      </div>
+      <!-- Tab 3: Pipeline -->
+      <div class="tab-pane" id="tabPipeline">
+        <div class="form-grid">
+          <div class="form-group"><label>Estágio Atual</label><select id="mEstagio"></select></div>
+          <div class="form-group"><label>Responsável</label><select id="mResp"><option>Anna</option><option>Rodrigo</option></select></div>
+          <div class="form-group"><label>Próximo Follow-up</label><input type="date" id="mFollowup"></div>
+          <div class="form-group"><label>Status</label><select id="mStatus"><option>active</option><option>perdido</option><option>congelado</option><option>sem_retorno</option><option>archived</option></select></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-sm" onclick="savePipeline()">Salvar</button>
+        </div>
+        <h4 style="margin:20px 0 8px;font-size:0.85rem">Nova Interação</h4>
+        <div class="form-grid">
+          <div class="form-group"><label>Canal</label><select id="mIntCanal"><option>LinkedIn</option><option>Email</option><option>Telefone</option><option>Reunião</option><option>Interno</option></select></div>
+          <div class="form-group"><label>Próxima Ação</label><select id="mIntAcao"><option>Ligar para tomador</option><option>Enviar e-mail</option><option>Cobrar documentos</option><option>Reforçar abordagem</option><option>Agendar reunião</option><option>Submeter na seguradora</option><option>Cobrar retorno seguradora</option><option>Revisar proposta</option><option>Validar emissão</option><option>Outra ação manual</option></select></div>
+        </div>
+        <div class="form-group" style="margin-top:8px"><label>Resumo</label><textarea id="mIntResumo" rows="2"></textarea></div>
+        <button class="btn btn-sm" onclick="addInteraction()" style="margin-top:8px">Registrar Interação</button>
+        <h4 style="margin:16px 0 8px;font-size:0.85rem">Histórico</h4>
+        <div class="interaction-log" id="interactionLog"></div>
+      </div>
+      <!-- Tab 4: Consulta Sancor -->
+      <div class="tab-pane" id="tabConsulta">
+        <div id="consultaList"></div>
+        <h4 style="margin:16px 0 8px;font-size:0.85rem">Nova Consulta</h4>
+        <div class="form-grid">
+          <div class="form-group"><label>Seguradora</label><select id="mcSeg"><option>Sancor</option><option>Berkley</option></select></div>
+          <div class="form-group"><label>Modalidade</label><input type="text" id="mcMod" value="Judicial Tributário"></div>
+          <div class="form-group"><label>Limite Aprovado (R$)</label><input type="number" id="mcLimite"></div>
+          <div class="form-group"><label>Taxa (% a.a.)</label><input type="number" id="mcTaxa" step="0.01"></div>
+          <div class="form-group"><label>Status</label><select id="mcStatus"><option value="pendente">Pendente</option><option value="aprovado_automatico">Aprovado automático</option><option value="aprovado_indicativo">Aprovado indicativo</option><option value="depende_mesa">Depende mesa crédito</option><option value="outro_corretor">Outro corretor</option><option value="fora_politica">Fora da política</option><option value="tomador_bloqueado">Tomador bloqueado</option><option value="parametro_incompativel">Parâmetro incompatível</option><option value="reprovado">Reprovado</option></select></div>
+          <div class="form-group"><label>Exige mesa?</label><select id="mcMesa"><option value="false">Não</option><option value="true">Sim</option></select></div>
+          <div class="form-group"><label>Exige carta?</label><select id="mcCarta"><option value="false">Não</option><option value="true">Sim</option></select></div>
+          <div class="form-group"><label>Responsável</label><select id="mcResp"><option>Anna</option><option>Rodrigo</option></select></div>
+        </div>
+        <div class="form-group" style="margin-top:8px"><label>Observações</label><textarea id="mcObs" rows="2"></textarea></div>
+        <button class="btn btn-primary btn-sm" onclick="addConsulta()" style="margin-top:8px">Registrar Consulta</button>
+      </div>
+      <!-- Tab 5: Proposta -->
+      <div class="tab-pane" id="tabProposta">
+        <div id="propostaList"></div>
+        <h4 style="margin:16px 0 8px;font-size:0.85rem">Documentos</h4>
+        <div class="doc-checklist" id="docChecklist"></div>
+        <h4 style="margin:16px 0 8px;font-size:0.85rem">Nova Proposta</h4>
+        <div class="form-grid">
+          <div class="form-group"><label>Valor Garantia (R$)</label><input type="number" id="mpValor"></div>
+          <div class="form-group"><label>Prazo (anos)</label><input type="number" id="mpPrazo" value="5"></div>
+          <div class="form-group"><label>Taxa (% a.a.)</label><input type="number" id="mpTaxa" value="0.50" step="0.01"></div>
+          <div class="form-group"><label>Comissão (%)</label><input type="number" id="mpCom" value="20"></div>
+          <div class="form-group"><label>Honorários (R$)</label><input type="number" id="mpHon"></div>
+          <div class="form-group"><label>Teto Percepção (R$)</label><input type="number" id="mpTeto" value="100000"></div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addProposta()" style="margin-top:12px">Criar Proposta</button>
+        <button class="btn btn-sm" onclick="navigateTo('solver')" style="margin-top:12px">Abrir VF Solver</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -804,14 +1121,100 @@ function renderRating() {
 }
 
 // ─── Company open (placeholder for Module 2) ────────────────────────────────
-function openCompany(id) {
-  console.log('Open company:', id);
-  // Will be implemented in Module 2
+// [openCompany moved to Module 2 below]
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function formatDate(d) { if (!d) return '—'; return new Date(d + (d.length===10?'T12:00:00':'')).toLocaleDateString('pt-BR'); }
+function daysInStage(dt) { if (!dt) return 0; return Math.floor((Date.now()-new Date(dt).getTime())/86400000); }
+function scoreClass(s) { return s>=80?'high':s>=60?'mid':'low'; }
+function navigateTo(page) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page===page));
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  const el=document.getElementById('page-'+page); if(el) el.classList.add('active');
+  if(page==='dashboard') loadDashboard(); if(page==='pipeline') loadPipeline(); if(page==='solver') calcSolver();
 }
+async function apiPost(path,body){try{const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail?.message||JSON.stringify(e.detail)||`HTTP ${r.status}`);}return await r.json();}catch(e){throw e;}}
+async function apiPut(path,body,params=''){try{const r=await fetch(API_BASE+path+params,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(JSON.stringify(e.detail||e));}return await r.json();}catch(e){throw e;}}
+
+// ═══ MODULE 2: Pipeline Kanban + Ficha ═══════════════════════════════════════
+const F1_STAGES=['Base PGFN','Enriquecimento','Abordagem','Interesse Manifesto','Análise Rápida','Proposta Enviada','Submetido Sancor','Aprovado','Fechado','Receita Realizada'];
+let pipelineCompanies=[], pipelineView='kanban', currentCompanyId=null, currentCompany=null;
+
+function setPipelineView(v){pipelineView=v;document.querySelectorAll('[data-pview]').forEach(b=>b.classList.toggle('active',b.dataset.pview===v));document.getElementById('kanbanView').style.display=v==='kanban'?'':'none';document.getElementById('esteiraView').style.display=v==='esteira'?'':'none';}
+
+function getDemoCompanies(){const nm=['Construtora Alpha','Metalúrgica Beta','Indústrias Gama','Transportes Delta','Tech Epsilon','Agro Zeta','Comercial Eta','Pharma Theta','Logística Iota','Energia Kappa','Alimentos Lambda','Química Mu','Telecom Nu','Mining Xi','Engenharia Omicron','Varejo Pi','Serviços Rho','Financeira Sigma','Têxtil Tau','Auto Upsilon'];return nm.map((n,i)=>({id:'demo-'+i,razao_social:n+' Ltda',cnpj:`${10+i}.000.000/0001-0${i%10}`,uf:'SP',valor_aberto:(1+Math.random()*4)*1e6,score_vf:50+Math.random()*50,situacao_processual:i%3===0?'AJUIZADA_SEM_GAR':'COBRANÇA',estagio_pipeline:F1_STAGES[Math.min(i%10,9)],frente:1,responsavel:i%2===0?'Anna':'Rodrigo',data_entrada_estagio:new Date(Date.now()-(i*2+1)*864e5).toISOString(),proximo_followup:i%3===0?new Date().toISOString().split('T')[0]:null}));}
+
+async function loadPipeline(){const d=await apiFetch('/api/companies?frente=1&status=active&limit=2000');pipelineCompanies=d||getDemoCompanies();renderKanban();renderEsteira();}
+
+function renderKanban(){const board=document.getElementById('kanbanBoard');const g={};F1_STAGES.forEach(s=>g[s]=[]);pipelineCompanies.forEach(c=>{const st=c.estagio_pipeline||'Base PGFN';if(g[st])g[st].push(c);else g['Base PGFN'].push(c);});board.innerHTML=F1_STAGES.map(stage=>{const cards=g[stage]||[];return`<div class="kanban-col" data-stage="${stage}" ondragover="event.preventDefault();this.classList.add('drop-over')" ondragleave="this.classList.remove('drop-over')" ondrop="handleDrop(event,'${stage}')"><div class="kanban-col-header"><span>${stage}</span><span class="count">${cards.length}</span></div><div class="kanban-col-body">${cards.map(c=>renderCard(c)).join('')}</div></div>`;}).join('');}
+
+function renderCard(c){const days=daysInStage(c.data_entrada_estagio);const stale=days>7;const sc=Number(c.score_vf)||0;return`<div class="k-card${stale?' stale':''}" draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${c.id}');this.classList.add('dragging')" ondragend="this.classList.remove('dragging')" onclick="openCompany('${c.id}')"><div class="k-name">${c.razao_social||c.cnpj}</div><div class="k-valor">${formatCurrency(c.valor_aberto)}</div><div class="k-meta"><span class="k-score ${scoreClass(sc)}">${sc.toFixed(0)}</span><span>${(c.responsavel||'?')[0]}</span><span class="k-days${stale?' alert':''}">${days}d${stale?'<span class="badge-alert">ALERTA</span>':''}</span></div></div>`;}
+
+async function handleDrop(ev,newStage){ev.preventDefault();ev.currentTarget.classList.remove('drop-over');const id=ev.dataTransfer.getData('text/plain');if(!id)return;try{await apiPut(`/api/companies/${id}`,{estagio_pipeline:newStage,updated_by:currentUser});loadPipeline();}catch(e){let msg;try{msg=JSON.parse(e.message);msg=msg.missing?msg.missing.join('\n'):e.message;}catch(_){msg=e.message;}alert('Transição bloqueada:\n\n'+msg+'\n\nPreencha os campos obrigatórios na ficha da empresa.');}}
+
+function renderEsteira(){document.getElementById('esteiraBody').innerHTML=pipelineCompanies.map(c=>{const d=daysInStage(c.data_entrada_estagio);return`<tr onclick="openCompany('${c.id}')" style="cursor:pointer"><td>${c.razao_social||'—'}</td><td>${c.cnpj}</td><td>${c.uf||'—'}</td><td>${formatCurrency(c.valor_aberto)}</td><td>${Number(c.score_vf||0).toFixed(0)}</td><td>${c.situacao_processual||'—'}</td><td>${c.estagio_pipeline||'—'}</td><td>${(c.responsavel||'—')[0]}</td><td class="${d>7?'k-days alert':''}">${d}d</td></tr>`;}).join('');}
+
+// ─── Company Modal ───────────────────────────────────────────────────────────
+function openCompany(id){currentCompanyId=id;const c=pipelineCompanies.find(x=>x.id===id)||(followupsData||[]).find(x=>x.id===id);if(!c){alert('Empresa não encontrada');return;}currentCompany=c;document.getElementById('modalTitle').textContent=c.razao_social||c.cnpj;setModalTab(0);document.getElementById('companyModal').classList.add('open');loadModalData(id,c);}
+function closeModal(){document.getElementById('companyModal').classList.remove('open');}
+function setModalTab(idx){document.querySelectorAll('.modal-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===idx));}
+
+async function loadModalData(id,c){
+  document.getElementById('pgfnFields').innerHTML=`<div class="form-group"><label>CNPJ</label><input readonly value="${c.cnpj||''}"></div><div class="form-group"><label>UF</label><input readonly value="${c.uf||''}"></div><div class="form-group"><label>Valor Aberto</label><input readonly value="${formatCurrency(c.valor_aberto)}"></div><div class="form-group"><label>Score VF</label><input readonly value="${Number(c.score_vf||0).toFixed(1)}"></div><div class="form-group"><label>Situação</label><input readonly value="${c.situacao_processual||''}"></div><div class="form-group"><label>Enrichment</label><input readonly value="${c.enrichment_status||'pgfn_only'}"></div>`;
+  const insc=await apiFetch(`/api/inscricoes/${id}`);
+  document.getElementById('inscricoesBody').innerHTML=(insc||[]).map(i=>`<tr><td>${i.numero_inscricao||'—'}</td><td>${formatCurrency(i.valor_consolidado)}</td><td>${formatDate(i.data_inscricao)}</td><td>${i.situacao_inscricao||'—'}</td><td>${i.tipo_garantia||'—'}</td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Sem inscrições</td></tr>';
+  document.getElementById('mSitReceita').value=c.situacao_cadastral_receita||'';document.getElementById('mRegime').value=c.regime_tributario||'';document.getElementById('mDecNome').value=c.decisor_nome||'';document.getElementById('mDecCargo').value=c.decisor_cargo||'';document.getElementById('mDecEmail').value=c.decisor_email||'';document.getElementById('mDecTel').value=c.decisor_telefone||'';document.getElementById('mDecLinkedin').value=c.decisor_linkedin||'';document.getElementById('mDecConf').value=c.decisor_confianca||'';
+  document.getElementById('mPl').value=c.pl||'';document.getElementById('mFat').value=c.faturamento||'';document.getElementById('mEbitda').value=c.ebitda||'';document.getElementById('mCapSoc').value=c.capital_social||'';document.getElementById('mPorte').value=c.porte||'';document.getElementById('mDataBal').value=c.data_balanco||'';
+  const sel=document.getElementById('mEstagio');sel.innerHTML=F1_STAGES.map(s=>`<option${s===c.estagio_pipeline?' selected':''}>${s}</option>`).join('');document.getElementById('mResp').value=c.responsavel||'Anna';document.getElementById('mFollowup').value=c.proximo_followup||'';document.getElementById('mStatus').value=c.status||'active';
+  const ints=await apiFetch(`/api/interactions/${id}`);document.getElementById('interactionLog').innerHTML=(ints||[]).map(i=>`<div class="interaction-item"><div class="i-header"><span>${i.responsavel||'—'} via ${i.canal||'—'}</span><span>${formatDate(i.data_hora)}</span></div><div>${i.resumo||''}</div>${i.estagio_novo?`<div style="color:var(--accent-light);font-size:0.72rem;margin-top:2px">${i.estagio_anterior||'—'} → ${i.estagio_novo}</div>`:''}</div>`).join('')||'<div style="color:var(--text-muted);font-size:0.82rem">Nenhuma interação</div>';
+  const cons=await apiFetch(`/api/consultas/${id}`);document.getElementById('consultaList').innerHTML=(cons||[]).map(c=>{const cls=c.status?.includes('aprovado')?'status-aprovado':c.status==='pendente'||c.status==='depende_mesa'?'status-pendente':'status-reprovado';return`<div class="consulta-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>${c.seguradora}</strong><span class="status-badge ${cls}">${(c.status||'').replace(/_/g,' ')}</span></div><div style="font-size:0.8rem;color:var(--text-muted)">Limite: ${formatCurrency(c.limite_aprovado)} | Taxa: ${c.taxa_pct_anual||'—'}% | ${formatDate(c.data_consulta)}${c.exige_mesa_credito?' | Mesa: Sim':''}${c.exige_carta_nomeacao?' | Carta: Sim':''}</div>${c.observacoes?`<div style="font-size:0.78rem;margin-top:4px">${c.observacoes}</div>`:''}</div>`;}).join('')||'<div style="color:var(--text-muted);font-size:0.82rem">Nenhuma consulta</div>';
+  const props=await apiFetch(`/api/propostas/${id}`);document.getElementById('propostaList').innerHTML=(props||[]).map(p=>{const fc=p.flag_aderencia==='aderente'?'status-aprovado':p.flag_aderencia==='atencao'?'status-indicativo':'status-reprovado';return`<div class="consulta-card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><strong>${p.numero_proposta||'Proposta'}</strong><span class="status-badge ${fc}">${(p.flag_aderencia||'—').replace(/_/g,' ')}</span></div><div style="font-size:0.8rem;color:var(--text-muted)">Garantia: ${formatCurrency(p.valor_garantia)} | Prêmio: ${formatCurrency(p.premio_bruto)} | Receita VF: ${formatCurrency(p.receita_vf_total)} | ${p.status_proposta||'rascunho'}</div></div>`;}).join('')||'<div style="color:var(--text-muted);font-size:0.82rem">Nenhuma proposta</div>';
+  const docs=await apiFetch(`/api/documentos/${id}`);const docTypes=['balanco_dre','balancete','contrato_social','ficha_judicial','ir_socios','nda','ccg','carta_nomeacao','minuta','covenants'];const docLabels={balanco_dre:'Balanço/DRE',balancete:'Balancete',contrato_social:'Contrato Social',ficha_judicial:'Ficha Judicial',ir_socios:'IR Sócios',nda:'NDA',ccg:'CCG',carta_nomeacao:'Carta Nomeação',minuta:'Minuta',covenants:'Covenants'};const dm={};(docs||[]).forEach(d=>dm[d.tipo]=d.status);document.getElementById('docChecklist').innerHTML=docTypes.map(t=>{const st=dm[t]||'pendente';return`<div class="doc-item"><span class="dot ${st}"></span>${docLabels[t]||t} <span style="color:var(--text-muted);font-size:0.7rem;margin-left:auto">${st}</span></div>`;}).join('');
+  if(c.valor_aberto) document.getElementById('mpValor').value=Math.round(Number(c.valor_aberto));
+}
+
+async function saveEnrichment(){try{await apiPut(`/api/companies/${currentCompanyId}`,{situacao_cadastral_receita:document.getElementById('mSitReceita').value,regime_tributario:document.getElementById('mRegime').value,decisor_nome:document.getElementById('mDecNome').value,decisor_cargo:document.getElementById('mDecCargo').value,decisor_email:document.getElementById('mDecEmail').value,decisor_telefone:document.getElementById('mDecTel').value,decisor_linkedin:document.getElementById('mDecLinkedin').value,decisor_confianca:document.getElementById('mDecConf').value,updated_by:currentUser},'?force=true');alert('Salvo!');}catch(e){alert('Erro: '+e.message);}}
+async function saveFinanceiro(){try{await apiPut(`/api/companies/${currentCompanyId}`,{pl:Number(document.getElementById('mPl').value)||null,faturamento:Number(document.getElementById('mFat').value)||null,ebitda:Number(document.getElementById('mEbitda').value)||null,capital_social:Number(document.getElementById('mCapSoc').value)||null,porte:document.getElementById('mPorte').value,data_balanco:document.getElementById('mDataBal').value||null,updated_by:currentUser},'?force=true');alert('Salvo!');}catch(e){alert('Erro: '+e.message);}}
+async function savePipeline(){try{await apiPut(`/api/companies/${currentCompanyId}`,{estagio_pipeline:document.getElementById('mEstagio').value,responsavel:document.getElementById('mResp').value,proximo_followup:document.getElementById('mFollowup').value||null,status:document.getElementById('mStatus').value,updated_by:currentUser});alert('Salvo!');loadPipeline();}catch(e){alert('Erro: '+e.message);}}
+async function addInteraction(){try{await apiPost('/api/interactions',{company_id:currentCompanyId,canal:document.getElementById('mIntCanal').value,resumo:document.getElementById('mIntResumo').value,proxima_acao:document.getElementById('mIntAcao').value,responsavel:currentUser});document.getElementById('mIntResumo').value='';loadModalData(currentCompanyId,currentCompany);}catch(e){alert('Erro: '+e.message);}}
+async function addConsulta(){try{await apiPost('/api/consultas',{company_id:currentCompanyId,seguradora:document.getElementById('mcSeg').value,modalidade:document.getElementById('mcMod').value,limite_aprovado:Number(document.getElementById('mcLimite').value)||null,taxa_pct_anual:Number(document.getElementById('mcTaxa').value)||null,status:document.getElementById('mcStatus').value,exige_mesa_credito:document.getElementById('mcMesa').value==='true',exige_carta_nomeacao:document.getElementById('mcCarta').value==='true',observacoes:document.getElementById('mcObs').value,responsavel:document.getElementById('mcResp').value});document.getElementById('mcObs').value='';loadModalData(currentCompanyId,currentCompany);}catch(e){alert('Erro: '+e.message);}}
+async function addProposta(){try{await apiPost('/api/propostas',{company_id:currentCompanyId,valor_garantia:Number(document.getElementById('mpValor').value),prazo_anos:Number(document.getElementById('mpPrazo').value),taxa:Number(document.getElementById('mpTaxa').value)/100,comissao_pct:Number(document.getElementById('mpCom').value),honorarios:Number(document.getElementById('mpHon').value)||0,teto_percepcao:Number(document.getElementById('mpTeto').value),created_by:currentUser});loadModalData(currentCompanyId,currentCompany);}catch(e){alert('Erro: '+e.message);}}
+function enrichCnpj(){alert('API CNPJ.ws não configurada. Configure em Settings.');}
+function enrichDecisor(){alert('API Apollo não configurada. Configure em Settings.');}
+function enrichFinanceiro(){alert('API Serasa não configurada. Configure em Settings.');}
+
+// ═══ MODULE 3: VF Solver ═════════════════════════════════════════════════════
+function calcSolver(){
+  const V=Number(document.getElementById('svValor').value)||0,P=Number(document.getElementById('svPrazo').value)||0,T=Number(document.getElementById('svTaxa').value)/100||0,C=Number(document.getElementById('svComissao').value)||0,teto=Number(document.getElementById('svTeto').value)||0;
+  const premio=V*T*P,comissao=premio*C/100,honorarios=Math.max(teto-premio,0),receita=comissao+honorarios,custo=premio+honorarios,relHon=premio>0?honorarios/premio:0;
+  const flag=(comissao+honorarios)>premio?(relHon<=2?'aderente':'atencao'):'fora_politica';
+  const flagL={aderente:'ADERENTE',atencao:'ATENÇÃO — Hon/Prêmio > 2x',fora_politica:'FORA DA POLÍTICA'};
+  document.getElementById('solverFlag').innerHTML=`<div class="solver-flag ${flag}">${flagL[flag]}</div>`;
+  document.getElementById('solverOutputs').innerHTML=[['Prêmio Bruto',premio,'accent'],['Comissão V&F',comissao,'green'],['Honorários',honorarios,'blue'],['Receita V&F',receita,'green'],['Custo Cliente',custo,''],['Hon/Prêmio',relHon.toFixed(1)+'x',relHon>2?'red':'']].map(([l,v,c])=>`<div class="solver-output-card"><div class="s-label">${l}</div><div class="s-value"${c?' style="color:var(--'+c+')"':''}>${typeof v==='number'?formatCurrency(v):v}</div></div>`).join('');
+  const rows=[];for(let t=0.50;t<=1.50;t+=0.25){const tx=t/100,pr=V*tx*P,cm=pr*C/100,hn=Math.max(teto-pr,0),rv=cm+hn,cc=pr+hn,rh=pr>0?hn/pr:0;const fl=(cm+hn)>pr?(rh<=2?'aderente':'atencao'):'fora_politica';const isRef=Math.abs(t-Number(document.getElementById('svTaxa').value))<0.01;rows.push(`<tr class="${isRef?'highlight':''}"><td>${t.toFixed(2)}%</td><td>${formatCurrency(pr)}</td><td>${formatCurrency(cm)}</td><td>${formatCurrency(hn)}</td><td>${formatCurrency(rv)}</td><td>${formatCurrency(cc)}</td><td>${rh.toFixed(1)}x</td><td><span class="status-badge ${fl==='aderente'?'status-aprovado':fl==='atencao'?'status-indicativo':'status-reprovado'}">${fl}</span></td></tr>`);}
+  document.getElementById('sensitivityBody').innerHTML=rows.join('');
+}
+
+// ═══ MODULE 4: Import + Filtros ══════════════════════════════════════════════
+async function handleImport(file){if(!file)return;const fd=new FormData();fd.append('file',file);try{const r=await fetch(API_BASE+'/api/companies/import',{method:'POST',body:fd});const res=await r.json();document.getElementById('importResult').style.display='';document.getElementById('importStats').innerHTML=`<div class="import-stat"><div class="num" style="color:var(--green)">${res.importadas||0}</div><div class="lbl">Importadas</div></div><div class="import-stat"><div class="num" style="color:var(--yellow)">${res.duplicatas||0}</div><div class="lbl">Duplicatas</div></div><div class="import-stat"><div class="num" style="color:var(--red)">${res.erros||0}</div><div class="lbl">Erros</div></div>`;document.getElementById('importErrors').innerHTML=(res.detalhes_erros||[]).slice(0,10).map(e=>`<div>${e}</div>`).join('');}catch(e){alert('Erro: '+e.message);}}
+async function applyFilters(){const p=new URLSearchParams();const v={score_min:['fScoreMin','0'],score_max:['fScoreMax','110'],uf:['fUf',''],responsavel:['fResp',''],estagio_pipeline:['fEstagio',''],seguradora_elegivel:['fSeguradora',''],simples_nacional:['fSimples',''],search:['fSearch','']};for(const[k,[id,def]]of Object.entries(v)){const val=document.getElementById(id).value;if(val&&val!==def)p.set(k,val);}const d=await apiFetch('/api/companies?'+p.toString());const cs=d||getDemoCompanies();document.getElementById('filterCount').textContent=`${cs.length} empresa(s)`;document.getElementById('filterResultsBody').innerHTML=cs.slice(0,200).map(c=>`<tr onclick="openCompany('${c.id}')" style="cursor:pointer"><td>${c.razao_social||'—'}</td><td>${c.cnpj}</td><td>${c.uf||'—'}</td><td>${formatCurrency(c.valor_aberto)}</td><td>${Number(c.score_vf||0).toFixed(0)}</td><td>${c.situacao_processual||'—'}</td><td>${c.estagio_pipeline||'—'}</td><td>${c.responsavel||'—'}</td></tr>`).join('');}
+function clearFilters(){['fScoreMin','fScoreMax','fUf','fResp','fEstagio','fSeguradora','fSimples','fSearch'].forEach(id=>{const el=document.getElementById(id);el.value=id==='fScoreMin'?'0':id==='fScoreMax'?'110':'';});document.getElementById('filterResultsBody').innerHTML='';document.getElementById('filterCount').textContent='';}
+
+// ═══ MODULE 5: Settings ══════════════════════════════════════════════════════
+async function saveSettings(){const keys={comissao_padrao:'setCom',taxa_minima_padrao:'setTaxa',teto_percepcao_min:'setTetoMin',teto_percepcao_max:'setTetoMax',relacao_hon_premio_max:'setHonMax'};for(const[k,id]of Object.entries(keys)){try{await apiPut(`/api/settings/${k}`,{value:document.getElementById(id).value,updated_by:currentUser});}catch(e){}}alert('Parâmetros salvos!');}
+async function testApis(){const apis=[{name:'CNPJ.ws',url:'/api/enrich/cnpj/00000000000000'},{name:'Serasa',url:'/api/enrich/financeiro/00000000000000'},{name:'Apollo',url:'/api/enrich/decisor/00000000000000'}];const r=[];for(const a of apis){const d=await apiFetch(a.url);r.push(`${a.name}: ${d?.status==='not_configured'?'NÃO CONFIGURADA':d?'OK':'OFFLINE'}`);}alert(r.join('\n'));}
+async function exportBackup(){const d=await apiFetch('/api/companies?limit=5000');if(!d){alert('API indisponível');return;}const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`vf_crm_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();}
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   loadDashboard();
+  calcSolver();
+  // Upload zone drag events
+  const zone=document.getElementById('uploadZone');
+  if(zone){zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('dragover');});zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('dragover');if(e.dataTransfer.files[0])handleImport(e.dataTransfer.files[0]);});}
+  // Populate estágio filter
+  const sel=document.getElementById('fEstagio');if(sel)F1_STAGES.forEach(s=>{const o=document.createElement('option');o.textContent=s;sel.appendChild(o);});
 });
 </script>
 </body>
