@@ -174,8 +174,11 @@ async def get_company(
 async def update_company(
     company_id: uuid.UUID,
     update: CompanyUpdate,
+    force: bool = Query(False, description="Force stage change bypassing validation"),
     db: AsyncSession = Depends(get_db),
 ):
+    from ..validation import validate_transition
+
     result = await db.execute(select(Company).where(Company.id == company_id))
     company = result.scalar_one_or_none()
     if not company:
@@ -183,18 +186,37 @@ async def update_company(
 
     data = update.model_dump(exclude_unset=True)
 
-    # Track stage changes
+    # Track stage changes with validation
     if "estagio_pipeline" in data and data["estagio_pipeline"] != company.estagio_pipeline:
         old_stage = company.estagio_pipeline
+        new_stage = data["estagio_pipeline"]
+
+        # Validate transition unless forced
+        if not force and old_stage:
+            valid, missing = await validate_transition(db, company_id, old_stage, new_stage)
+            if not valid:
+                raise HTTPException(
+                    422,
+                    detail={
+                        "message": f"Transição {old_stage} → {new_stage} bloqueada",
+                        "missing": missing,
+                        "hint": "Use ?force=true para forçar (será registrado como override)",
+                    }
+                )
+
         company.data_entrada_estagio = datetime.utcnow()
-        # Auto-create interaction for stage change
+        canal = "Override" if force else "Interno"
+        resumo = f"Estágio alterado: {old_stage} → {new_stage}"
+        if force:
+            resumo += " (OVERRIDE — validação ignorada)"
+
         interaction = Interaction(
             company_id=company_id,
             responsavel=data.get("updated_by", "Sistema"),
-            canal="Interno",
-            resumo=f"Estágio alterado: {old_stage} → {data['estagio_pipeline']}",
+            canal=canal,
+            resumo=resumo,
             estagio_anterior=old_stage,
-            estagio_novo=data["estagio_pipeline"],
+            estagio_novo=new_stage,
         )
         db.add(interaction)
 
