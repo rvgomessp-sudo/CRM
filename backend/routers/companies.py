@@ -2,7 +2,7 @@
 
 import io
 import uuid
-from datetime import datetime
+from datetime import datetime, date
 from decimal import Decimal, InvalidOperation
 from typing import Optional, List
 
@@ -23,6 +23,7 @@ COLUMN_MAP = {
     "razão social": "razao_social",
     "razao social": "razao_social",
     "cnpj": "cnpj",
+    "cnpj completo": "cnpj",
     "uf": "uf",
     "score vf": "score_vf",
     "score": "score_vf",
@@ -30,20 +31,37 @@ COLUMN_MAP = {
     "faixa de valor": "faixa_valor",
     "faixa valor": "faixa_valor",
     "valor aberto": "valor_aberto",
+    "valor aberto (r$)": "valor_aberto",
     "total consolidado": "valor_aberto",
     "qtd inscrições": "qtd_inscricoes",
     "qtd inscricoes": "qtd_inscricoes",
+    "qtd. inscrições": "qtd_inscricoes",
     "quantidade de inscrições": "qtd_inscricoes",
     "anos pgfn": "anos_pgfn",
+    "anos na pgfn": "anos_pgfn",
     "ano última inscrição": "ano_ult_inscricao",
+    "ano últ. inscrição": "ano_ult_inscricao",
     "ano ult inscricao": "ano_ult_inscricao",
     "situação processual": "situacao_processual",
     "situacao processual": "situacao_processual",
+    "situações presentes": "situacao_processual",
     "receita principal": "receita_principal",
     "simples nacional": "simples_nacional",
     "seguradora elegível": "seguradora_elegivel",
     "seguradora elegivel": "seguradora_elegivel",
     "seguradora": "seguradora_elegivel",
+    "estágio pipeline": "estagio_pipeline",
+    "estagio pipeline": "estagio_pipeline",
+    "responsável v&f": "responsavel",
+    "responsavel": "responsavel",
+    "próximo follow-up": "proximo_followup",
+    "proximo followup": "proximo_followup",
+    "contato (nome)": "decisor_nome",
+    "contato": "decisor_nome",
+    "telefone": "decisor_telefone",
+    "e-mail": "decisor_email",
+    "email": "decisor_email",
+    "porte": "porte",
 }
 
 
@@ -65,6 +83,28 @@ def _safe_int(val) -> Optional[int]:
         return None
     try:
         return int(float(str(val)))
+    except (ValueError, TypeError):
+        return None
+
+
+def _safe_date(val):
+    if val is None:
+        return None
+    if isinstance(val, date):
+        return val
+    if isinstance(val, datetime):
+        return val.date()
+    try:
+        s = str(val).strip()
+        if not s or s in ("", "-", "None"):
+            return None
+        # Try common formats
+        for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(s, fmt).date()
+            except ValueError:
+                continue
+        return None
     except (ValueError, TypeError):
         return None
 
@@ -262,6 +302,27 @@ async def import_companies(
     errors = []
 
     for sheet in wb.sheetnames:
+        # Skip non-data sheets
+        sheet_lower = sheet.lower()
+        if "painel" in sheet_lower or "resumo" in sheet_lower:
+            continue
+
+        # Detect frente/seguradora from sheet name
+        sheet_frente = None
+        sheet_seguradora = None
+        if "sancor" in sheet_lower:
+            sheet_frente = 1
+            sheet_seguradora = "Sancor"
+        elif "berkley" in sheet_lower:
+            sheet_frente = 2
+            sheet_seguradora = "Berkley"
+        elif "zurich" in sheet_lower or "swiss" in sheet_lower or "chubb" in sheet_lower:
+            sheet_frente = 2
+            sheet_seguradora = "Zurich/Swiss/Chubb"
+        elif "completa" in sheet_lower or "base" in sheet_lower:
+            sheet_frente = 1
+            sheet_seguradora = "Sancor"
+
         ws = wb[sheet]
         header_row = None
         header_map = {}
@@ -269,7 +330,7 @@ async def import_companies(
         # Find header row (contains "Empresa" or "CNPJ")
         for row_idx, row in enumerate(ws.iter_rows(max_row=30, values_only=False), 1):
             values = [str(c.value).strip().lower() if c.value else "" for c in row]
-            has_key = any(v in ("empresa", "cnpj", "razão social", "razao social") for v in values)
+            has_key = any(v in ("empresa", "cnpj", "cnpj completo", "razão social", "razao social") for v in values)
             if has_key:
                 header_row = row_idx
                 for col_idx, val in enumerate(values):
@@ -299,37 +360,69 @@ async def import_companies(
             else:
                 continue
 
-            # Check duplicate
-            existing = await db.execute(select(Company).where(Company.cnpj == cnpj))
-            if existing.scalar_one_or_none():
-                result.duplicatas += 1
-                continue
-
             try:
-                company_data = {"cnpj": cnpj}
+                # Parse row into field dict
+                row_data = {}
                 for col_idx, field_name in header_map.items():
                     if field_name == "cnpj":
                         continue
                     val = row[col_idx] if col_idx < len(row) else None
                     if val is None:
                         continue
-
                     if field_name in ("score_vf", "valor_aberto", "anos_pgfn"):
-                        company_data[field_name] = _safe_decimal(val)
+                        row_data[field_name] = _safe_decimal(val)
                     elif field_name in ("qtd_inscricoes", "ano_ult_inscricao"):
-                        company_data[field_name] = _safe_int(val)
+                        row_data[field_name] = _safe_int(val)
                     elif field_name == "simples_nacional":
-                        company_data[field_name] = _safe_bool(val)
+                        row_data[field_name] = _safe_bool(val)
+                    elif field_name in ("proximo_followup", "data_proposta", "data_emissao", "data_balanco"):
+                        row_data[field_name] = _safe_date(val)
                     else:
-                        company_data[field_name] = str(val).strip() if val else None
+                        row_data[field_name] = str(val).strip() if val else None
 
-                obj = Company(**company_data)
-                obj.status = "active"
-                obj.enrichment_status = "pgfn_only"
-                obj.estagio_pipeline = "Base PGFN"
-                obj.data_entrada_estagio = datetime.utcnow()
-                db.add(obj)
-                result.importadas += 1
+                # Check if CNPJ already exists — consolidate inscriptions
+                existing_q = await db.execute(select(Company).where(Company.cnpj == cnpj))
+                existing = existing_q.scalar_one_or_none()
+
+                row_valor = row_data.get("valor_aberto") or Decimal("0")
+
+                if existing:
+                    # Consolidate: sum valor_aberto, increment qtd_inscricoes
+                    existing.valor_aberto = (existing.valor_aberto or Decimal("0")) + row_valor
+                    existing.qtd_inscricoes = (existing.qtd_inscricoes or 0) + 1
+                    # Keep highest score
+                    new_score = row_data.get("score_vf")
+                    if new_score and (not existing.score_vf or new_score > existing.score_vf):
+                        existing.score_vf = new_score
+                    # Merge situacao_processual (append if different)
+                    new_sit = row_data.get("situacao_processual")
+                    if new_sit and existing.situacao_processual and new_sit not in existing.situacao_processual:
+                        existing.situacao_processual = existing.situacao_processual + " | " + new_sit
+                    elif new_sit and not existing.situacao_processual:
+                        existing.situacao_processual = new_sit
+                    # Fill empty fields from new row (decisor, telefone, email, etc)
+                    for field in ("decisor_nome", "decisor_telefone", "decisor_email", "porte",
+                                  "receita_principal", "responsavel"):
+                        new_val = row_data.get(field)
+                        if new_val and not getattr(existing, field, None):
+                            setattr(existing, field, new_val)
+                    result.duplicatas += 1  # count as consolidated
+                else:
+                    # New company
+                    obj = Company(cnpj=cnpj, **row_data)
+                    obj.status = "active"
+                    obj.enrichment_status = "pgfn_only"
+                    if not obj.estagio_pipeline:
+                        obj.estagio_pipeline = "Base PGFN"
+                    obj.data_entrada_estagio = datetime.utcnow()
+                    if not obj.qtd_inscricoes:
+                        obj.qtd_inscricoes = 1
+                    if sheet_frente and not obj.frente:
+                        obj.frente = sheet_frente
+                    if sheet_seguradora and not obj.seguradora_elegivel:
+                        obj.seguradora_elegivel = sheet_seguradora
+                    db.add(obj)
+                    result.importadas += 1
             except Exception as e:
                 result.erros += 1
                 errors.append(f"CNPJ {cnpj}: {str(e)}")

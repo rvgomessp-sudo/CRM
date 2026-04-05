@@ -8,12 +8,27 @@ from typing import Optional, List
 from pydantic import BaseModel, Field
 from sqlalchemy import (
     Column, String, Integer, Boolean, DateTime, Date, Numeric, Text,
-    ForeignKey, func
+    ForeignKey, func, TypeDecorator
 )
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from .database import Base
+
+
+class UUIDType(TypeDecorator):
+    """Platform-agnostic UUID type. Uses String(36) for SQLite, native UUID for PG."""
+    impl = String(36)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            return str(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return uuid.UUID(value) if not isinstance(value, uuid.UUID) else value
+        return value
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -23,7 +38,7 @@ from .database import Base
 class Company(Base):
     __tablename__ = "companies"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
     cnpj = Column(String(18), unique=True, nullable=False)
     razao_social = Column(String(255))
     uf = Column(String(2))
@@ -96,8 +111,8 @@ class Company(Base):
 class Interaction(Base):
     __tablename__ = "interactions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUIDType, ForeignKey("companies.id"), nullable=False)
     data_hora = Column(DateTime, default=func.now())
     responsavel = Column(String(20))
     canal = Column(String(30))
@@ -122,8 +137,8 @@ class Inscricao(Base):
     """Individual PGFN inscription entries per company."""
     __tablename__ = "inscricoes"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUIDType, ForeignKey("companies.id"), nullable=False)
     numero_inscricao = Column(String(50), unique=True)
     cnpj = Column(String(18))
     cnpj_raiz = Column(String(10))
@@ -152,8 +167,8 @@ class ConsultaSeguradora(Base):
     """Structured insurer query results (Sancor/Berkley)."""
     __tablename__ = "consultas_seguradora"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUIDType, ForeignKey("companies.id"), nullable=False)
     data_consulta = Column(DateTime, default=func.now())
     seguradora = Column(String(50), default="Sancor")
     modalidade = Column(String(100))
@@ -178,8 +193,8 @@ class Documento(Base):
     """Document tracking per company."""
     __tablename__ = "documentos"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUIDType, ForeignKey("companies.id"), nullable=False)
     tipo = Column(String(50))  # balanco_dre|balancete|contrato_social|ficha_judicial|ir_socios|covenants|minuta|ccg|carta_nomeacao|nda
     status = Column(String(20), default="pendente")  # pendente|recebido|enviado|validado
     data_recebimento = Column(Date)
@@ -196,8 +211,8 @@ class Proposta(Base):
     """Proposal/operation entity — separated from company."""
     __tablename__ = "propostas"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    company_id = Column(UUID(as_uuid=True), ForeignKey("companies.id"), nullable=False)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    company_id = Column(UUIDType, ForeignKey("companies.id"), nullable=False)
     numero_proposta = Column(String(50))
     valor_garantia = Column(Numeric(15, 2))
     prazo_anos = Column(Integer)
@@ -229,7 +244,7 @@ class Meta(Base):
     """Per-user targets vs actual."""
     __tablename__ = "metas"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
     responsavel = Column(String(20), nullable=False)
     periodo = Column(String(10), nullable=False)  # YYYY-MM
     tipo = Column(String(50), nullable=False)
