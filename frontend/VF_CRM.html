@@ -8,24 +8,25 @@
 /* ─── Reset & Base ────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
-  --bg: #0f1117;
-  --bg-card: #1a1d27;
-  --bg-card-hover: #222633;
-  --border: #2a2e3d;
-  --text: #e4e4e7;
-  --text-muted: #8b8fa3;
-  --accent: #6366f1;
-  --accent-light: #818cf8;
-  --green: #22c55e;
-  --green-bg: rgba(34,197,94,0.12);
-  --yellow: #eab308;
-  --yellow-bg: rgba(234,179,8,0.12);
-  --red: #ef4444;
-  --red-bg: rgba(239,68,68,0.12);
-  --blue: #3b82f6;
-  --blue-bg: rgba(59,130,246,0.12);
+  /* Paleta Grupo V&F: vermelho cereja, branco pérola, cinza chumbo */
+  --bg: #2b2d31;             /* cinza chumbo escuro (fundo) */
+  --bg-card: #36383f;        /* cinza chumbo médio (cards) */
+  --bg-card-hover: #41444c;  /* cinza chumbo hover */
+  --border: #4a4d56;         /* cinza chumbo borda */
+  --text: #f5f1ea;           /* branco pérola */
+  --text-muted: #a8a4a0;     /* cinza pérola suave */
+  --accent: #c8102e;         /* vermelho cereja V&F */
+  --accent-light: #e63946;   /* vermelho cereja claro */
+  --green: #2d8a4e;
+  --green-bg: rgba(45,138,78,0.15);
+  --yellow: #d4a017;
+  --yellow-bg: rgba(212,160,23,0.15);
+  --red: #c8102e;
+  --red-bg: rgba(200,16,46,0.15);
+  --blue: #4a6fa5;
+  --blue-bg: rgba(74,111,165,0.15);
   --radius: 8px;
-  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
 html { font-size: 14px; }
 body {
@@ -58,6 +59,10 @@ a { color: var(--accent-light); text-decoration: none; }
   border-bottom: 1px solid var(--border);
 }
 .sidebar-logo span { color: var(--text-muted); font-weight: 400; font-size: 0.8rem; display: block; margin-top: 2px; }
+.api-status { margin: 8px 12px; padding: 8px 10px; background: var(--red-bg); border: 1px solid var(--red); border-radius: 6px; color: var(--red); font-size: 0.72rem; }
+.api-status strong { display: block; }
+.api-status small { color: var(--text-muted); font-size: 0.68rem; }
+.api-status.hidden { display: none; }
 .sidebar-nav { flex: 1; padding: 12px 0; }
 .nav-item {
   display: flex;
@@ -522,8 +527,12 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
   <!-- ─── Sidebar ──────────────────────────────────────────────────────── -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      V&F CRM
-      <span>Seguro Garantia v2.0</span>
+      Grupo V&F
+      <span>CRM Seguro Garantia</span>
+    </div>
+    <div id="apiStatus" class="api-status hidden">
+      <strong>Backend offline</strong>
+      <small>Inicie o servidor local na porta 8000 para usar todos os recursos</small>
     </div>
     <nav class="sidebar-nav">
       <div class="nav-item active" data-page="dashboard">
@@ -911,9 +920,16 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+// API base: use localhost when serving from file:// or local hostname, else same-origin
+const API_BASE = (window.location.protocol === 'file:' ||
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1' ||
+  window.location.hostname === '')
   ? 'http://localhost:8000'
-  : '';  // Same origin in production
+  : '';
+
+function showApiOffline(){const el=document.getElementById('apiStatus');if(el)el.classList.remove('hidden');}
+function hideApiOffline(){const el=document.getElementById('apiStatus');if(el)el.classList.add('hidden');}
 
 let currentUser = 'Rodrigo';
 let dashView = 'rodrigo';
@@ -968,63 +984,27 @@ function formatCurrency(val) {
   return 'R$ ' + Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-// ─── Demo data (when API not available) ──────────────────────────────────────
-function getDemoData() {
-  return {
-    total_companies: 847,
-    total_active: 312,
-    followups_vencidos: 8,
-    empresas_triar: 45,
-    propostas_pendentes: 12,
-    receita_projetada: 1850000,
-    receita_realizada: 420000,
-    pipeline_f1: {
-      'Base PGFN': 180, 'Enriquecimento': 42, 'Abordagem': 35,
-      'Interesse Manifesto': 18, 'Análise Rápida': 12, 'Proposta Enviada': 8,
-      'Submetido Sancor': 5, 'Aprovado': 3, 'Fechado': 2, 'Receita Realizada': 7
-    },
-    pipeline_f2: {
-      'Qualificação': 15, 'Diagnóstico': 8, 'Engenharia de Balanço': 5,
-      'Narrativa/Dossiê': 3, 'Comitê': 2, 'Aprovado': 1, 'Fechado': 1, 'Receita Realizada': 2
-    },
-    por_seguradora: { 'Sancor': 180, 'Berkley': 45, 'Zurich': 28, 'Swiss Re': 12, 'Chubb': 8 },
-    por_rating: { 'A+': 25, 'A': 68, 'A-': 92, 'B+': 78, 'B': 49 }
-  };
-}
-
-function getDemoFollowups() {
-  const today = new Date();
-  const names = [
-    'Construtora Alpha Ltda', 'Metalúrgica Beta S/A', 'Indústrias Gama',
-    'Transportes Delta', 'Tech Epsilon', 'Agro Zeta', 'Comercial Eta', 'Pharma Theta'
-  ];
-  return names.map((name, i) => {
-    const d = new Date(today);
-    d.setDate(d.getDate() - (i > 3 ? i - 3 : 0) + (i <= 3 ? 0 : 0));
-    return {
-      id: 'demo-' + i,
-      razao_social: name,
-      cnpj: '00.000.000/0001-0' + i,
-      proximo_followup: d.toISOString().split('T')[0],
-      estagio_pipeline: ['Abordagem', 'Interesse Manifesto', 'Proposta Enviada', 'Diagnóstico'][i % 4],
-      responsavel: i % 2 === 0 ? 'Anna' : 'Rodrigo',
-      frente: i < 5 ? 1 : 2
-    };
-  });
-}
+// (Demo data removed — frontend shows real data only)
 
 // ─── Render Dashboard ────────────────────────────────────────────────────────
 async function loadDashboard() {
   // Fetch data
   const apiData = await apiFetch('/api/dashboard');
-  dashboardData = apiData || getDemoData();
+  if (!apiData) {
+    showApiOffline();
+    dashboardData = { total_companies:0, total_active:0, followups_vencidos:0, empresas_triar:0,
+      propostas_pendentes:0, receita_projetada:0, receita_realizada:0,
+      pipeline_f1:Object.fromEntries(F1_STAGES.map(s=>[s,0])),
+      pipeline_f2:{}, por_seguradora:{}, por_rating:{} };
+  } else {
+    hideApiOffline();
+    dashboardData = apiData;
+  }
 
   // Fetch follow-ups
   const respParam = dashView !== 'todos' ? `?responsavel=${currentUser}` : '';
   const apiFollowups = await apiFetch('/api/followups' + respParam);
-  followupsData = apiFollowups || getDemoFollowups().filter(f =>
-    dashView === 'todos' || f.responsavel === currentUser
-  );
+  followupsData = apiFollowups || [];
 
   renderKPIs();
   renderFunnels();
@@ -1143,9 +1123,9 @@ let pipelineCompanies=[], pipelineView='kanban', currentCompanyId=null, currentC
 
 function setPipelineView(v){pipelineView=v;document.querySelectorAll('[data-pview]').forEach(b=>b.classList.toggle('active',b.dataset.pview===v));document.getElementById('kanbanView').style.display=v==='kanban'?'':'none';document.getElementById('esteiraView').style.display=v==='esteira'?'':'none';}
 
-function getDemoCompanies(){const nm=['Construtora Alpha','Metalúrgica Beta','Indústrias Gama','Transportes Delta','Tech Epsilon','Agro Zeta','Comercial Eta','Pharma Theta','Logística Iota','Energia Kappa','Alimentos Lambda','Química Mu','Telecom Nu','Mining Xi','Engenharia Omicron','Varejo Pi','Serviços Rho','Financeira Sigma','Têxtil Tau','Auto Upsilon'];return nm.map((n,i)=>({id:'demo-'+i,razao_social:n+' Ltda',cnpj:`${10+i}.000.000/0001-0${i%10}`,uf:'SP',valor_aberto:(1+Math.random()*4)*1e6,score_vf:50+Math.random()*50,situacao_processual:i%3===0?'AJUIZADA_SEM_GAR':'COBRANÇA',estagio_pipeline:F1_STAGES[Math.min(i%10,9)],frente:1,responsavel:i%2===0?'Anna':'Rodrigo',data_entrada_estagio:new Date(Date.now()-(i*2+1)*864e5).toISOString(),proximo_followup:i%3===0?new Date().toISOString().split('T')[0]:null}));}
+// (Demo companies removed)
 
-async function loadPipeline(){const d=await apiFetch('/api/companies?frente=1&status=active&limit=2000');pipelineCompanies=d||getDemoCompanies();renderKanban();renderEsteira();}
+async function loadPipeline(){const d=await apiFetch('/api/companies?frente=1&status=active&limit=2000');if(!d){showApiOffline();pipelineCompanies=[];}else{hideApiOffline();pipelineCompanies=d;}renderKanban();renderEsteira();}
 
 function renderKanban(){const board=document.getElementById('kanbanBoard');const g={};F1_STAGES.forEach(s=>g[s]=[]);pipelineCompanies.forEach(c=>{const st=c.estagio_pipeline||'Base PGFN';if(g[st])g[st].push(c);else g['Base PGFN'].push(c);});board.innerHTML=F1_STAGES.map(stage=>{const cards=g[stage]||[];return`<div class="kanban-col" data-stage="${stage}" ondragover="event.preventDefault();this.classList.add('drop-over')" ondragleave="this.classList.remove('drop-over')" ondrop="handleDrop(event,'${stage}')"><div class="kanban-col-header"><span>${stage}</span><span class="count">${cards.length}</span></div><div class="kanban-col-body">${cards.map(c=>renderCard(c)).join('')}</div></div>`;}).join('');}
 
@@ -1197,8 +1177,25 @@ function calcSolver(){
 }
 
 // ═══ MODULE 4: Import + Filtros ══════════════════════════════════════════════
-async function handleImport(file){if(!file)return;const fd=new FormData();fd.append('file',file);try{const r=await fetch(API_BASE+'/api/companies/import',{method:'POST',body:fd});const res=await r.json();document.getElementById('importResult').style.display='';document.getElementById('importStats').innerHTML=`<div class="import-stat"><div class="num" style="color:var(--green)">${res.importadas||0}</div><div class="lbl">Importadas</div></div><div class="import-stat"><div class="num" style="color:var(--yellow)">${res.duplicatas||0}</div><div class="lbl">Duplicatas</div></div><div class="import-stat"><div class="num" style="color:var(--red)">${res.erros||0}</div><div class="lbl">Erros</div></div>`;document.getElementById('importErrors').innerHTML=(res.detalhes_erros||[]).slice(0,10).map(e=>`<div>${e}</div>`).join('');}catch(e){alert('Erro: '+e.message);}}
-async function applyFilters(){const p=new URLSearchParams();const v={score_min:['fScoreMin','0'],score_max:['fScoreMax','110'],uf:['fUf',''],responsavel:['fResp',''],estagio_pipeline:['fEstagio',''],seguradora_elegivel:['fSeguradora',''],simples_nacional:['fSimples',''],search:['fSearch','']};for(const[k,[id,def]]of Object.entries(v)){const val=document.getElementById(id).value;if(val&&val!==def)p.set(k,val);}const d=await apiFetch('/api/companies?'+p.toString());const cs=d||getDemoCompanies();document.getElementById('filterCount').textContent=`${cs.length} empresa(s)`;document.getElementById('filterResultsBody').innerHTML=cs.slice(0,200).map(c=>`<tr onclick="openCompany('${c.id}')" style="cursor:pointer"><td>${c.razao_social||'—'}</td><td>${c.cnpj}</td><td>${c.uf||'—'}</td><td>${formatCurrency(c.valor_aberto)}</td><td>${Number(c.score_vf||0).toFixed(0)}</td><td>${c.situacao_processual||'—'}</td><td>${c.estagio_pipeline||'—'}</td><td>${c.responsavel||'—'}</td></tr>`).join('');}
+async function handleImport(file){
+  if(!file)return;
+  const fd=new FormData();fd.append('file',file);
+  try{
+    const r=await fetch(API_BASE+'/api/companies/import',{method:'POST',body:fd});
+    if(!r.ok){throw new Error(`HTTP ${r.status}: ${await r.text()}`);}
+    const res=await r.json();
+    hideApiOffline();
+    document.getElementById('importResult').style.display='';
+    document.getElementById('importStats').innerHTML=`<div class="import-stat"><div class="num" style="color:var(--green)">${res.importadas||0}</div><div class="lbl">Importadas</div></div><div class="import-stat"><div class="num" style="color:var(--yellow)">${res.duplicatas||0}</div><div class="lbl">Consolidadas</div></div><div class="import-stat"><div class="num" style="color:var(--red)">${res.erros||0}</div><div class="lbl">Erros</div></div>`;
+    document.getElementById('importErrors').innerHTML=(res.detalhes_erros||[]).slice(0,10).map(e=>`<div>${e}</div>`).join('');
+    // Refresh dashboard and pipeline after import
+    setTimeout(()=>{loadDashboard();loadPipeline();},500);
+  }catch(e){
+    showApiOffline();
+    alert('Falha na importação. O backend não está rodando.\n\nPara iniciar:\n1. Abra o terminal na pasta do projeto\n2. Execute: uvicorn backend.main:app --port 8000\n3. Tente importar novamente.\n\nDetalhe técnico: '+e.message);
+  }
+}
+async function applyFilters(){const p=new URLSearchParams();const v={score_min:['fScoreMin','0'],score_max:['fScoreMax','110'],uf:['fUf',''],responsavel:['fResp',''],estagio_pipeline:['fEstagio',''],seguradora_elegivel:['fSeguradora',''],simples_nacional:['fSimples',''],search:['fSearch','']};for(const[k,[id,def]]of Object.entries(v)){const val=document.getElementById(id).value;if(val&&val!==def)p.set(k,val);}const d=await apiFetch('/api/companies?'+p.toString());if(!d){showApiOffline();document.getElementById('filterCount').textContent='Backend offline';document.getElementById('filterResultsBody').innerHTML='';return;}hideApiOffline();const cs=d;document.getElementById('filterCount').textContent=`${cs.length} empresa(s)`;document.getElementById('filterResultsBody').innerHTML=cs.slice(0,200).map(c=>`<tr onclick="openCompany('${c.id}')" style="cursor:pointer"><td>${c.razao_social||'—'}</td><td>${c.cnpj}</td><td>${c.uf||'—'}</td><td>${formatCurrency(c.valor_aberto)}</td><td>${Number(c.score_vf||0).toFixed(0)}</td><td>${c.situacao_processual||'—'}</td><td>${c.estagio_pipeline||'—'}</td><td>${c.responsavel||'—'}</td></tr>`).join('');}
 function clearFilters(){['fScoreMin','fScoreMax','fUf','fResp','fEstagio','fSeguradora','fSimples','fSearch'].forEach(id=>{const el=document.getElementById(id);el.value=id==='fScoreMin'?'0':id==='fScoreMax'?'110':'';});document.getElementById('filterResultsBody').innerHTML='';document.getElementById('filterCount').textContent='';}
 
 // ═══ MODULE 5: Settings ══════════════════════════════════════════════════════
