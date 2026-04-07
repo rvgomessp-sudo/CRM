@@ -1368,7 +1368,19 @@ async function handleDrop(ev,newStage){ev.preventDefault();ev.currentTarget.clas
 function renderEsteira(){document.getElementById('esteiraBody').innerHTML=pipelineCompanies.map(c=>{const d=daysInStage(c.data_entrada_estagio);return`<tr onclick="openCompany('${c.id}')" style="cursor:pointer"><td>${c.razao_social||'—'}</td><td>${c.cnpj}</td><td>${c.uf||'—'}</td><td>${formatCurrency(c.valor_aberto)}</td><td>${Number(c.score_vf||0).toFixed(0)}</td><td>${c.situacao_processual||'—'}</td><td>${c.estagio_pipeline||'—'}</td><td>${(c.responsavel||'—')[0]}</td><td class="${d>7?'k-days alert':''}">${d}d</td></tr>`;}).join('');}
 
 // ─── Company Modal ───────────────────────────────────────────────────────────
-function openCompany(id){currentCompanyId=id;const c=pipelineCompanies.find(x=>x.id===id)||(followupsData||[]).find(x=>x.id===id);if(!c){alert('Empresa não encontrada');return;}currentCompany=c;document.getElementById('modalTitle').textContent=c.razao_social||c.cnpj;setModalTab(0);document.getElementById('companyModal').classList.add('open');loadModalData(id,c);}
+async function openCompany(id){
+  currentCompanyId=id;
+  // Try local caches first (fast)
+  let c=pipelineCompanies.find(x=>x.id===id)||(followupsData||[]).find(x=>x.id===id);
+  // Fallback: fetch from API by ID (works for filter results, search, etc)
+  if(!c){c=await apiFetch('/api/companies/'+id);}
+  if(!c){alert('Empresa não encontrada');return;}
+  currentCompany=c;
+  document.getElementById('modalTitle').textContent=c.razao_social||c.cnpj;
+  setModalTab(0);
+  document.getElementById('companyModal').classList.add('open');
+  loadModalData(id,c);
+}
 function closeModal(){document.getElementById('companyModal').classList.remove('open');}
 function setModalTab(idx){document.querySelectorAll('.modal-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));document.querySelectorAll('.tab-pane').forEach((p,i)=>p.classList.toggle('active',i===idx));}
 
