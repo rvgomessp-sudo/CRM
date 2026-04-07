@@ -139,7 +139,7 @@ async def list_companies(
     simples_nacional: Optional[bool] = None,
     enrichment_status: Optional[str] = None,
     search: Optional[str] = None,
-    limit: int = Query(500, le=5000),
+    limit: int = Query(2000, le=10000),
     offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
@@ -284,6 +284,21 @@ async def archive_company(
     return {"message": "Company archived"}
 
 
+@router.post("/backfill-frente")
+async def backfill_frente(db: AsyncSession = Depends(get_db)):
+    """Backfill frente=1 and seguradora=Sancor on companies where they are NULL.
+    Useful after importing an XLSX whose sheet name didn't match auto-detection."""
+    from sqlalchemy import update
+    r1 = await db.execute(
+        update(Company).where(Company.frente.is_(None)).values(frente=1)
+    )
+    r2 = await db.execute(
+        update(Company).where(Company.seguradora_elegivel.is_(None)).values(seguradora_elegivel="Sancor")
+    )
+    await db.flush()
+    return {"frente_updated": r1.rowcount, "seguradora_updated": r2.rowcount}
+
+
 @router.post("/import", response_model=ImportResult)
 async def import_companies(
     file: UploadFile = File(...),
@@ -419,10 +434,9 @@ async def import_companies(
                     obj.data_entrada_estagio = datetime.utcnow()
                     if not obj.qtd_inscricoes:
                         obj.qtd_inscricoes = 1
-                    if sheet_frente and not obj.frente:
-                        obj.frente = sheet_frente
-                    if sheet_seguradora and not obj.seguradora_elegivel:
-                        obj.seguradora_elegivel = sheet_seguradora
+                    # Default frente=1 (Fase 1 = Sancor only). Sheet detection overrides.
+                    obj.frente = sheet_frente or obj.frente or 1
+                    obj.seguradora_elegivel = sheet_seguradora or obj.seguradora_elegivel or "Sancor"
                     db.add(obj)
                     result.importadas += 1
 
