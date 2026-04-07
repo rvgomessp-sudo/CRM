@@ -425,6 +425,10 @@ async def import_companies(
                         obj.seguradora_elegivel = sheet_seguradora
                     db.add(obj)
                     result.importadas += 1
+
+                # Periodic flush every 500 rows to avoid huge single transaction
+                if (result.importadas + result.duplicatas) % 500 == 0:
+                    await db.flush()
             except Exception as e:
                 result.erros += 1
                 errors.append(f"CNPJ {cnpj}: {str(e)}")
