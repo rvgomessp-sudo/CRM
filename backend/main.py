@@ -34,6 +34,32 @@ async def lifespan(app: FastAPI):
     # In production, Alembic handles schema via the Dockerfile CMD.
     if os.getenv("SKIP_INIT_DB", "false").lower() not in ("true", "1", "yes"):
         await init_db()
+
+    # Auto-backfill: corrige empresas com frente=NULL ou seguradora=NULL
+    # (acontece quando importação foi feita antes da correção que default frente=1)
+    try:
+        from sqlalchemy import update, select, func
+        from .database import async_session
+        from .models import Company
+        async with async_session() as session:
+            # Count companies needing backfill
+            r = await session.execute(
+                select(func.count(Company.id)).where(Company.frente.is_(None))
+            )
+            null_count = r.scalar() or 0
+            if null_count > 0:
+                print(f"[startup] Backfill: corrigindo {null_count} empresas com frente=NULL")
+                await session.execute(
+                    update(Company).where(Company.frente.is_(None)).values(frente=1)
+                )
+                await session.execute(
+                    update(Company).where(Company.seguradora_elegivel.is_(None)).values(seguradora_elegivel="Sancor")
+                )
+                await session.commit()
+                print(f"[startup] Backfill concluído")
+    except Exception as e:
+        print(f"[startup] Backfill falhou (não crítico): {e}")
+
     yield
 
 
