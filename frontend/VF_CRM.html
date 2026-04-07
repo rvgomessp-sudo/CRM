@@ -539,6 +539,21 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
 </head>
 <body>
 
+<!-- ═══ Backend Config Screen (first-time setup) ═══════════════════════════ -->
+<div class="login-overlay hidden" id="configScreen">
+  <div class="login-box">
+    <div class="login-logo">Grupo V&F<span>Configurar Backend</span></div>
+    <p style="margin-top:16px;font-size:0.85rem;color:var(--text-muted);text-align:center">
+      Cole a URL do backend (Railway). Ex: <code style="color:var(--accent-light)">https://vf-crm.up.railway.app</code>
+    </p>
+    <form class="login-form" onsubmit="return saveBackendUrl(event)">
+      <input type="url" id="cfgUrl" placeholder="https://seu-backend.up.railway.app" required>
+      <button type="submit">Salvar e Continuar</button>
+      <div class="login-error" id="cfgError"></div>
+    </form>
+  </div>
+</div>
+
 <!-- ═══ Login Screen ═══════════════════════════════════════════════════════ -->
 <div class="login-overlay hidden" id="loginScreen">
   <div class="login-box">
@@ -835,6 +850,16 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
         <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">Exportar toda a base de empresas como arquivo JSON para backup.</p>
         <button class="btn btn-primary btn-sm" onclick="exportBackup()">Exportar JSON</button>
       </div>
+      <div class="settings-section">
+        <h3>Configuração do Backend</h3>
+        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px">URL do backend FastAPI. Em desenvolvimento, deixe vazio para usar localhost:8000.</p>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Backend URL</label>
+          <input type="text" id="setBackendUrl" placeholder="https://seu-backend.up.railway.app">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveBackendFromSettings()">Salvar URL</button>
+        <button class="btn btn-sm" onclick="logout()" style="margin-left:8px">Sair (logout)</button>
+      </div>
     </section>
 
   </main>
@@ -961,13 +986,33 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 // ─── Config ──────────────────────────────────────────────────────────────────
-// API base: use localhost when serving from file:// or local hostname, else same-origin
-const API_BASE = (window.location.protocol === 'file:' ||
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1' ||
-  window.location.hostname === '')
-  ? 'http://localhost:8000'
-  : '';
+// API base: configurable via localStorage. Defaults to localhost in dev.
+// In production (vercel.app), prompts user for Railway backend URL on first load.
+function getApiBase() {
+  const stored = localStorage.getItem('vf_api_base');
+  if (stored) return stored;
+  // Auto-detect: localhost → use local backend
+  if (window.location.protocol === 'file:' ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '') {
+    return 'http://localhost:8000';
+  }
+  // Otherwise no default — user must configure
+  return '';
+}
+let API_BASE = getApiBase();
+
+function setApiBase(url) {
+  url = (url || '').trim().replace(/\/$/, '');
+  if (url) {
+    localStorage.setItem('vf_api_base', url);
+    API_BASE = url;
+  } else {
+    localStorage.removeItem('vf_api_base');
+    API_BASE = getApiBase();
+  }
+}
 
 function showApiOffline(){const el=document.getElementById('apiStatus');if(el)el.classList.remove('hidden');}
 function hideApiOffline(){const el=document.getElementById('apiStatus');if(el)el.classList.add('hidden');}
@@ -978,7 +1023,35 @@ function setToken(t) { localStorage.setItem('vf_token', t); }
 function clearToken() { localStorage.removeItem('vf_token'); localStorage.removeItem('vf_user'); }
 function authHeaders() { const t = getToken(); return t ? { 'Authorization': 'Bearer ' + t } : {}; }
 
+function showConfigScreen() { document.getElementById('configScreen').classList.remove('hidden'); setTimeout(() => document.getElementById('cfgUrl').focus(), 100); }
+function hideConfigScreen() { document.getElementById('configScreen').classList.add('hidden'); }
+
+async function saveBackendUrl(event) {
+  event.preventDefault();
+  const url = document.getElementById('cfgUrl').value.trim();
+  const errEl = document.getElementById('cfgError');
+  errEl.textContent = '';
+  try {
+    // Test the URL
+    const r = await fetch(url.replace(/\/$/, '') + '/api/health');
+    if (!r.ok) throw new Error('Backend respondeu com erro ' + r.status);
+    const data = await r.json();
+    if (data.status !== 'ok') throw new Error('Resposta inesperada do backend');
+    setApiBase(url);
+    hideConfigScreen();
+    checkAuth();
+  } catch (e) {
+    errEl.textContent = 'Não consegui conectar: ' + e.message;
+  }
+  return false;
+}
+
 async function checkAuth() {
+  // First, check if API_BASE is configured for production
+  if (!API_BASE && window.location.protocol !== 'file:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    showConfigScreen();
+    return false;
+  }
   // Try to fetch /api/auth/me with current token
   const t = getToken();
   if (!t) { showLogin(); return false; }
@@ -1268,7 +1341,10 @@ function navigateTo(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page===page));
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   const el=document.getElementById('page-'+page); if(el) el.classList.add('active');
-  if(page==='dashboard') loadDashboard(); if(page==='pipeline') loadPipeline(); if(page==='solver') calcSolver();
+  if(page==='dashboard') loadDashboard();
+  if(page==='pipeline') loadPipeline();
+  if(page==='solver') calcSolver();
+  if(page==='settings') { const inp=document.getElementById('setBackendUrl'); if(inp) inp.value=localStorage.getItem('vf_api_base')||''; }
 }
 async function apiPost(path,body){try{const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body)});if(r.status===401){clearToken();showLogin();throw new Error('Sessão expirada');}if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail?.message||JSON.stringify(e.detail)||`HTTP ${r.status}`);}return await r.json();}catch(e){throw e;}}
 async function apiPut(path,body,params=''){try{const r=await fetch(API_BASE+path+params,{method:'PUT',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body)});if(r.status===401){clearToken();showLogin();throw new Error('Sessão expirada');}if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(JSON.stringify(e.detail||e));}return await r.json();}catch(e){throw e;}}
@@ -1358,6 +1434,8 @@ function clearFilters(){['fScoreMin','fScoreMax','fUf','fResp','fEstagio','fSegu
 async function saveSettings(){const keys={comissao_padrao:'setCom',taxa_minima_padrao:'setTaxa',teto_percepcao_min:'setTetoMin',teto_percepcao_max:'setTetoMax',relacao_hon_premio_max:'setHonMax'};for(const[k,id]of Object.entries(keys)){try{await apiPut(`/api/settings/${k}`,{value:document.getElementById(id).value,updated_by:currentUser});}catch(e){}}alert('Parâmetros salvos!');}
 async function testApis(){const apis=[{name:'CNPJ.ws',url:'/api/enrich/cnpj/00000000000000'},{name:'Serasa',url:'/api/enrich/financeiro/00000000000000'},{name:'Apollo',url:'/api/enrich/decisor/00000000000000'}];const r=[];for(const a of apis){const d=await apiFetch(a.url);r.push(`${a.name}: ${d?.status==='not_configured'?'NÃO CONFIGURADA':d?'OK':'OFFLINE'}`);}alert(r.join('\n'));}
 async function exportBackup(){const d=await apiFetch('/api/companies?limit=5000');if(!d){alert('API indisponível');return;}const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`vf_crm_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();}
+
+function saveBackendFromSettings(){const url=document.getElementById('setBackendUrl').value.trim();if(!url){if(confirm('Limpar URL e usar localhost?')){setApiBase('');location.reload();}return;}setApiBase(url);alert('URL salva. Recarregando...');location.reload();}
 
 // ─── Init ────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
