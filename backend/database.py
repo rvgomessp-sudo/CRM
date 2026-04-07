@@ -2,31 +2,31 @@
 
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
 from dotenv import load_dotenv
+
+from .db_base import Base  # re-export for backward compat
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./vf_crm.db")
 
-# Convert postgres:// to postgresql+asyncpg:// if needed
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
-elif DATABASE_URL.startswith("postgresql://") and "asyncpg" not in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+def _get_database_url() -> str:
+    url = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./vf_crm.db")
+    if url.startswith("postgres://"):
+        url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+    elif url.startswith("postgresql://") and "asyncpg" not in url:
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
 
-# SQLite doesn't support pool_size
-engine_kwargs = {"echo": False}
+
+DATABASE_URL = _get_database_url()
+
+_engine_kwargs = {"echo": False}
 if not DATABASE_URL.startswith("sqlite"):
-    engine_kwargs["pool_size"] = 5
-    engine_kwargs["max_overflow"] = 10
+    _engine_kwargs["pool_size"] = 5
+    _engine_kwargs["max_overflow"] = 10
 
-engine = create_async_engine(DATABASE_URL, **engine_kwargs)
+engine = create_async_engine(DATABASE_URL, **_engine_kwargs)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 async def get_db():
@@ -40,5 +40,6 @@ async def get_db():
 
 
 async def init_db():
+    """Create all tables. Used in dev mode. In production, use Alembic migrations instead."""
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

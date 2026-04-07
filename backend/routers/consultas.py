@@ -13,7 +13,9 @@ from ..models import (
     ConsultaCreate, ConsultaUpdate, ConsultaResponse,
 )
 
-router = APIRouter(prefix="/api/consultas", tags=["consultas"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api/consultas", tags=["consultas"], dependencies=[Depends(require_auth)])
 
 VALID_STATUSES = {
     "aprovado_automatico", "aprovado_indicativo", "depende_mesa",

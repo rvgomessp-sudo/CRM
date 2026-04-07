@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import Inscricao, Company, InscricaoCreate, InscricaoResponse
 
-router = APIRouter(prefix="/api/inscricoes", tags=["inscricoes"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api/inscricoes", tags=["inscricoes"], dependencies=[Depends(require_auth)])
 
 
 @router.get("/{company_id}", response_model=List[InscricaoResponse])

@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import Company, Interaction, Meta, MetaCreate, MetaUpdate, MetaResponse, DashboardResponse, PipelineResponse, CompanyResponse
 
-router = APIRouter(prefix="/api", tags=["pipeline"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api", tags=["pipeline"], dependencies=[Depends(require_auth)])
 
 F1_STAGES = [
     "Base PGFN", "Enriquecimento", "Abordagem", "Interesse Manifesto",

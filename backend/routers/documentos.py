@@ -10,7 +10,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import Documento, DocumentoCreate, DocumentoUpdate, DocumentoResponse
 
-router = APIRouter(prefix="/api/documentos", tags=["documentos"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api/documentos", tags=["documentos"], dependencies=[Depends(require_auth)])
 
 VALID_TIPOS = {
     "balanco_dre", "balancete", "contrato_social", "ficha_judicial",

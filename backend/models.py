@@ -12,7 +12,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 
-from .database import Base
+from .db_base import Base
 
 
 class UUIDType(TypeDecorator):
@@ -238,6 +238,21 @@ class Proposta(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     company = relationship("Company", back_populates="propostas")
+
+
+class User(Base):
+    """System user (Anna, Rodrigo)."""
+    __tablename__ = "users"
+
+    id = Column(UUIDType, primary_key=True, default=uuid.uuid4)
+    username = Column(String(50), unique=True, nullable=False)
+    nome_completo = Column(String(100))
+    email = Column(String(100))
+    senha_hash = Column(String(255), nullable=False)
+    papel = Column(String(20), default="user")  # admin, user
+    ativo = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
 class Meta(Base):
@@ -646,6 +661,36 @@ class ImportResult(BaseModel):
     duplicatas: int = 0
     erros: int = 0
     detalhes_erros: List[str] = []
+
+
+class UserResponse(BaseModel):
+    id: uuid.UUID
+    username: str
+    nome_completo: Optional[str] = None
+    email: Optional[str] = None
+    papel: str = "user"
+    ativo: bool = True
+
+    model_config = {"from_attributes": True}
+
+
+class UserCreate(BaseModel):
+    username: str
+    nome_completo: Optional[str] = None
+    email: Optional[str] = None
+    senha: str
+    papel: str = "user"
+
+
+class LoginRequest(BaseModel):
+    username: str
+    senha: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
 
 
 class SolverResult(BaseModel):

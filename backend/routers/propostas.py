@@ -14,7 +14,9 @@ from ..models import (
     PropostaCreate, PropostaUpdate, PropostaResponse, SolverResult,
 )
 
-router = APIRouter(prefix="/api/propostas", tags=["propostas"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api/propostas", tags=["propostas"], dependencies=[Depends(require_auth)])
 
 
 def _calculate_proposta(

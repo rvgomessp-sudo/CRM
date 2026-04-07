@@ -16,7 +16,9 @@ from ..models import (
     CompanyCreate, CompanyUpdate, CompanyResponse, ImportResult,
 )
 
-router = APIRouter(prefix="/api/companies", tags=["companies"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api/companies", tags=["companies"], dependencies=[Depends(require_auth)])
 
 COLUMN_MAP = {
     "empresa": "razao_social",

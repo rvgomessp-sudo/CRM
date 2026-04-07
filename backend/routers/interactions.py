@@ -14,7 +14,9 @@ from ..models import (
     InteractionCreate, InteractionResponse,
 )
 
-router = APIRouter(prefix="/api/interactions", tags=["interactions"])
+from ..auth import require_auth
+
+router = APIRouter(prefix="/api/interactions", tags=["interactions"], dependencies=[Depends(require_auth)])
 
 
 @router.get("/{company_id}", response_model=List[InteractionResponse])

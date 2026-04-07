@@ -63,6 +63,22 @@ a { color: var(--accent-light); text-decoration: none; }
 .api-status strong { display: block; }
 .api-status small { color: var(--text-muted); font-size: 0.68rem; }
 .api-status.hidden { display: none; }
+
+/* ─── Login Modal ─────────────────────────────────────────────────────────── */
+.login-overlay { position:fixed; inset:0; background:var(--bg); z-index:300; display:flex; align-items:center; justify-content:center; }
+.login-overlay.hidden { display:none; }
+.login-box { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:40px; width:90vw; max-width:400px; box-shadow:0 8px 32px rgba(0,0,0,0.5); }
+.login-logo { font-size:1.5rem; font-weight:700; color:var(--accent-light); text-align:center; margin-bottom:4px; }
+.login-logo span { display:block; font-size:0.8rem; color:var(--text-muted); font-weight:400; margin-top:2px; }
+.login-form { margin-top:24px; display:flex; flex-direction:column; gap:14px; }
+.login-form input { padding:12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg); color:var(--text); font-size:0.95rem; }
+.login-form input:focus { outline:none; border-color:var(--accent); }
+.login-form button { padding:12px; background:var(--accent); border:none; border-radius:var(--radius); color:#fff; font-weight:600; cursor:pointer; font-size:0.95rem; transition:background 0.15s; }
+.login-form button:hover { background:var(--accent-light); }
+.login-form button:disabled { opacity:0.5; cursor:not-allowed; }
+.login-error { color:var(--red); font-size:0.82rem; margin-top:8px; min-height:18px; }
+.login-bootstrap-link { text-align:center; margin-top:16px; font-size:0.78rem; color:var(--text-muted); }
+.login-bootstrap-link a { color:var(--accent-light); cursor:pointer; }
 .sidebar-nav { flex: 1; padding: 12px 0; }
 .nav-item {
   display: flex;
@@ -523,6 +539,30 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
 </head>
 <body>
 
+<!-- ═══ Login Screen ═══════════════════════════════════════════════════════ -->
+<div class="login-overlay hidden" id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">Grupo V&F<span>CRM Seguro Garantia</span></div>
+    <form class="login-form" id="loginForm" onsubmit="return doLogin(event)">
+      <input type="text" id="loginUser" placeholder="Usuário" autocomplete="username" required>
+      <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password" required>
+      <button type="submit" id="loginBtn">Entrar</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+    <div class="login-bootstrap-link" id="bootstrapLink">
+      Primeiro acesso? <a onclick="showBootstrap()">Criar admin inicial</a>
+    </div>
+    <form class="login-form" id="bootstrapForm" style="display:none" onsubmit="return doBootstrap(event)">
+      <input type="text" id="bsUser" placeholder="Username (ex: rodrigo)" required>
+      <input type="text" id="bsName" placeholder="Nome completo">
+      <input type="password" id="bsPass" placeholder="Senha (mín 8 caracteres)" minlength="8" required>
+      <button type="submit">Criar Admin</button>
+      <div class="login-error" id="bsError"></div>
+      <div class="login-bootstrap-link"><a onclick="showLogin()">Voltar ao login</a></div>
+    </form>
+  </div>
+</div>
+
 <div class="app-container">
   <!-- ─── Sidebar ──────────────────────────────────────────────────────── -->
   <aside class="sidebar">
@@ -558,10 +598,11 @@ select:focus, input:focus { outline: none; border-color: var(--accent); }
     </nav>
     <div class="sidebar-user">
       <div class="user-avatar" id="userAvatar">R</div>
-      <div class="user-info">
+      <div class="user-info" style="flex:1">
         <div class="name" id="userName">Rodrigo</div>
         <div class="role">Sócio</div>
       </div>
+      <button onclick="logout()" title="Sair" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px 8px;font-size:1.1rem">↪</button>
     </div>
   </aside>
 
@@ -931,6 +972,120 @@ const API_BASE = (window.location.protocol === 'file:' ||
 function showApiOffline(){const el=document.getElementById('apiStatus');if(el)el.classList.remove('hidden');}
 function hideApiOffline(){const el=document.getElementById('apiStatus');if(el)el.classList.add('hidden');}
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+function getToken() { return localStorage.getItem('vf_token'); }
+function setToken(t) { localStorage.setItem('vf_token', t); }
+function clearToken() { localStorage.removeItem('vf_token'); localStorage.removeItem('vf_user'); }
+function authHeaders() { const t = getToken(); return t ? { 'Authorization': 'Bearer ' + t } : {}; }
+
+async function checkAuth() {
+  // Try to fetch /api/auth/me with current token
+  const t = getToken();
+  if (!t) { showLogin(); return false; }
+  try {
+    const r = await fetch(API_BASE + '/api/auth/me', { headers: authHeaders() });
+    if (r.ok) {
+      const user = await r.json();
+      localStorage.setItem('vf_user', JSON.stringify(user));
+      currentUser = user.nome_completo || user.username;
+      document.getElementById('userAvatar').textContent = currentUser[0].toUpperCase();
+      document.getElementById('userName').textContent = currentUser;
+      hideLogin();
+      return true;
+    }
+    if (r.status === 401) { clearToken(); showLogin(); return false; }
+    // Backend unreachable — let user use the app in offline mode (no auth)
+    hideLogin();
+    return true;
+  } catch (e) {
+    // Backend offline — show app but mark API as offline
+    showApiOffline();
+    hideLogin();
+    return true;
+  }
+}
+
+function showLogin() {
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginForm').style.display = '';
+  document.getElementById('bootstrapForm').style.display = 'none';
+  document.getElementById('bootstrapLink').style.display = '';
+  setTimeout(() => document.getElementById('loginUser').focus(), 100);
+}
+function hideLogin() { document.getElementById('loginScreen').classList.add('hidden'); }
+function showBootstrap() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('bootstrapForm').style.display = '';
+  document.getElementById('bootstrapLink').style.display = 'none';
+}
+
+async function doLogin(event) {
+  event.preventDefault();
+  const user = document.getElementById('loginUser').value;
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errEl.textContent = '';
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  try {
+    const r = await fetch(API_BASE + '/api/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user, senha: pass })
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      throw new Error(e.detail || 'Falha no login');
+    }
+    const data = await r.json();
+    setToken(data.access_token);
+    localStorage.setItem('vf_user', JSON.stringify(data.user));
+    currentUser = data.user.nome_completo || data.user.username;
+    document.getElementById('userAvatar').textContent = currentUser[0].toUpperCase();
+    document.getElementById('userName').textContent = currentUser;
+    hideLogin();
+    loadDashboard();
+  } catch (e) {
+    errEl.textContent = e.message || 'Erro desconhecido';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+  return false;
+}
+
+async function doBootstrap(event) {
+  event.preventDefault();
+  const data = {
+    username: document.getElementById('bsUser').value,
+    nome_completo: document.getElementById('bsName').value,
+    senha: document.getElementById('bsPass').value,
+    papel: 'admin',
+  };
+  const errEl = document.getElementById('bsError');
+  errEl.textContent = '';
+  try {
+    const r = await fetch(API_BASE + '/api/auth/bootstrap', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      throw new Error(e.detail || 'Falha ao criar admin');
+    }
+    // After bootstrap, auto-login
+    document.getElementById('loginUser').value = data.username;
+    document.getElementById('loginPass').value = data.senha;
+    showLogin();
+    setTimeout(() => doLogin(new Event('submit')), 100);
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+  return false;
+}
+
+function logout() {
+  clearToken();
+  showLogin();
+}
+
 let currentUser = 'Rodrigo';
 let dashView = 'rodrigo';
 let dashboardData = null;
@@ -970,11 +1125,12 @@ function setDashView(view) {
 // ─── API helpers ─────────────────────────────────────────────────────────────
 async function apiFetch(path) {
   try {
-    const resp = await fetch(API_BASE + path);
+    const resp = await fetch(API_BASE + path, { headers: authHeaders() });
+    if (resp.status === 401) { clearToken(); showLogin(); return null; }
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     return await resp.json();
   } catch (e) {
-    console.warn('API unavailable, using demo data:', e.message);
+    console.warn('API error:', e.message);
     return null;
   }
 }
@@ -1114,8 +1270,8 @@ function navigateTo(page) {
   const el=document.getElementById('page-'+page); if(el) el.classList.add('active');
   if(page==='dashboard') loadDashboard(); if(page==='pipeline') loadPipeline(); if(page==='solver') calcSolver();
 }
-async function apiPost(path,body){try{const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail?.message||JSON.stringify(e.detail)||`HTTP ${r.status}`);}return await r.json();}catch(e){throw e;}}
-async function apiPut(path,body,params=''){try{const r=await fetch(API_BASE+path+params,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(JSON.stringify(e.detail||e));}return await r.json();}catch(e){throw e;}}
+async function apiPost(path,body){try{const r=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body)});if(r.status===401){clearToken();showLogin();throw new Error('Sessão expirada');}if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.detail?.message||JSON.stringify(e.detail)||`HTTP ${r.status}`);}return await r.json();}catch(e){throw e;}}
+async function apiPut(path,body,params=''){try{const r=await fetch(API_BASE+path+params,{method:'PUT',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body)});if(r.status===401){clearToken();showLogin();throw new Error('Sessão expirada');}if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(JSON.stringify(e.detail||e));}return await r.json();}catch(e){throw e;}}
 
 // ═══ MODULE 2: Pipeline Kanban + Ficha ═══════════════════════════════════════
 const F1_STAGES=['Base PGFN','Enriquecimento','Abordagem','Interesse Manifesto','Análise Rápida','Proposta Enviada','Submetido Sancor','Aprovado','Fechado','Receita Realizada'];
@@ -1181,7 +1337,7 @@ async function handleImport(file){
   if(!file)return;
   const fd=new FormData();fd.append('file',file);
   try{
-    const r=await fetch(API_BASE+'/api/companies/import',{method:'POST',body:fd});
+    const r=await fetch(API_BASE+'/api/companies/import',{method:'POST',body:fd,headers:authHeaders()});
     if(!r.ok){throw new Error(`HTTP ${r.status}: ${await r.text()}`);}
     const res=await r.json();
     hideApiOffline();
@@ -1204,14 +1360,18 @@ async function testApis(){const apis=[{name:'CNPJ.ws',url:'/api/enrich/cnpj/0000
 async function exportBackup(){const d=await apiFetch('/api/companies?limit=5000');if(!d){alert('API indisponível');return;}const b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`vf_crm_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();}
 
 // ─── Init ────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  loadDashboard();
-  calcSolver();
-  // Upload zone drag events
+document.addEventListener('DOMContentLoaded', async () => {
+  // Setup upload zone first
   const zone=document.getElementById('uploadZone');
   if(zone){zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('dragover');});zone.addEventListener('dragleave',()=>zone.classList.remove('dragover'));zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('dragover');if(e.dataTransfer.files[0])handleImport(e.dataTransfer.files[0]);});}
   // Populate estágio filter
   const sel=document.getElementById('fEstagio');if(sel)F1_STAGES.forEach(s=>{const o=document.createElement('option');o.textContent=s;sel.appendChild(o);});
+  // Check auth, then load
+  const ok = await checkAuth();
+  if (ok) {
+    loadDashboard();
+    calcSolver();
+  }
 });
 </script>
 </body>

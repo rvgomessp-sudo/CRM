@@ -11,7 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..database import get_db
 from ..models import Setting, SettingResponse, SettingUpdate
 
-router = APIRouter(tags=["settings"])
+from ..auth import require_auth
+
+router = APIRouter(tags=["settings"], dependencies=[Depends(require_auth)])
 
 
 # ─── Settings CRUD ───────────────────────────────────────────────────────────
