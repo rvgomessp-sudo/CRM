@@ -56,12 +56,14 @@ export async function importarCSVF2(
 
   // ── Parse do CSV ──────────────────────────────────────
   const texto = await file.text()
-  const parsed = Papa.parse<LinhaCSVF2>(texto, {
-    header: true,
-    delimiter: ';',
-    encoding: 'UTF-8',
-    skipEmptyLines: true,
-    transformHeader: (h) => h.trim().replace(/^\uFEFF/, ''), // remove BOM
+  const parsed = await new Promise<Papa.ParseResult<LinhaCSVF2>>((resolve) => {
+    Papa.parse<LinhaCSVF2>(texto, {
+      header: true,
+      delimiter: ';',
+      skipEmptyLines: true,
+      transformHeader: (h) => h.trim().replace(/^\uFEFF/, ''),
+      complete: (results) => resolve(results),
+    })
   })
 
   if (parsed.errors.length > 0) {
