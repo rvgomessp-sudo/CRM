@@ -1,6 +1,9 @@
-// lib/types.ts
+// ============================================================
+// CRM V3 — Tipos TypeScript
+// Espelho fiel do schema Supabase
+// ============================================================
 
-export type EstagioPipeline =
+export type PipelineStage =
   | 'base_pgfn'
   | 'enriquecimento'
   | 'abordagem'
@@ -12,145 +15,283 @@ export type EstagioPipeline =
   | 'fechado'
   | 'receita_realizada'
 
-export type PrioridadeMarinheiro = 'ALTA' | 'MEDIA' | 'BAIXA'
-export type SeguradoraTier = 'Sancor' | 'Berkley' | 'Zurich' | 'Swiss Re' | 'Chubb' | 'Indefinida'
-export type StatusProposta = 'rascunho' | 'enviada' | 'em_negociacao' | 'aceita' | 'recusada' | 'expirada'
-export type CanalInteracao = 'email' | 'telefone' | 'whatsapp' | 'reuniao' | 'sistema' | 'outro'
+export type PrioridadeTipo  = 'ALTA' | 'MEDIA' | 'BAIXA'
+export type MotorTipo       = 'A1' | 'A2' | 'B1' | 'B2'
+export type SeguradoraTipo  = 'SANCOR' | 'BERKLEY' | 'ZURICH' | 'SWISS' | 'CHUBB'
+export type FaixaTipo       = 'F1_SANCOR' | 'F2_AMPLIADA'
+export type PapelUsuario    = 'admin' | 'operador'
+export type CanalInteracao  = 'EMAIL' | 'TELEFONE' | 'WHATSAPP' | 'REUNIAO' | 'SISTEMA'
+export type StatusConsulta  = 'PENDENTE' | 'APROVADO' | 'RECUSADO' | 'CONDICIONAL'
+export type StatusProposta  = 'RASCUNHO' | 'ENVIADA' | 'EM_ANALISE' | 'APROVADA' | 'RECUSADA' | 'CONVERTIDA'
 
+// ---- Profile ----
+export interface Profile {
+  id:           string
+  nome:         string
+  email:        string
+  papel:        PapelUsuario
+  ativo:        boolean
+  criado_em:    string
+  atualizado_em: string
+}
+
+// ---- Empresa ----
 export interface Empresa {
-  cnpj_raiz: string
-  cnpj_completo: string | null
-  nome_devedor: string
-  uf_devedor: string | null
-  qtd_inscricoes_empresa: number | null
-  prioridade: PrioridadeMarinheiro | null
-  seguradora: SeguradoraTier
-  estagio: EstagioPipeline
-  responsavel_id: string | null
-  valor_total_brl: number | null
-  valor_minimo_inscricao: number | null
-  valor_maximo_inscricao: number | null
-  pl_estimado: number | null
-  receita_estimada: number | null
-  regime_tributario: string | null
-  sancor_consultado: boolean
-  sancor_aprovado: boolean | null
-  sancor_limite: number | null
-  sancor_taxa_minima: number | null
-  sancor_data_consulta: string | null
-  excluido: boolean
-  motivo_exclusao: string | null
-  fonte: string | null
-  importado_em: string
-  atualizado_em: string
-  // joins opcionais
-  inscricoes?: Inscricao[]
-  interacoes?: Interacao[]
-  decisores?: Decisor[]
-  propostas?: Proposta[]
+  cnpj_raiz:                string   // 8 dígitos
+  cnpj_completo:            string
+  nome_devedor:             string
+  uf_devedor:               string | null
+  qtd_inscricoes:           number
+  prioridade:               PrioridadeTipo | null
+  motor:                    MotorTipo | null
+  faixa:                    FaixaTipo | null
+  valor_total_devida:       number
+  valor_maior_inscricao:    number
+  estagio:                  PipelineStage
+  seguradora_alvo:          SeguradoraTipo
+  responsavel_id:           string | null
+  ativo:                    boolean
+  excluido:                 boolean
+  motivo_exclusao:          string | null
+  // Enriquecimento
+  capital_social:           number | null
+  receita_estimada:         number | null
+  pl_estimado:              number | null
+  regime_tributario:        string | null
+  cnpj_situacao:            string | null
+  cnae_principal:           string | null
+  segmento:                 string | null
+  // Decisor
+  decisor_nome:             string | null
+  decisor_cargo:            string | null
+  decisor_email:            string | null
+  decisor_telefone:         string | null
+  decisor_linkedin:         string | null
+  // Score
+  score_vf:                 number | null
+  notas:                    string | null
+  // SLA
+  ultimo_contato_em:        string | null
+  proxima_acao_em:          string | null
+  proxima_acao_descricao:   string | null
+  // Proteção
+  nda_assinado:             boolean
+  nda_data:                 string | null
+  // Metadados
+  importado_em:             string
+  criado_em:                string
+  atualizado_em:            string
+  atualizado_por:           string | null
+  // Joins opcionais
+  responsavel?:             Profile | null
+  inscricoes?:              Inscricao[]
+  interacoes?:              Interacao[]
 }
 
+// ---- Inscrição ----
 export interface Inscricao {
-  id: string
-  cnpj_raiz: string
-  numero_inscricao: string
-  situacao_inscricao: string | null
-  tipo_garantia: string | null
-  flag_garantia: string | null
-  tributo: string | null
-  receita_principal: string | null
-  data_inscricao: string | null
-  dias_inscricao: number | null
-  ano_inscricao: number | null
-  valor_brl: string | null
-  valor_numerico: number | null
-  indicador_ajuizado: boolean
-  unidade_responsavel: string | null
-  criado_em: string
+  id:                   string
+  cnpj_raiz:            string
+  cnpj_completo:        string
+  nome_devedor:         string | null
+  uf_devedor:           string | null
+  numero_inscricao:     string
+  situacao_inscricao:   string | null
+  tipo_garantia:        string | null
+  flag_garantia:        string | null
+  tributo:              string | null
+  receita_principal:    string | null
+  data_inscricao:       string | null
+  dias_inscricao:       number | null
+  ano_inscricao:        number | null
+  valor_brl:            string | null
+  valor_numerico:       number | null
+  indicador_ajuizado:   boolean
+  unidade_responsavel:  string | null
+  motor:                MotorTipo | null
+  prioridade:           PrioridadeTipo | null
+  criado_em:            string
 }
 
+// ---- Interação ----
 export interface Interacao {
-  id: string
-  cnpj_raiz: string
-  canal: CanalInteracao
-  resumo: string
-  proxima_acao: string | null
-  data_proxima_acao: string | null
-  responsavel_id: string | null
-  estagio_momento: EstagioPipeline | null
-  criado_em: string
-  usuario?: { nome: string }
+  id:                   string
+  cnpj_raiz:            string
+  canal:                CanalInteracao
+  resumo:               string
+  proxima_acao:         string | null
+  proxima_acao_em:      string | null
+  responsavel_id:       string | null
+  estagio_na_interacao: PipelineStage | null
+  criado_em:            string
+  criado_por:           string | null
+  // Joins
+  responsavel?:         Profile | null
 }
 
+// ---- Consulta Seguradora ----
+export interface ConsultaSeguradora {
+  id:               string
+  cnpj_raiz:        string
+  seguradora:       SeguradoraTipo
+  status:           StatusConsulta
+  limite_aprovado:  number | null
+  taxa_indicativa:  number | null
+  modalidade:       string | null
+  notas:            string | null
+  data_consulta:    string
+  validade_ate:     string | null
+  criado_em:        string
+  criado_por:       string | null
+}
+
+// ---- Proposta ----
 export interface Proposta {
-  id: string
-  cnpj_raiz: string
-  seguradora: SeguradoraTier
-  status: StatusProposta
-  valor_garantia: number
-  taxa_aa: number
-  prazo_meses: number
-  premio_bruto: number | null
-  comissao_pct: number
-  comissao_brl: number | null
-  honorarios_brl: number | null
-  receita_vf_total: number | null
-  premio_liquido: number | null
-  regra_economica_ok: boolean | null
-  enviada_em: string | null
-  aceita_em: string | null
-  observacoes: string | null
-  criado_em: string
-  atualizado_em: string
+  id:                   string
+  cnpj_raiz:            string
+  valor_garantia:       number
+  inscricoes_cobertas:  string[] | null
+  seguradora:           SeguradoraTipo
+  taxa_anual:           number
+  prazo_anos:           number
+  premio_bruto:         number
+  comissao_pct:         number | null
+  comissao_valor:       number | null
+  honorarios_valor:     number
+  receita_vf_total:     number | null
+  regra_economica_ok:   boolean | null
+  status:               StatusProposta
+  data_envio:           string | null
+  validade_proposta:    string | null
+  notas:                string | null
+  pdf_url:              string | null
+  criado_em:            string
+  criado_por:           string | null
+  atualizado_em:        string
 }
 
-export interface Decisor {
-  id: string
-  cnpj_raiz: string
-  nome: string
-  cargo: string | null
-  email: string | null
-  telefone: string | null
-  linkedin: string | null
-  principal: boolean
-  nda_assinado: boolean
-  nda_data: string | null
+// ---- Histórico de Estágio ----
+export interface HistoricoEstagio {
+  id:               string
+  cnpj_raiz:        string
+  estagio_anterior: PipelineStage | null
+  estagio_novo:     PipelineStage
+  mudado_por:       string | null
+  mudado_em:        string
+  observacao:       string | null
 }
 
-export interface Usuario {
-  id: string
-  auth_user_id: string | null
-  nome: string
-  email: string
-  papel: 'admin' | 'operador'
-  ativo: boolean
+// ---- Views ----
+export interface DashboardKPIs {
+  total_empresas:        number
+  em_base:               number
+  em_enriquecimento:     number
+  em_abordagem:          number
+  em_interesse:          number
+  em_analise:            number
+  em_proposta:           number
+  convertidos:           number
+  total_divida_carteira: number
+  divida_convertida:     number
+  motor_a1:              number
+  motor_a2:              number
+  motor_b1:              number
+  motor_b2:              number
+  followups_vencidos:    number
 }
 
-// Labels de exibição
-export const ESTAGIO_LABELS: Record<EstagioPipeline, string> = {
-  base_pgfn: '1. Base PGFN',
-  enriquecimento: '2. Enriquecimento',
-  abordagem: '3. Abordagem',
-  interesse_manifesto: '4. Interesse Manifesto',
-  analise_rapida: '5. Análise Rápida',
-  proposta_enviada: '6. Proposta Enviada',
-  submetido_sancor: '7. Submetido Sancor',
-  aprovado: '8. Aprovado',
-  fechado: '9. Fechado',
-  receita_realizada: '10. Receita Realizada',
+export interface FunilEstagio {
+  estagio:        PipelineStage
+  qtd_empresas:   number
+  valor_total:    number
+  score_medio:    number | null
 }
 
-export const ESTAGIO_ORDEM: EstagioPipeline[] = [
+// ---- CSV Import ----
+export interface CSVRow {
+  CNPJ_RAIZ:            string
+  CNPJ_COMPLETO:        string
+  NOME_DEVEDOR:         string
+  UF_DEVEDOR:           string
+  QTD_INSCRICOES_EMPRESA: string
+  PRIORIDADE_MARINHEIRO: string
+  NUMERO_INSCRICAO:     string
+  SITUACAO_INSCRICAO:   string
+  TIPO_GARANTIA:        string
+  FLAG_GARANTIA:        string
+  TRIBUTO:              string
+  RECEITA_PRINCIPAL:    string
+  DATA_INSCRICAO:       string
+  DIAS_INSCRICAO:       string
+  ANO_INSCRICAO:        string
+  VALOR_BRL:            string
+  VALOR_NUMERICO:       string
+  INDICADOR_AJUIZADO:   string
+  UNIDADE_RESPONSAVEL:  string
+}
+
+// ---- VF Solver ----
+export interface SolverInput {
+  valorGarantia:  number
+  taxaAnual:      number    // decimal: 0.005 = 0,50%
+  prazoAnos:      number
+  comissaoPct:    number    // decimal: 0.20 = 20%
+  honorarios:     number
+  seguradora:     SeguradoraTipo
+}
+
+export interface SolverOutput {
+  premioBruto:      number
+  comissaoValor:    number
+  receiaVFTotal:    number
+  regraEconomica:   boolean
+  taxaEfetiva:      number
+  alertas:          string[]
+}
+
+// ---- Labels ----
+export const STAGE_LABELS: Record<PipelineStage, string> = {
+  base_pgfn:           'Base PGFN',
+  enriquecimento:      'Enriquecimento',
+  abordagem:           'Abordagem',
+  interesse_manifesto: 'Interesse',
+  analise_rapida:      'Análise Rápida',
+  proposta_enviada:    'Proposta Enviada',
+  submetido_sancor:    'Submetido Sancor',
+  aprovado:            'Aprovado',
+  fechado:             'Fechado',
+  receita_realizada:   'Receita',
+}
+
+export const STAGE_COLORS: Record<PipelineStage, string> = {
+  base_pgfn:           'bg-text-faint text-text-muted',
+  enriquecimento:      'bg-info/20 text-info',
+  abordagem:           'bg-warning/20 text-warning',
+  interesse_manifesto: 'bg-success/20 text-success',
+  analise_rapida:      'bg-purple-500/20 text-purple-400',
+  proposta_enviada:    'bg-vf-red/20 text-vf-red-light',
+  submetido_sancor:    'bg-vf-red/30 text-vf-red-light',
+  aprovado:            'bg-success/30 text-success',
+  fechado:             'bg-success/40 text-success',
+  receita_realizada:   'bg-green-900/50 text-green-400',
+}
+
+export const MOTOR_LABELS: Record<MotorTipo, string> = {
+  A1: 'A1 – Urgência',
+  A2: 'A2 – Prevenção',
+  B1: 'B1 – Penhora',
+  B2: 'B2 – Revisão',
+}
+
+export const MOTOR_COLORS: Record<MotorTipo, string> = {
+  A1: 'bg-red-500/20 text-red-400',
+  A2: 'bg-amber-500/20 text-amber-400',
+  B1: 'bg-blue-500/20 text-blue-400',
+  B2: 'bg-purple-500/20 text-purple-400',
+}
+
+export const STAGES_ORDERED: PipelineStage[] = [
   'base_pgfn', 'enriquecimento', 'abordagem', 'interesse_manifesto',
   'analise_rapida', 'proposta_enviada', 'submetido_sancor',
-  'aprovado', 'fechado', 'receita_realizada'
+  'aprovado', 'fechado', 'receita_realizada',
 ]
-
-// Campos obrigatórios por estágio (regras de passagem)
-export const ESTAGIO_CAMPOS_OBRIGATORIOS: Partial<Record<EstagioPipeline, string[]>> = {
-  enriquecimento: ['cnpj_completo', 'uf_devedor'],
-  interesse_manifesto: ['responsavel_id'],
-  analise_rapida: ['sancor_consultado'],
-  proposta_enviada: ['sancor_aprovado'],
-  submetido_sancor: ['sancor_limite'],
-}

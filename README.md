@@ -1,124 +1,155 @@
-# V&F CRM v3.0 — Seguro Garantia Tributário PGFN
+# CRM V3 — Vazquez & Fonseca
 
-CRM operacional para prospecção e conversão de operações PGFN (garantia judicial tributária).  
-Stack: Next.js 14 (App Router) + Supabase + Vercel
+Pipeline PGFN · Seguro Garantia Tributário · Stack: Next.js 14 + Supabase + Vercel
 
 ---
 
-## Setup — passo a passo
+## Stack
 
-### 1. Supabase
+| Camada | Tecnologia |
+|--------|-----------|
+| Frontend | Next.js 14 App Router + Tailwind CSS |
+| Backend/DB | Supabase (PostgreSQL 15) |
+| Auth | Supabase Auth (email/password) |
+| Deploy | Vercel |
+| CSV | PapaParse (client-side, UTF-8 BOM) |
 
-1. Acesse [supabase.com](https://supabase.com) → novo projeto
-2. Abra **SQL Editor** e execute o arquivo `schema_supabase_crm_v3.sql` (gerado separadamente)
-3. Vá em **Authentication → Users** e crie os usuários:
-   - `rodrigo@vf.com.br` (senha forte)
-   - `ana@vf.com.br` (senha forte)
-4. Copie o **Project URL** e a **anon public key** de Settings → API
+---
 
-### 2. Usuários na tabela
+## Deploy — Passo a Passo
 
-Após criar os usuários no Auth, rode no SQL Editor:
+### 1. Supabase — criar projeto
 
-```sql
-INSERT INTO usuarios (auth_user_id, nome, email, papel) VALUES
-('<uuid-rodrigo>', 'Rodrigo Vazquez', 'rodrigo@vf.com.br', 'admin'),
-('<uuid-ana>', 'Ana', 'ana@vf.com.br', 'operador');
-```
+1. Acesse https://supabase.com/dashboard
+2. Crie um projeto em **São Paulo (sa-east-1)**
+3. Copie a **URL** e a **anon key** do projeto
+4. Vá em **SQL Editor** e execute o arquivo `crm_v3_schema.sql` (cole o conteúdo completo)
+5. Vá em **Authentication → Users** → clique em **Add User**:
+   - Rodrigo: `rodrigo@[dominio].com.br` → papel `admin`
+   - Ana: `ana@[dominio].com.br` → papel `operador`
+6. Após criar os usuários, execute no SQL Editor:
+   ```sql
+   UPDATE profiles SET papel = 'admin' WHERE email = 'rodrigo@[dominio].com.br';
+   ```
 
-O UUID está em Authentication → Users → coluna "UID".
-
-### 3. Projeto local
+### 2. Repositório GitHub
 
 ```bash
+# Clone ou push para o repo existente
 git clone https://github.com/rvgomessp-sudo/CRM.git
 cd CRM
-npm install
-
-# Copiar e preencher variáveis
-cp .env.example .env.local
-# editar .env.local com NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-npm run dev
+# Copie os arquivos do CRM V3 aqui
+git add .
+git commit -m "CRM V3 — rebuild completo com Supabase + Next.js"
+git push origin main
 ```
 
-Acesse: http://localhost:3000
+**IMPORTANTE:** As bases CSV (.csv) estão no .gitignore — nunca commitar no repositório.
 
-### 4. Deploy na Vercel
+### 3. Variáveis de Ambiente
+
+Copie `.env.local.example` para `.env.local`:
 
 ```bash
-# Instalar Vercel CLI (se necessário)
-npm i -g vercel
-
-vercel --prod
+cp .env.local.example .env.local
 ```
 
-Ou via interface:
-1. [vercel.com](https://vercel.com) → Import Git Repository → `rvgomessp-sudo/CRM`
-2. Framework: **Next.js** (detectado automaticamente)
-3. Environment Variables:
+Edite com os valores do Supabase:
+
+```
+NEXT_PUBLIC_SUPABASE_URL=https://[projeto].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+### 4. Deploy Vercel
+
+1. Acesse https://vercel.com/rvgomessp-sudos-projects
+2. Conecte ao repositório GitHub `rvgomessp-sudo/CRM`
+3. Em **Environment Variables**, adicione:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-4. Deploy
+4. Framework: **Next.js** (detectado automaticamente)
+5. Clique em **Deploy**
+
+### 5. Desenvolvimento local
+
+```bash
+npm install
+npm run dev
+# Acesse http://localhost:3000
+```
 
 ---
 
-## Importar base F2
-
-1. Acesse `/importar` no CRM
-2. Arraste o arquivo `01_f2_inscricoes_individuais.csv`
-3. O importador faz dedup automático por CNPJ_RAIZ e NUMERO_INSCRICAO
-4. O pipeline existente NÃO é sobrescrito em reimportações
-
----
-
-## Estrutura de arquivos
+## Estrutura do Projeto
 
 ```
 app/
-  (painel)/
-    dashboard/        ← KPIs, funil, follow-ups vencidos
-    pipeline/         ← Kanban 10 etapas
-    base/             ← Tabela base PGFN com filtros
-    empresa/[cnpj]/   ← Ficha completa com inscrições individuais
-    importar/         ← Upload CSV F1/F2
-    solver/           ← Precificação ótima
-    configuracoes/    ← Supabase, usuários, backup
-  login/
+  (auth)/login/         → Login Supabase
+  (dashboard)/
+    dashboard/          → KPIs + funil + SLA
+    pipeline/           → Kanban 10 estágios
+    base-pgfn/          → Tabela com filtros + busca
+    empresa/[cnpj]/     → Ficha: inscrições, interações, proposta
+    importar/           → CSV F1/F2 com dedup
+    solver/             → VF Solver + geração de proposta
 components/
-  Sidebar.tsx
+  Sidebar.tsx           → Navegação lateral
 lib/
-  supabase/client.ts  ← browser
-  supabase/server.ts  ← SSR
-  types.ts            ← todos os tipos TypeScript
-  utils.ts            ← formatBRL, CNPJ, cálculos
-  importador.ts       ← parser CSV + upsert Supabase
-middleware.ts         ← proteção de rotas
+  types.ts              → Todos os tipos TypeScript
+  utils.ts              → CNPJ, BRL, datas, SLA
+  motor.ts              → Classificação A1/A2/B1/B2
+  supabase/client.ts    → Cliente browser
+  supabase/server.ts    → Cliente server (App Router)
+middleware.ts           → Auth guard + redirect
+crm_v3_schema.sql       → Schema completo PostgreSQL
 ```
 
 ---
 
-## Regras de negócio críticas
+## Regras críticas — não alterar
 
-- **CNPJ_RAIZ**: 8 primeiros dígitos numéricos, zero-padded. NUNCA contar pontos/barras.
-- **Dedup**: por `NUMERO_INSCRICAO` nas inscrições. Empresa atualiza dados mas preserva estágio do pipeline.
-- **Exclusão automática**: Massa Falida, Recuperação Judicial, Falido, Simples, MEI.
-- **Regra econômica**: `comissão + honorários > prêmio líquido` — obrigatória em toda proposta.
-- **SLA**: análise rápida 1 dia útil, proposta 48h, alerta >7 dias parado.
-- **Ordem da esteira**: PGFN → Receita/CNPJ → Sancor → decisor. Enriquecimento de decisores só após validação cadastral + consulta Sancor.
+### CNPJ Raiz
+```typescript
+// Remove TODOS os não-numéricos, pega os 8 primeiros dígitos
+const raiz = cnpj.replace(/\D/g, '').substring(0, 8).padStart(8, '0')
+```
+
+### Classificação de Motores
+| Motor | Lógica | Abordagem |
+|-------|--------|-----------|
+| A1 | Ajuizado + SEM garantia | Execução ativa, risco BACENJUD |
+| A2 | NÃO ajuizado + SEM garantia | Antecipe antes do ajuizamento |
+| B1 | Situação contém PENHORA | Substituição por SG |
+| B2 | Situação contém SEGURO GARANTIA | Revisão de prêmio |
+
+**Prioridade empresa:** A1 > B1 > B2 > A2
+
+### Regra econômica V&F
+`comissão + honorários ≥ R$ 80.000` (teto mínimo)
+`comissão + honorários ≤ R$ 200.000` (teto-alvo)
+
+### Dedup na importação
+- Empresa: `ON CONFLICT (cnpj_raiz) DO UPDATE` — atualiza sempre
+- Inscrição: `ON CONFLICT (numero_inscricao) DO UPDATE` — atualiza sempre
+- Motor da empresa: calculado automaticamente via trigger SQL
 
 ---
 
-## Tiers de seguradora (regra de alocação automática)
+## Usuários
 
-| Seguradora | Dívida | PL mínimo | Receita mínima |
-|---|---|---|---|
-| Sancor | ≤ R$ 20M | R$ 20M | — |
-| Berkley | ≤ R$ 30M | — | R$ 100M |
-| Zurich/Swiss/Chubb | > R$ 30M | R$ 100M | R$ 300M |
+| Usuário | Papel | Escopo |
+|---------|-------|--------|
+| Rodrigo | Admin | Análise técnica, financeiro, sem limite |
+| Ana | Operador | Follow-up, institucional, pós-reunião |
 
 ---
 
-## Proteção de PI (casos fora da automaticidade)
+## Próximos passos (Fase 2)
 
-Antes da defesa técnica com Rodrigo: NDA + termo de cooperação + instrumento de PI + documentos financeiros + ficha judicial.
+- [ ] Integração CNPJ.gov.br (enriquecimento automático)
+- [ ] Template de proposta PDF
+- [ ] Notificações SLA por e-mail
+- [ ] API Sancor (consulta de cadastro)
+- [ ] OSINT (Hunter.io, LinkedIn) — com aprovação humana
+- [ ] Exportação Excel da carteira

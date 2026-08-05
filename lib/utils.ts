@@ -1,124 +1,144 @@
-// lib/utils.ts
-import { EstagioPipeline, Empresa, ESTAGIO_CAMPOS_OBRIGATORIOS } from './types'
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
-// ── Formatação BRL (sem centavos) ──────────────────────────
+// ---- Tailwind classnames utility ----
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+// ---- CNPJ Raiz ----
+// Regra: remove TODOS os não-numéricos → pega os 8 primeiros dígitos
+// Preserva zero à esquerda. Resultado sempre CHAR(8).
+export function extractCnpjRaiz(rawCnpj: string): string {
+  const digits = rawCnpj.replace(/\D/g, '')        // remove tudo que não é dígito
+  const raiz = digits.substring(0, 8)              // primeiros 8 dígitos
+  return raiz.padStart(8, '0')                      // garante 8 chars (segurança)
+}
+
+// Formata CNPJ completo: XX.XXX.XXX/XXXX-XX
+export function formatCnpj(cnpj: string): string {
+  const d = cnpj.replace(/\D/g, '')
+  if (d.length !== 14) return cnpj
+  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12)}`
+}
+
+// ---- Formatação monetária BRL ----
+const BRL = new Intl.NumberFormat('pt-BR', {
+  style: 'currency',
+  currency: 'BRL',
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+})
+
 export function formatBRL(value: number | null | undefined): string {
   if (value == null) return '—'
-  return new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value)
+  return BRL.format(value)
 }
 
-// ── CNPJ_RAIZ a partir de qualquer formato ────────────────
-export function extrairCnpjRaiz(cnpjRaw: string): string {
-  const apenasDigitos = cnpjRaw.replace(/[^0-9]/g, '')
-  return apenasDigitos.substring(0, 8).padStart(8, '0')
+export function formatBRLCompact(value: number | null | undefined): string {
+  if (value == null) return '—'
+  if (Math.abs(value) >= 1_000_000_000) return `R$ ${(value / 1_000_000_000).toFixed(1)}B`
+  if (Math.abs(value) >= 1_000_000)     return `R$ ${(value / 1_000_000).toFixed(1)}M`
+  if (Math.abs(value) >= 1_000)         return `R$ ${(value / 1_000).toFixed(0)}K`
+  return BRL.format(value)
 }
 
-// ── Formatar CNPJ completo ─────────────────────────────────
-export function formatarCnpj(cnpj: string): string {
-  const d = cnpj.replace(/[^0-9]/g, '')
-  if (d.length !== 14) return cnpj
-  return `${d.slice(0,2)}.${d.slice(2,5)}.${d.slice(5,8)}/${d.slice(8,12)}-${d.slice(12,14)}`
+// Parseia string BRL do CSV ("R$ 4.119.813" ou "4119812.53")
+export function parseBRLString(raw: string): number {
+  if (!raw) return 0
+  // Remove "R$", espaços, pontos de milhar, substitui vírgula decimal
+  const clean = raw
+    .replace('R$', '')
+    .replace(/\./g, '')
+    .replace(',', '.')
+    .trim()
+  const n = parseFloat(clean)
+  return isNaN(n) ? 0 : n
 }
 
-// ── Prioridade marinheiro ─────────────────────────────────
-export function calcularPrioridade(qtd: number): 'ALTA' | 'MEDIA' | 'BAIXA' {
-  if (qtd <= 2) return 'ALTA'
-  if (qtd <= 4) return 'MEDIA'
+// ---- Formatação de taxa ----
+export function formatTaxa(taxa: number | null | undefined): string {
+  if (taxa == null) return '—'
+  return `${(taxa * 100).toFixed(2)}% a.a.`
+}
+
+// ---- Formatação de datas ----
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('pt-BR')
+  } catch {
+    return dateStr
+  }
+}
+
+export function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+  } catch {
+    return dateStr
+  }
+}
+
+// Dias desde uma data
+export function diasDesde(dateStr: string | null | undefined): number {
+  if (!dateStr) return 0
+  const diff = Date.now() - new Date(dateStr).getTime()
+  return Math.floor(diff / (1000 * 60 * 60 * 24))
+}
+
+// SLA: retorna classe CSS baseada nos dias parado
+export function slaStatus(diasParado: number): 'ok' | 'alerta' | 'vencido' {
+  if (diasParado <= 3)  return 'ok'
+  if (diasParado <= 7)  return 'alerta'
+  return 'vencido'
+}
+
+export function slaClass(diasParado: number): string {
+  const s = slaStatus(diasParado)
+  if (s === 'ok')      return 'text-success'
+  if (s === 'alerta')  return 'text-warning'
+  return 'text-danger'
+}
+
+// ---- Parseia data do CSV (dd/mm/yyyy) ----
+export function parseCSVDate(raw: string): string | null {
+  if (!raw || raw.trim() === '') return null
+  const [d, m, y] = raw.split('/')
+  if (!d || !m || !y) return null
+  return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`
+}
+
+// ---- Prioridade do marinheiro → enum ----
+export function mapPrioridade(raw: string): 'ALTA' | 'MEDIA' | 'BAIXA' {
+  const p = raw?.toUpperCase().trim()
+  if (p === 'ALTA')  return 'ALTA'
+  if (p === 'MEDIA') return 'MEDIA'
   return 'BAIXA'
 }
 
-// ── Seguradora sugerida por valor ─────────────────────────
-export function sugerirSeguradora(valorTotal: number): string {
-  if (valorTotal <= 20_000_000) return 'Sancor'
-  if (valorTotal <= 30_000_000) return 'Berkley'
-  return 'Zurich'
+// ---- Faixa baseada no valor ----
+export function mapFaixa(valorTotal: number): 'F1_SANCOR' | 'F2_AMPLIADA' {
+  return valorTotal <= 7_000_000 ? 'F1_SANCOR' : 'F2_AMPLIADA'
 }
 
-// ── Validação de passagem de estágio ─────────────────────
-export function podeProceder(empresa: Empresa, proximoEstagio: EstagioPipeline): {
-  ok: boolean
-  camposFaltando: string[]
-} {
-  const campos = ESTAGIO_CAMPOS_OBRIGATORIOS[proximoEstagio] || []
-  const faltando = campos.filter(campo => {
-    const val = (empresa as Record<string, unknown>)[campo]
-    return val == null || val === false || val === ''
-  })
-  return { ok: faltando.length === 0, camposFaltando: faltando }
+// ---- Seguradora-alvo baseada no valor ----
+export function mapSeguradora(valorTotal: number, pl?: number): 'SANCOR' | 'BERKLEY' | 'ZURICH' {
+  if (valorTotal <= 20_000_000) return 'SANCOR'
+  if (valorTotal <= 30_000_000) return 'BERKLEY'
+  return 'ZURICH'
 }
 
-// ── Calcular prêmio e receita VF ─────────────────────────
-export function calcularProposta({
-  valorGarantia,
-  taxaAA,
-  prazoMeses,
-  comissaoPct,
-  honorariosBRL,
-}: {
-  valorGarantia: number
-  taxaAA: number
-  prazoMeses: number
-  comissaoPct: number
-  honorariosBRL: number
-}) {
-  const premioBruto = valorGarantia * taxaAA * (prazoMeses / 12)
-  const comissaoBRL = premioBruto * (comissaoPct / 100)
-  const premioLiquido = premioBruto - comissaoBRL
-  const receitaVF = comissaoBRL + honorariosBRL
-  const regraEconomicaOk = receitaVF > premioLiquido
-
-  return {
-    premioBruto,
-    comissaoBRL,
-    premioLiquido,
-    receitaVF,
-    regraEconomicaOk,
-  }
+// ---- Abbreviate long names ----
+export function truncate(str: string, max: number): string {
+  if (str.length <= max) return str
+  return str.slice(0, max - 1) + '…'
 }
 
-// ── Dias úteis entre duas datas ───────────────────────────
-export function diasUteis(dataInicio: Date, dataFim: Date): number {
-  let count = 0
-  const cur = new Date(dataInicio)
-  while (cur <= dataFim) {
-    const dow = cur.getDay()
-    if (dow !== 0 && dow !== 6) count++
-    cur.setDate(cur.getDate() + 1)
-  }
-  return count
-}
-
-// ── Parse de valor BRL do CSV (ex: "R$ 4.119.813") ───────
-export function parseBRLParaNumerico(valorBRL: string): number {
-  const limpo = valorBRL.replace(/[^0-9,]/g, '').replace(',', '.')
-  return parseFloat(limpo.replace(/\./g, '').replace(',', '.')) || 0
-}
-
-// ── Verificar exclusão automática ────────────────────────
-export function deveExcluir(nomeDevedor: string, regimeTributario?: string | null): {
-  excluir: boolean
-  motivo?: string
-} {
-  const nome = nomeDevedor.toUpperCase()
-  if (nome.includes('MASSA FALIDA')) return { excluir: true, motivo: 'Massa Falida' }
-  if (nome.includes('RECUPERAÇÃO JUDICIAL') || nome.includes('RECUPERACAO JUDICIAL')) return { excluir: true, motivo: 'Recuperação Judicial' }
-  if (nome.includes('FALIDO')) return { excluir: true, motivo: 'Falido' }
-  if (regimeTributario?.toUpperCase().includes('SIMPLES')) return { excluir: true, motivo: 'Simples Nacional' }
-  if (regimeTributario?.toUpperCase().includes('MEI')) return { excluir: true, motivo: 'MEI' }
-  return { excluir: false }
-}
-
-// ── Cor por prioridade ────────────────────────────────────
-export function corPrioridade(prioridade: string | null): string {
-  switch (prioridade) {
-    case 'ALTA': return '#dc2626'
-    case 'MEDIA': return '#d97706'
-    case 'BAIXA': return '#6b7280'
-    default: return '#9ca3af'
-  }
+// ---- Pluralizar ----
+export function plural(n: number, singular: string, plural: string): string {
+  return `${n} ${n === 1 ? singular : plural}`
 }

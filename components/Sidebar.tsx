@@ -1,72 +1,93 @@
 'use client'
-// components/Sidebar.tsx
+
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import {
+  LayoutDashboard, KanbanSquare, Database, Building2,
+  Upload, Calculator, Settings, LogOut, Shield
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/dashboard', label: 'Dashboard', icon: '▦' },
-  { href: '/pipeline', label: 'Pipeline', icon: '⠿' },
-  { href: '/base', label: 'Base PGFN', icon: '≡' },
-  { href: '/importar', label: 'Importar', icon: '↑' },
-  { href: '/solver', label: 'VF Solver', icon: '◈' },
-  { href: '/configuracoes', label: 'Configurações', icon: '⚙' },
+  { href: '/dashboard',  label: 'Dashboard',    icon: LayoutDashboard },
+  { href: '/pipeline',   label: 'Pipeline',     icon: KanbanSquare },
+  { href: '/base-pgfn',  label: 'Base PGFN',    icon: Database },
+  { href: '/importar',   label: 'Importar',     icon: Upload },
+  { href: '/solver',     label: 'VF Solver',    icon: Calculator },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  userName?: string
+  userRole?: string
+}
+
+export default function Sidebar({ userName, userRole }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const supabase = createClient()
 
   async function handleLogout() {
-    const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+    router.refresh()
   }
 
   return (
-    <div className="sidebar">
+    <aside className="flex flex-col w-56 min-h-screen bg-bg-secondary border-r border-border">
+
       {/* Logo */}
-      <div style={{ padding: '0 20px 20px', borderBottom: '1px solid var(--color-border)', marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32,
-            background: 'var(--color-primary)',
-            borderRadius: 7,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 800, color: 'white'
-          }}>VF</div>
+      <div className="px-4 py-5 border-b border-border">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-vf-red rounded flex items-center justify-center flex-shrink-0">
+            <Shield className="w-3.5 h-3.5 text-white" />
+          </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 14 }}>V&F CRM</div>
-            <div style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>PGFN v3.0</div>
+            <p className="text-text-primary font-semibold text-sm leading-tight">V&F Grupo</p>
+            <p className="text-text-faint text-[10px] uppercase tracking-wide">CRM v3</p>
           </div>
         </div>
       </div>
 
       {/* Nav */}
-      <nav style={{ flex: 1 }}>
-        {NAV.map(item => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`nav-item ${pathname.startsWith(item.href) ? 'active' : ''}`}
-          >
-            <span style={{ fontSize: 14, width: 18, textAlign: 'center' }}>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+      <nav className="flex-1 px-2 py-4 space-y-0.5">
+        {NAV.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(href + '/')
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={cn(
+                'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors',
+                active
+                  ? 'bg-vf-red/10 text-vf-red-light font-medium'
+                  : 'text-text-muted hover:bg-bg-hover hover:text-text-primary'
+              )}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              {label}
+            </Link>
+          )
+        })}
       </nav>
 
-      {/* Logout */}
-      <div style={{ padding: '20px 0 0', borderTop: '1px solid var(--color-border)', marginTop: 'auto' }}>
+      {/* User + logout */}
+      <div className="px-2 py-3 border-t border-border">
+        {userName && (
+          <div className="px-3 py-2 mb-1">
+            <p className="text-text-primary text-xs font-medium truncate">{userName}</p>
+            <p className="text-text-faint text-[10px] capitalize">{userRole}</p>
+          </div>
+        )}
         <button
           onClick={handleLogout}
-          className="nav-item"
-          style={{ width: '100%', background: 'none', border: 'none', textAlign: 'left' }}
+          className="flex items-center gap-2.5 w-full px-3 py-2 rounded text-sm
+                     text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
         >
-          <span style={{ fontSize: 14, width: 18, textAlign: 'center' }}>⏻</span>
+          <LogOut className="w-4 h-4" />
           Sair
         </button>
       </div>
-    </div>
+    </aside>
   )
 }
