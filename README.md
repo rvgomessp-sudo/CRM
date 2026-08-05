@@ -153,3 +153,5 @@ const raiz = cnpj.replace(/\D/g, '').substring(0, 8).padStart(8, '0')
 - [ ] API Sancor (consulta de cadastro)
 - [ ] OSINT (Hunter.io, LinkedIn) — com aprovação humana
 - [ ] Exportação Excel da carteira
+
+<!-- deploy trigger -->
