@@ -283,6 +283,9 @@ export const MOTOR_LABELS: Record<MotorTipo, string> = {
   B2: 'B2 – Revisão',
 }
 
+// Alias para compatibilidade
+export const MOTOR_BADGE_LABEL = MOTOR_LABELS
+
 export const MOTOR_COLORS: Record<MotorTipo, string> = {
   A1: 'bg-red-500/20 text-red-400',
   A2: 'bg-amber-500/20 text-amber-400',
