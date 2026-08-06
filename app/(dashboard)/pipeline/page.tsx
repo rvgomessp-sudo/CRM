@@ -33,7 +33,7 @@ export default function PipelinePage() {
     setLoading(true)
     let query = supabase
       .from('empresas')
-      .select('*, responsavel:profiles!responsavel_id(id, nome)')
+      .select('*')
       .eq('ativo', true)
       .eq('excluido', false)
       .order('atualizado_em', { ascending: false })
