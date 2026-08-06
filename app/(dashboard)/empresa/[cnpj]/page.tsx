@@ -51,9 +51,9 @@ export default function EmpresaPage() {
   async function fetchAll() {
     setLoading(true)
     const [emp, ins, int, con, prop] = await Promise.all([
-      supabase.from('empresas').select('*, responsavel:profiles!responsavel_id(id, nome)').eq('cnpj_raiz', cnpj).single(),
+      supabase.from('empresas').select('*').eq('cnpj_raiz', cnpj).single(),
       supabase.from('inscricoes').select('*').eq('cnpj_raiz', cnpj).order('valor_numerico', { ascending: false }),
-      supabase.from('interacoes').select('*, responsavel:profiles!responsavel_id(id, nome)').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
+      supabase.from('interacoes').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
       supabase.from('consultas_seguradora').select('*').eq('cnpj_raiz', cnpj).order('data_consulta', { ascending: false }),
       supabase.from('propostas').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
     ])
