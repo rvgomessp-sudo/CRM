@@ -119,3 +119,31 @@ Valor_Troca = Restituição + Economia
 - [ ] Calibrar os % por motor (faixas acima são partida)
 - [ ] Estudo de taxa próprio (para automatizar taxa comparativa da base)
 - [ ] Ponto default do honorário na faixa (margem vs. volume — ligado à elasticidade)
+
+---
+
+## 🔧 ATUALIZAÇÃO — Motores expandidos (base v2)
+
+Após mapeamento dos tipos de garantia na base (SITUACAO_INSCRICAO):
+
+| Motor | Situação (SITUACAO_INSCRICAO) | Vetor | Valor Destravado |
+|-------|-------------------------------|-------|------------------|
+| A1 | ATIVA AJUIZADA (sem garantia) | Urgência BACENJUD | IS |
+| A2 | ATIVA NAO AJUIZAVEL (sem gar.) | Prevenção | IS |
+| B1 | ...GARANTIA - PENHORA | Substituição libera ativo | Valor do ativo |
+| B2 | ...GARANTIA - SEGURO GARANTIA | Substituição antecipada | Restituição + economia |
+| B3 | ...GARANTIA - CARTA FIANCA | Migração taxa menor | Limite bancário liberado |
+| B4 | ...GARANTIA - DEPOSITO | **Impedir NOVOS depósitos** | Depósitos futuros evitados |
+| B5 | ...GARANTIA - NJP | Estruturação premium | A definir |
+
+### ⚠️ CORREÇÃO CRÍTICA — Motor B4 (Depósito)
+A PGFN **NÃO aceita** substituir depósito judicial já feito por seguro garantia.
+O dinheiro depositado permanece. Portanto o B4 NÃO é "liberar caixa preso".
+O vetor correto é **PREVENÇÃO**: impedir que a empresa continue imobilizando
+caixa em NOVOS depósitos. Argumento: "em vez de depositar mais no tribunal,
+garanta por seguro — preserve seu caixa daqui pra frente."
+Valor destravado = valor estimado de novos depósitos evitados (não o já depositado).
+
+### Volumes na base (PJ, principal, situação):
+- Seguro Garantia: 20.659 | Depósito: 16.142 | Penhora: ~5.478 (qualif.)
+- Carta Fiança: 2.709 | NJP: 282
