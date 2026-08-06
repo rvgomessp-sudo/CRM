@@ -132,3 +132,29 @@ autuada recentemente, dívida de IPI ou multa isolada.**
 - COMPANHIA DAS DOCAS DA BAHIA (CODEBA) — provável Economia Mista
 - FEDERAÇÃO BRASILEIRA DE CONVENTION — provável Associação
 - SAMARA VANESSA DE OLIVEIRA, ARYAN SCHUT FLORES — provável Empresário Individual
+
+---
+
+## ✅ CARGA INICIAL CONCLUÍDA
+
+**Data:** carga NR1 v1
+**Resultado:** 42 empresas + 42 inscrições no CRM V3 (Supabase)
+**Pipeline:** R$471,2MM
+**Método:** carga via API REST Supabase (service_role), após materialização
+            em `crm_alvos_nr1` no Postgres local.
+
+### Régua final aplicada (piso R$1MM)
+- Estreante puro (inscrição única) ✅
+- PJ, PRINCIPAL, ajuizado ✅
+- Sem garantia (TIPO_SITUACAO + SITUACAO) ✅
+- Sem SISPAR ✅
+- Sem RJ/Falência/Massa ✅
+- Sem públicos/associações/institutos ✅
+- Sem Simples Nacional ✅
+
+### Roteamento seguradora
+- SANCOR (≤R$20MM): 37 · ZURICH (>R$30MM): 4 · BERKLEY (≤R$30MM): 1
+
+### Pendências fase 2 (natureza jurídica — CP-11)
+- SPTrans, CODEBA (estatais), Federação Convention, empresário individual
+  (Samara, Aryan) — revisar quando enriquecer com natureza_juridica
