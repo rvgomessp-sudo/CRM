@@ -103,3 +103,32 @@ autuada recentemente, dívida de IPI ou multa isolada.**
 | 12 | `12_rematerializar_completo.sql` | Cria `crm_alvos_nr1` (todas colunas + exclusões) |
 | — | `gerar_inserts` | Exporta INSERTs empresas+inscricoes p/ Supabase |
 
+
+---
+
+## CP-11 · Filtro por Natureza Jurídica (FASE ENRIQUECIMENTO)
+
+> Substitui os filtros frágeis por nome (CP-07) por classificação precisa
+> da Receita Federal, via campo `natureza_juridica` do cadastro CNPJ.
+
+- [ ] Enriquecer base com `natureza_juridica` (código 4 dígitos + descrição) da Receita
+- [ ] Filtrar por CÓDIGO, não por texto do nome:
+
+| Código | Natureza | Decisão |
+|--------|----------|---------|
+| 2062 | Soc. Empresária Limitada | ✅ alvo |
+| 2054 | S.A. Fechada | ✅ alvo |
+| 2046 | S.A. Aberta | ⚠️ avaliar porte |
+| 2135 | Empresário Individual | 🔶 régua a definir |
+| 1244 | Adm. Pública / Autarquia | ❌ excluir (SPTrans, CODEBA) |
+| 2038 | Economia Mista | ❌ excluir (estatal) |
+| 3999 | Associação / Fundação | ❌ excluir (sem fins lucrativos) |
+
+- [ ] Aposentar filtros por nome (MUNICIPIO, ASSOCIACAO...) após ter natureza_juridica
+- [ ] Casos hoje resolvidos na mão (SPTrans, CODEBA, Federação, empresário individual) passam a ser automáticos
+
+### Casos pendentes de julgamento (carga inicial, resolver no enriquecimento)
+- SÃO PAULO TRANSPORTE S.A. — provável Adm. Pública/Economia Mista
+- COMPANHIA DAS DOCAS DA BAHIA (CODEBA) — provável Economia Mista
+- FEDERAÇÃO BRASILEIRA DE CONVENTION — provável Associação
+- SAMARA VANESSA DE OLIVEIRA, ARYAN SCHUT FLORES — provável Empresário Individual
