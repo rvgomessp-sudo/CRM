@@ -114,7 +114,7 @@ export default function BasePGFNPage() {
 
           <select className="select py-1.5 text-xs w-auto" value={filters.uf} onChange={e => updateFilter('uf', e.target.value)}>
             <option value="">UF</option>
-            {['SP','MS'].map(u => <option key={u} value={u}>{u}</option>)}
+            {['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'].map(u => <option key={u} value={u}>{u}</option>)}
           </select>
 
           <select className="select py-1.5 text-xs w-auto" value={filters.seguradora} onChange={e => updateFilter('seguradora', e.target.value)}>
