@@ -7,16 +7,18 @@ export type PipelineStage =
   | 'base_pgfn'
   | 'enriquecimento'
   | 'abordagem'
-  | 'interesse_manifesto'
-  | 'analise_rapida'
-  | 'proposta_enviada'
-  | 'submetido_sancor'
-  | 'aprovado'
-  | 'fechado'
-  | 'receita_realizada'
+  | 'analise_preliminar'
+  | 'proposta_comercial'
+  | 'aprovado_ad_pagto'
+  | 'analise_estruturacao'
+  | 'submetido_seguradora'
+  | 'aprovacao_minuta'
+  | 'faturamento'
+  | 'emissao'
+  | 'reprovado'
 
 export type PrioridadeTipo  = 'ALTA' | 'MEDIA' | 'BAIXA'
-export type MotorTipo       = 'A1' | 'A2' | 'B1' | 'B2'
+export type MotorTipo       = 'A1' | 'A2' | 'B1' | 'B2' | 'B3' | 'B4' | 'B5'
 export type SeguradoraTipo  = 'SANCOR' | 'BERKLEY' | 'ZURICH' | 'SWISS' | 'CHUBB'
 export type FaixaTipo       = 'F1_SANCOR' | 'F2_AMPLIADA'
 export type PapelUsuario    = 'admin' | 'operador'
@@ -251,36 +253,43 @@ export interface SolverOutput {
 
 // ---- Labels ----
 export const STAGE_LABELS: Record<PipelineStage, string> = {
-  base_pgfn:           'Base PGFN',
-  enriquecimento:      'Enriquecimento',
-  abordagem:           'Abordagem',
-  interesse_manifesto: 'Interesse',
-  analise_rapida:      'Análise Rápida',
-  proposta_enviada:    'Proposta Enviada',
-  submetido_sancor:    'Submetido Sancor',
-  aprovado:            'Aprovado',
-  fechado:             'Fechado',
-  receita_realizada:   'Receita',
+  base_pgfn:            'Base PGFN',
+  enriquecimento:       'Enriquecimento',
+  abordagem:            'Abordagem',
+  analise_preliminar:   'Análise Preliminar',
+  proposta_comercial:   'Proposta Comercial',
+  aprovado_ad_pagto:    'Aprovado / Ad. Pagto',
+  analise_estruturacao: 'Análise Estruturação',
+  submetido_seguradora: 'Submetido à Seguradora',
+  aprovacao_minuta:     'Aprovação / Minuta',
+  faturamento:          'Faturamento',
+  emissao:              'Emissão',
+  reprovado:            'Reprovado',
 }
 
 export const STAGE_COLORS: Record<PipelineStage, string> = {
-  base_pgfn:           'bg-text-faint text-text-muted',
-  enriquecimento:      'bg-info/20 text-info',
-  abordagem:           'bg-warning/20 text-warning',
-  interesse_manifesto: 'bg-success/20 text-success',
-  analise_rapida:      'bg-purple-500/20 text-purple-400',
-  proposta_enviada:    'bg-vf-red/20 text-vf-red-light',
-  submetido_sancor:    'bg-vf-red/30 text-vf-red-light',
-  aprovado:            'bg-success/30 text-success',
-  fechado:             'bg-success/40 text-success',
-  receita_realizada:   'bg-green-900/50 text-green-400',
+  base_pgfn:            'bg-text-faint text-text-muted',
+  enriquecimento:       'bg-info/20 text-info',
+  abordagem:            'bg-warning/20 text-warning',
+  analise_preliminar:   'bg-amber-500/20 text-amber-400',
+  proposta_comercial:   'bg-purple-500/20 text-purple-400',
+  aprovado_ad_pagto:    'bg-cyan-500/20 text-cyan-400',
+  analise_estruturacao: 'bg-indigo-500/20 text-indigo-400',
+  submetido_seguradora: 'bg-vf-red/20 text-vf-red-light',
+  aprovacao_minuta:     'bg-vf-red/30 text-vf-red-light',
+  faturamento:          'bg-success/30 text-success',
+  emissao:              'bg-green-900/50 text-green-400',
+  reprovado:            'bg-red-900/40 text-red-400',
 }
 
 export const MOTOR_LABELS: Record<MotorTipo, string> = {
   A1: 'A1 – Urgência',
   A2: 'A2 – Prevenção',
   B1: 'B1 – Penhora',
-  B2: 'B2 – Revisão',
+  B2: 'B2 – Seguro Garantia',
+  B3: 'B3 – Carta Fiança',
+  B4: 'B4 – Depósito',
+  B5: 'B5 – NJP',
 }
 
 // Alias para compatibilidade
@@ -291,10 +300,14 @@ export const MOTOR_COLORS: Record<MotorTipo, string> = {
   A2: 'bg-amber-500/20 text-amber-400',
   B1: 'bg-blue-500/20 text-blue-400',
   B2: 'bg-purple-500/20 text-purple-400',
+  B3: 'bg-teal-500/20 text-teal-400',
+  B4: 'bg-cyan-500/20 text-cyan-400',
+  B5: 'bg-pink-500/20 text-pink-400',
 }
 
 export const STAGES_ORDERED: PipelineStage[] = [
-  'base_pgfn', 'enriquecimento', 'abordagem', 'interesse_manifesto',
-  'analise_rapida', 'proposta_enviada', 'submetido_sancor',
-  'aprovado', 'fechado', 'receita_realizada',
+  'base_pgfn', 'enriquecimento', 'abordagem', 'analise_preliminar',
+  'proposta_comercial', 'aprovado_ad_pagto', 'analise_estruturacao',
+  'submetido_seguradora', 'aprovacao_minuta', 'faturamento',
+  'emissao', 'reprovado',
 ]
