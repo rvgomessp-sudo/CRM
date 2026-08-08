@@ -116,3 +116,25 @@ Decisões ainda abertas do Solver:
 - Ponto default do honorário na faixa (margem vs volume — ligado a elasticidade)
 - Calibrar % por motor (faixas de partida na spec)
 - Estudo de taxa próprio para automatizar comparativo
+
+---
+
+## ✅✅ ATUALIZAÇÃO — CARGA V2 CONCLUÍDA
+
+**Trilho 1 FEITO:** base v2 no ar.
+- 2.823 empresas + 2.823 inscrições principais no Supabase
+- Motores B3/B4/B5 adicionados ao enum
+- V1 (42) limpa antes da carga
+- Método: conexão direta Postgres local → Supabase (Session pooler), instantâneo
+- Inscrições secundárias (~110 mil) permanecem em crm_carga_v2 no Postgres local,
+  para carregar na ficha quando estruturar propostas (Trilho 2)
+
+**Ana pode prospectar em https://crm-x874.vercel.app (hard refresh Ctrl+Shift+R)**
+
+### Trilho 2 (a partir de terça, com API Econodata):
+- Enriquecimento (natureza jurídica p/ CP-11, porte, faturamento, decisor)
+- OSINT de prospecção
+- VF Solver v2 (ver SPEC_VF_SOLVER_V2.md)
+- UX: Pipeline com coluna descarte, ficha multi-inscrição, Dashboard moderno,
+  Interações/Proposta reformuladas
+- Produto SaaS: white-label, ambientes, assinatura com fee
