@@ -14,8 +14,11 @@ export type PipelineStage =
   | 'submetido_seguradora'
   | 'aprovacao_minuta'
   | 'faturamento'
+  | 'consultoria'
   | 'emissao'
   | 'reprovado'
+
+export type TipoFechamento  = 'CONSULTORIA' | 'EMISSAO' | 'AMBOS'
 
 export type PrioridadeTipo  = 'ALTA' | 'MEDIA' | 'BAIXA'
 export type MotorTipo       = 'A1' | 'A2' | 'B1' | 'B2' | 'B3' | 'B4' | 'B5'
@@ -263,6 +266,7 @@ export const STAGE_LABELS: Record<PipelineStage, string> = {
   submetido_seguradora: 'Submetido à Seguradora',
   aprovacao_minuta:     'Aprovação / Minuta',
   faturamento:          'Faturamento',
+  consultoria:          'Consultoria',
   emissao:              'Emissão',
   reprovado:            'Reprovado',
 }
@@ -278,6 +282,7 @@ export const STAGE_COLORS: Record<PipelineStage, string> = {
   submetido_seguradora: 'bg-vf-red/20 text-vf-red-light',
   aprovacao_minuta:     'bg-vf-red/30 text-vf-red-light',
   faturamento:          'bg-success/30 text-success',
+  consultoria:          'bg-emerald-500/30 text-emerald-400',
   emissao:              'bg-green-900/50 text-green-400',
   reprovado:            'bg-red-900/40 text-red-400',
 }
@@ -309,5 +314,5 @@ export const STAGES_ORDERED: PipelineStage[] = [
   'base_pgfn', 'enriquecimento', 'abordagem', 'analise_preliminar',
   'proposta_comercial', 'aprovado_ad_pagto', 'analise_estruturacao',
   'submetido_seguradora', 'aprovacao_minuta', 'faturamento',
-  'emissao', 'reprovado',
+  'consultoria', 'emissao', 'reprovado',
 ]
