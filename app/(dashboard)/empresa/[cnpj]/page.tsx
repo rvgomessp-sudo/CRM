@@ -16,10 +16,10 @@ import {
 import { MOTOR_ABORDAGEM } from '@/lib/motor'
 import {
   ArrowLeft, Building2, FileText, MessageSquare, Calculator,
-  AlertTriangle, CheckCircle, Clock, Plus, ExternalLink, ChevronDown
+  AlertTriangle, CheckCircle, Clock, Plus, ExternalLink, ChevronDown, Phone, Mail, Trash2, User
 } from 'lucide-react'
 
-type Tab = 'overview' | 'inscricoes' | 'interacoes' | 'proposta'
+type Tab = 'overview' | 'inscricoes' | 'contatos' | 'interacoes' | 'proposta'
 
 export default function EmpresaPage() {
   const params = useParams()
@@ -31,6 +31,9 @@ export default function EmpresaPage() {
   const [interacoes, setInteracoes] = useState<Interacao[]>([])
   const [consultas, setConsultas] = useState<ConsultaSeguradora[]>([])
   const [propostas, setPropostas] = useState<Proposta[]>([])
+  const [contatos, setContatos] = useState<any[]>([])
+  const [showContatoForm, setShowContatoForm] = useState(false)
+  const [novoContato, setNovoContato] = useState({ nome: '', cargo: '', telefone: '', email: '' })
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('overview')
   const [saving, setSaving] = useState(false)
@@ -50,18 +53,20 @@ export default function EmpresaPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [emp, ins, int, con, prop] = await Promise.all([
+    const [emp, ins, int, con, prop, cont] = await Promise.all([
       supabase.from('empresas').select('*').eq('cnpj_raiz', cnpj).single(),
       supabase.from('inscricoes').select('*').eq('cnpj_raiz', cnpj).order('valor_numerico', { ascending: false }),
       supabase.from('interacoes').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
       supabase.from('consultas_seguradora').select('*').eq('cnpj_raiz', cnpj).order('data_consulta', { ascending: false }),
       supabase.from('propostas').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
+      supabase.from('contatos').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
     ])
     setEmpresa(emp.data)
     setInscricoes(ins.data || [])
     setInteracoes(int.data || [])
     setConsultas(con.data || [])
     setPropostas(prop.data || [])
+    setContatos(cont.data || [])
     setLoading(false)
   }
 
@@ -97,6 +102,32 @@ export default function EmpresaPage() {
     }
     setNovaInteracao({ canal: 'TELEFONE', resumo: '', proxima_acao: '', proxima_acao_em: '' })
     setShowInteracaoForm(false)
+    await fetchAll()
+    setSaving(false)
+  }
+
+  async function adicionarContato() {
+    if (!novoContato.nome.trim()) return
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('contatos').insert({
+      cnpj_raiz: cnpj,
+      nome: novoContato.nome,
+      cargo: novoContato.cargo || null,
+      telefone: novoContato.telefone || null,
+      email: novoContato.email || null,
+      origem: 'MANUAL',
+      criado_por: user?.id,
+    })
+    setNovoContato({ nome: '', cargo: '', telefone: '', email: '' })
+    setShowContatoForm(false)
+    await fetchAll()
+    setSaving(false)
+  }
+
+  async function excluirContato(id: string) {
+    setSaving(true)
+    await supabase.from('contatos').delete().eq('id', id)
     await fetchAll()
     setSaving(false)
   }
@@ -177,6 +208,7 @@ export default function EmpresaPage() {
           {([
             { id: 'overview',    label: 'Overview',    icon: Building2 },
             { id: 'inscricoes',  label: `Inscrições (${inscricoes.length})`, icon: FileText },
+            { id: 'contatos',    label: `Contatos (${contatos.length})`, icon: User },
             { id: 'interacoes',  label: `Interações (${interacoes.length})`, icon: MessageSquare },
             { id: 'proposta',    label: 'Proposta',    icon: Calculator },
           ] as const).map(({ id, label, icon: Icon }) => (
@@ -339,6 +371,107 @@ export default function EmpresaPage() {
         )}
 
         {/* INTERAÇÕES */}
+        {tab === 'contatos' && (
+          <div className="max-w-3xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-text-primary">Contatos / Decisores</h3>
+              <button
+                onClick={() => setShowContatoForm(!showContatoForm)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-vf-red text-white rounded-md hover:bg-vf-red-light transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" /> Adicionar contato
+              </button>
+            </div>
+
+            {showContatoForm && (
+              <div className="mb-4 p-4 bg-surface-2 rounded-lg border border-border space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    placeholder="Nome *"
+                    value={novoContato.nome}
+                    onChange={e => setNovoContato({ ...novoContato, nome: e.target.value })}
+                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
+                  />
+                  <input
+                    placeholder="Cargo"
+                    value={novoContato.cargo}
+                    onChange={e => setNovoContato({ ...novoContato, cargo: e.target.value })}
+                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
+                  />
+                  <input
+                    placeholder="Telefone"
+                    value={novoContato.telefone}
+                    onChange={e => setNovoContato({ ...novoContato, telefone: e.target.value })}
+                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
+                  />
+                  <input
+                    placeholder="E-mail"
+                    value={novoContato.email}
+                    onChange={e => setNovoContato({ ...novoContato, email: e.target.value })}
+                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={adicionarContato}
+                    disabled={saving || !novoContato.nome.trim()}
+                    className="px-4 py-2 text-xs font-medium bg-vf-red text-white rounded-md hover:bg-vf-red-light disabled:opacity-50"
+                  >
+                    {saving ? 'Salvando…' : 'Salvar'}
+                  </button>
+                  <button
+                    onClick={() => setShowContatoForm(false)}
+                    className="px-4 py-2 text-xs font-medium text-text-muted hover:text-text-primary"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {contatos.length === 0 ? (
+              <p className="text-sm text-text-muted py-8 text-center">
+                Nenhum contato ainda. Adicione manualmente ou enriqueça pela Econodata.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {contatos.map((c) => (
+                  <div key={c.id} className="flex items-start justify-between p-3 bg-surface-2 rounded-lg border border-border">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-text-primary">{c.nome}</span>
+                        {c.cargo && <span className="text-xs text-text-muted">· {c.cargo}</span>}
+                        {c.origem && c.origem !== 'MANUAL' && (
+                          <span className="text-[10px] px-1.5 py-0.5 bg-surface-1 rounded text-text-muted">{c.origem}</span>
+                        )}
+                      </div>
+                      <div className="flex gap-4 mt-1">
+                        {c.telefone && (
+                          <span className="flex items-center gap-1 text-xs text-text-muted">
+                            <Phone className="w-3 h-3" /> {c.telefone}
+                          </span>
+                        )}
+                        {c.email && (
+                          <span className="flex items-center gap-1 text-xs text-text-muted">
+                            <Mail className="w-3 h-3" /> {c.email}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => excluirContato(c.id)}
+                      className="p-1.5 text-text-muted hover:text-danger transition-colors"
+                      title="Excluir contato"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {tab === 'interacoes' && (
           <div className="max-w-2xl">
             <div className="flex items-center justify-between mb-4">
