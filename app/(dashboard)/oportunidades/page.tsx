@@ -7,12 +7,19 @@ import { createClient } from '@/lib/supabase/client'
 import { formatBRLCompact, cn } from '@/lib/utils'
 import {
   MOTOR_COLORS, STAGE_LABELS, TRIAGEM_COLORS, TRIAGEM_LABELS, FONTE_LABELS,
+  EVENTO_JUDICIAL_LABELS,
   type FilaRow, type MotorTipo, type PipelineStage, type TriagemStatus,
 } from '@/lib/types'
 import {
   Search, Target, Eye, X, Check, ChevronLeft, ChevronRight,
-  Building2, RotateCcw, Flame,
+  Building2, RotateCcw, Flame, Gavel,
 } from 'lucide-react'
+
+// dias desde uma data ISO
+function diasDe(d: string | null): number | null {
+  if (!d) return null
+  return Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+}
 
 const PAGE_SIZE = 50
 const UFS = ['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO']
@@ -180,8 +187,11 @@ function FilaOportunidades() {
               <th>Empresa</th>
               <th>UF</th>
               <th>Motor</th>
+              <th>Tributo</th>
               <th className="text-right">Dívida</th>
               <th className="text-right">Capital</th>
+              <th className="text-right" title="Dívida ÷ Capital — quanto menor, mais segurável">D/C</th>
+              <th>Evento judicial</th>
               <th>Insc.</th>
               <th>Estágio</th>
               <th>Triagem</th>
@@ -190,9 +200,9 @@ function FilaOportunidades() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={10} className="text-center text-text-faint py-12">Carregando…</td></tr>
+              <tr><td colSpan={13} className="text-center text-text-faint py-12">Carregando…</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={10} className="text-center text-text-faint py-12">
+              <tr><td colSpan={13} className="text-center text-text-faint py-12">
                 <Building2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 Nenhuma oportunidade com esses filtros
               </td></tr>
@@ -228,8 +238,35 @@ function FilaOportunidades() {
                 <td>{row.motor
                   ? <span className={cn('badge text-[10px]', MOTOR_COLORS[row.motor as MotorTipo])}>{row.motor}</span>
                   : '—'}</td>
+                <td className="text-text-muted text-[11px]">{row.tributo_principal ?? '—'}</td>
                 <td className="text-right font-semibold text-text-primary">{formatBRLCompact(row.valor_total_devida)}</td>
                 <td className="text-right text-text-muted">{formatBRLCompact(row.capital_social)}</td>
+                <td className="text-right">
+                  {row.ratio_divida_capital != null ? (
+                    <span className={cn('font-medium text-xs',
+                      row.ratio_divida_capital <= 2 ? 'text-success' :
+                      row.ratio_divida_capital <= 5 ? 'text-warning' : 'text-danger')}
+                      title="Dívida ÷ Capital">
+                      {row.ratio_divida_capital}×
+                    </span>
+                  ) : <span className="text-text-faint text-xs">—</span>}
+                </td>
+                {/* Evento judicial */}
+                <td>
+                  {row.evento_judicial_tipo ? (() => {
+                    const d = diasDe(row.evento_judicial_em)
+                    const fresco = d != null && d <= 30
+                    return (
+                      <div className="flex items-center gap-1">
+                        <Gavel className={cn('w-3 h-3 flex-shrink-0', fresco ? 'text-vf-red-light' : 'text-text-faint')} />
+                        <span className={cn('text-[11px]', fresco ? 'text-text-primary' : 'text-text-muted')}>
+                          {EVENTO_JUDICIAL_LABELS[row.evento_judicial_tipo] ?? row.evento_judicial_tipo}
+                          {d != null && <span className="text-text-faint"> · {d === 0 ? 'hoje' : `${d}d`}</span>}
+                        </span>
+                      </div>
+                    )
+                  })() : <span className="text-text-faint text-xs">—</span>}
+                </td>
                 <td className="text-text-muted text-center">{row.qtd_inscricoes}</td>
                 <td><span className="text-text-muted text-xs">{STAGE_LABELS[row.estagio as PipelineStage] || row.estagio}</span></td>
                 <td><span className={cn('badge text-[10px]', TRIAGEM_COLORS[row.triagem])}>{TRIAGEM_LABELS[row.triagem]}</span></td>

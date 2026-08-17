@@ -342,6 +342,10 @@ export interface FilaRow {
   valor_maior_inscricao:  number
   capital_social:         number | null
   cnpj_situacao:          string | null
+  tributo_principal:      string | null
+  ratio_divida_capital:   number | null
+  evento_judicial_tipo:   string | null
+  evento_judicial_em:     string | null
   seguradora_alvo:        SeguradoraTipo
   prioridade:             PrioridadeTipo | null
   score:                  number | null
@@ -366,4 +370,13 @@ export const TRIAGEM_COLORS: Record<TriagemStatus, string> = {
   VISTO:      'bg-text-faint/20 text-text-muted',
   DESCARTADO: 'bg-danger/20 text-danger',
   ABORDAR:    'bg-success/20 text-success',
+}
+
+
+export const EVENTO_JUDICIAL_LABELS: Record<string, string> = {
+  EXECUCAO_FISCAL:   'Execução Fiscal',
+  ANULATORIA:        'Anulatória',
+  EMBARGOS_EXEC:     'Embargos',
+  MANDADO_SEGURANCA: 'Mand. Segurança',
+  CAUTELAR:          'Cautelar',
 }
