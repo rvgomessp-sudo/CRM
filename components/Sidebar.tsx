@@ -5,16 +5,17 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, KanbanSquare, Database, Building2,
-  Upload, Calculator, Settings, LogOut, Shield
+  Upload, Calculator, Settings, LogOut, Shield, Target
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/dashboard',  label: 'Dashboard',    icon: LayoutDashboard },
-  { href: '/pipeline',   label: 'Pipeline',     icon: KanbanSquare },
-  { href: '/base-pgfn',  label: 'Base PGFN',    icon: Database },
-  { href: '/importar',   label: 'Importar',     icon: Upload },
-  { href: '/solver',     label: 'VF Solver',    icon: Calculator },
+  { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
+  { href: '/oportunidades', label: 'Oportunidades', icon: Target },
+  { href: '/pipeline',      label: 'Pipeline',      icon: KanbanSquare },
+  { href: '/base-pgfn',     label: 'Base PGFN',     icon: Database },
+  { href: '/importar',      label: 'Importar',      icon: Upload },
+  { href: '/solver',        label: 'VF Solver',     icon: Calculator },
 ]
 
 interface SidebarProps {

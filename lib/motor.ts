@@ -74,7 +74,10 @@ const MOTOR_PRIORITY: Record<MotorTipo, number> = {
   A1: 1,
   B1: 2,
   B2: 3,
-  A2: 4,
+  B3: 4,
+  B4: 5,
+  B5: 6,
+  A2: 7,
 }
 
 export function motorMaisUrgente(motores: (MotorTipo | null)[]): MotorTipo | null {
@@ -89,11 +92,17 @@ export const MOTOR_ABORDAGEM: Record<MotorTipo, string> = {
   A2: 'Inscrição ativa pré-judicial. Constitua o Seguro Garantia agora e antecipe o ajuizamento.',
   B1: 'Penhora de ativos em curso. Substituição por Seguro Garantia libera o capital imobilizado.',
   B2: 'Seguro Garantia ativo detectado. Revisão de prêmio e limite pode reduzir custo da apólice.',
+  B3: 'Carta de fiança bancária imobilizando limite de crédito. Substituição por Seguro Garantia libera o limite no banco.',
+  B4: 'Depósito judicial imobiliza o caixa. Seguro Garantia substitui o depósito e recupera o capital de giro.',
+  B5: 'Garantia por patrimônio líquido / NJP. Estruture Seguro Garantia adequado à obrigação e reduza a exposição patrimonial.',
 }
 
 export const MOTOR_BADGE_LABEL: Record<MotorTipo, string> = {
   A1: 'A1 URGÊNCIA',
   A2: 'A2 PREVENÇÃO',
   B1: 'B1 PENHORA',
-  B2: 'B2 REVISÃO',
+  B2: 'B2 SEGURO GARANTIA',
+  B3: 'B3 CARTA FIANÇA',
+  B4: 'B4 DEPÓSITO',
+  B5: 'B5 NJP',
 }

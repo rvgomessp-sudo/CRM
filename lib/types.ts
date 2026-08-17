@@ -316,3 +316,54 @@ export const STAGES_ORDERED: PipelineStage[] = [
   'submetido_seguradora', 'aprovacao_minuta', 'faturamento',
   'consultoria', 'emissao', 'reprovado',
 ]
+
+// ============================================================
+// P0/P1 — Eventos & Oportunidades (fila priorizada)
+// ============================================================
+
+export type FonteEvento   = 'FISCAL' | 'LICITACAO' | 'JUDICIAL'
+export type TriagemStatus = 'NOVO' | 'VISTO' | 'DESCARTADO' | 'ABORDAR'
+
+// Linha da view vw_fila_oportunidades
+export interface FilaRow {
+  oportunidade_id:        string
+  cnpj_raiz:              string
+  cnpj_completo:          string
+  nome_devedor:           string
+  uf_devedor:             string | null
+  fonte:                  FonteEvento
+  motor:                  MotorTipo | null
+  estagio:                PipelineStage
+  triagem:                TriagemStatus
+  triado_em:              string | null
+  motivo_descarte:        string | null
+  qtd_inscricoes:         number
+  valor_total_devida:     number
+  valor_maior_inscricao:  number
+  capital_social:         number | null
+  cnpj_situacao:          string | null
+  seguradora_alvo:        SeguradoraTipo
+  prioridade:             PrioridadeTipo | null
+  score:                  number | null
+  alvo_marinheiro:        boolean
+}
+
+export const FONTE_LABELS: Record<FonteEvento, string> = {
+  FISCAL:    'Fiscal (PGFN)',
+  LICITACAO: 'Licitação (PNCP)',
+  JUDICIAL:  'Judicial (DJE)',
+}
+
+export const TRIAGEM_LABELS: Record<TriagemStatus, string> = {
+  NOVO:       'Novo',
+  VISTO:      'Visto',
+  DESCARTADO: 'Descartado',
+  ABORDAR:    'Abordar',
+}
+
+export const TRIAGEM_COLORS: Record<TriagemStatus, string> = {
+  NOVO:       'bg-info/20 text-info',
+  VISTO:      'bg-text-faint/20 text-text-muted',
+  DESCARTADO: 'bg-danger/20 text-danger',
+  ABORDAR:    'bg-success/20 text-success',
+}
