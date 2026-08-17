@@ -8,10 +8,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // V&F Brand — Grafite/Branco/Vermelho Cereja
-        bg:       { primary: '#0D0E13', secondary: '#161821', card: '#1C1F2E', hover: '#222537' },
-        border:   { DEFAULT: '#2A2D3A', strong: '#3E4256' },
-        vf:       { red: '#C41E3A', 'red-dark': '#9B1630', 'red-light': '#E53E5C' },
+        // V&F Brand v4 — Preto-azulado + Ouro (vermelho reservado a ALERTA)
+        bg:       { primary: '#0A0C12', secondary: '#10131C', card: '#151A26', hover: '#1C2333' },
+        border:   { DEFAULT: '#262D3E', strong: '#3D4761' },
+        // vf-red* mantidos por compatibilidade de classe — agora renderizam OURO
+        vf:       { red: '#C9A227', 'red-dark': '#9A7B1A', 'red-light': '#E5C563' },
+        gold:     { DEFAULT: '#C9A227', dark: '#9A7B1A', light: '#E5C563' },
         text:     { primary: '#F0F2F5', muted: '#8B91A1', faint: '#4A5068' },
         success:  '#22C55E',
         warning:  '#F59E0B',

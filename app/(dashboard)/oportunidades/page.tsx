@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { formatBRLCompact, cn } from '@/lib/utils'
 import {
   MOTOR_COLORS, STAGE_LABELS, TRIAGEM_COLORS, TRIAGEM_LABELS, FONTE_LABELS,
-  EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO,
+  EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO, ZONA_LABELS, ZONA_COLORS,
   type FilaRow, type MotorTipo, type PipelineStage, type TriagemStatus,
 } from '@/lib/types'
 import {
@@ -39,7 +39,7 @@ function FilaOportunidades() {
   const motor     = sp.get('motor')    ?? ''
   const uf        = sp.get('uf')       ?? ''
   const triagem   = sp.get('triagem')  ?? ''
-  const soAlvo    = sp.get('alvo')     === '1'
+  const soAlvo    = sp.get('alvo')     !== '0'   // marinheiro LIGADO por padrão
   const verDescart= sp.get('descart')  === '1'
   const page      = Math.max(0, parseInt(sp.get('page') ?? '0', 10) || 0)
 
@@ -122,7 +122,7 @@ function FilaOportunidades() {
             <h1 className="text-text-primary font-semibold">Oportunidades</h1>
             <span className="badge bg-bg-primary text-text-muted">{total} na fila</span>
           </div>
-          <p className="text-text-faint text-xs">Ordenado por score · melhores primeiro</p>
+          <p className="text-text-faint text-xs">Risco fiscal · melhores primeiro — trabalhista separado</p>
         </div>
 
         {/* Filtros (persistem na URL) */}
@@ -154,7 +154,7 @@ function FilaOportunidades() {
           </select>
 
           <button
-            onClick={() => setParam({ alvo: soAlvo ? null : '1' })}
+            onClick={() => setParam({ alvo: soAlvo ? '0' : null })}
             className={cn('btn-ghost py-1.5 text-xs', soAlvo && 'bg-vf-red/10 text-vf-red-light')}
           >
             <Flame className="w-3.5 h-3.5" /> Só marinheiro
@@ -191,7 +191,8 @@ function FilaOportunidades() {
               <th className="text-right">Dívida</th>
               <th className="text-right">Capital</th>
               <th className="text-right" title="Dívida ÷ Capital — quanto menor, mais segurável">D/C</th>
-              <th>Evento judicial</th>
+              <th>Zona</th>
+              <th>Evento fiscal</th>
               <th>Insc.</th>
               <th>Estágio</th>
               <th>Triagem</th>
@@ -200,9 +201,9 @@ function FilaOportunidades() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={13} className="text-center text-text-faint py-12">Carregando…</td></tr>
+              <tr><td colSpan={14} className="text-center text-text-faint py-12">Carregando…</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={13} className="text-center text-text-faint py-12">
+              <tr><td colSpan={14} className="text-center text-text-faint py-12">
                 <Building2 className="w-8 h-8 mx-auto mb-2 opacity-30" />
                 Nenhuma oportunidade com esses filtros
               </td></tr>
@@ -251,7 +252,15 @@ function FilaOportunidades() {
                     </span>
                   ) : <span className="text-text-faint text-xs">—</span>}
                 </td>
-                {/* Evento judicial */}
+                {/* Zona de risco */}
+                <td>
+                  {row.zona_risco ? (
+                    <span className={cn('badge text-[10px]', ZONA_COLORS[row.zona_risco] ?? 'bg-bg-hover text-text-muted')}>
+                      {row.zona_risco === 'SUFOCO' && '🚨 '}{ZONA_LABELS[row.zona_risco] ?? row.zona_risco}
+                    </span>
+                  ) : <span className="text-text-faint text-xs">—</span>}
+                </td>
+                {/* Evento fiscal (trabalhista separado, sem relação securitária) */}
                 <td>
                   {row.evento_judicial_tipo ? (() => {
                     const d = diasDe(row.evento_judicial_em)
@@ -270,6 +279,11 @@ function FilaOportunidades() {
                       </div>
                     )
                   })() : <span className="text-text-faint text-xs">—</span>}
+                  {row.eventos_trabalhistas ? (
+                    <span className="block text-[10px] text-text-faint mt-0.5" title="Constrições trabalhistas — sem relação securitária tributária; sinal de estresse de caixa">
+                      ⚒ {row.eventos_trabalhistas} trabalhista{row.eventos_trabalhistas > 1 ? 's' : ''}
+                    </span>
+                  ) : null}
                 </td>
                 <td className="text-text-muted text-center">{row.qtd_inscricoes}</td>
                 <td><span className="text-text-muted text-xs">{STAGE_LABELS[row.estagio as PipelineStage] || row.estagio}</span></td>

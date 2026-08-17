@@ -10,11 +10,10 @@ import {
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/oportunidades', label: 'Oportunidades', icon: Target },
   { href: '/pipeline',      label: 'Pipeline',      icon: KanbanSquare },
+  { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
   { href: '/base-pgfn',     label: 'Base PGFN',     icon: Database },
-  { href: '/importar',      label: 'Importar',      icon: Upload },
   { href: '/solver',        label: 'VF Solver',     icon: Calculator },
 ]
 
@@ -45,7 +44,7 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
           </div>
           <div>
             <p className="text-text-primary font-semibold text-sm leading-tight">V&F Grupo</p>
-            <p className="text-text-faint text-[10px] uppercase tracking-wide">CRM v3</p>
+            <p className="text-vf-red-light text-[10px] uppercase tracking-widest">Originação por Eventos</p>
           </div>
         </div>
       </div>

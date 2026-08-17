@@ -82,6 +82,14 @@ export interface Empresa {
   // Proteção
   nda_assinado:             boolean
   nda_data:                 string | null
+  // Inteligência (P0–F2)
+  socios?:                  { nome?: string; qualificacao?: string }[] | null
+  tributo_principal?:       string | null
+  zona_risco?:              string | null
+  evento_judicial_tipo?:    string | null
+  evento_judicial_em?:      string | null
+  eventos_trabalhistas?:    number | null
+  evento_trabalhista_em?:   string | null
   // Metadados
   importado_em:             string
   criado_em:                string
@@ -346,6 +354,9 @@ export interface FilaRow {
   ratio_divida_capital:   number | null
   evento_judicial_tipo:   string | null
   evento_judicial_em:     string | null
+  zona_risco:             string | null
+  eventos_trabalhistas:   number | null
+  evento_trabalhista_em:  string | null
   seguradora_alvo:        SeguradoraTipo
   prioridade:             PrioridadeTipo | null
   score:                  number | null
@@ -387,3 +398,21 @@ export const EVENTO_JUDICIAL_LABELS: Record<string, string> = {
 
 // movimentos de constrição = alerta máximo (o "sufoco")
 export const EVENTO_ALERTA_MAXIMO = new Set(['SISBAJUD','PENHORA','RENAJUD'])
+
+
+// Zonas de risco processual (mapa de guerra fiscal)
+export const ZONA_LABELS: Record<string, string> = {
+  SUFOCO:   'Sufoco',
+  VERMELHA: 'Vermelha',
+  AMARELA:  'Amarela',
+}
+export const ZONA_COLORS: Record<string, string> = {
+  SUFOCO:   'bg-danger/20 text-danger',
+  VERMELHA: 'bg-orange-500/20 text-orange-400',
+  AMARELA:  'bg-amber-400/15 text-amber-300',
+}
+export const ZONA_DESCRICAO: Record<string, string> = {
+  SUFOCO:   'Constrição FISCAL recente (SISBAJUD/penhora) — caixa travado, urgência máxima.',
+  VERMELHA: 'Execução fiscal ajuizada — cronômetro ligado; risco concreto de bloqueio.',
+  AMARELA:  'Inscrita em dívida ativa, sem execução localizada — janela de prevenção.',
+}

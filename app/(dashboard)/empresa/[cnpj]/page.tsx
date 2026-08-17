@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -10,16 +10,31 @@ import {
 } from '@/lib/utils'
 import {
   STAGE_LABELS, STAGES_ORDERED, MOTOR_COLORS, MOTOR_BADGE_LABEL,
+  EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO,
+  ZONA_LABELS, ZONA_COLORS, ZONA_DESCRICAO,
   type Empresa, type Inscricao, type Interacao, type ConsultaSeguradora,
   type Proposta, type PipelineStage, type MotorTipo, type CanalInteracao
 } from '@/lib/types'
-import { MOTOR_ABORDAGEM } from '@/lib/motor'
 import {
-  ArrowLeft, Building2, FileText, MessageSquare, Calculator,
-  AlertTriangle, CheckCircle, Clock, Plus, ExternalLink, ChevronDown, Phone, Mail, Trash2, User
+  ArrowLeft, Building2, FileText, MessageSquare, Calculator, ShieldAlert,
+  AlertTriangle, CheckCircle, Clock, Plus, ChevronDown, Phone, Mail, Trash2,
+  User, Users, Gavel, Landmark, Hammer, Target,
 } from 'lucide-react'
 
-type Tab = 'overview' | 'inscricoes' | 'contatos' | 'interacoes' | 'proposta'
+type Tab = 'painel' | 'inscricoes' | 'contatos' | 'interacoes' | 'proposta'
+
+interface EventoJudicial {
+  id: string
+  tipo: string
+  numero_processo: string | null
+  ocorrido_em: string | null
+  payload: { polo?: string; tribunal?: string; ramo?: string } | null
+}
+
+function diasDe(d: string | null | undefined): number | null {
+  if (!d) return null
+  return Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+}
 
 export default function EmpresaPage() {
   const params = useParams()
@@ -32,34 +47,32 @@ export default function EmpresaPage() {
   const [consultas, setConsultas] = useState<ConsultaSeguradora[]>([])
   const [propostas, setPropostas] = useState<Proposta[]>([])
   const [contatos, setContatos] = useState<any[]>([])
+  const [eventos, setEventos] = useState<EventoJudicial[]>([])
   const [showContatoForm, setShowContatoForm] = useState(false)
   const [novoContato, setNovoContato] = useState({ nome: '', cargo: '', telefone: '', email: '' })
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('overview')
+  const [tab, setTab] = useState<Tab>('painel')
   const [saving, setSaving] = useState(false)
   const [showInteracaoForm, setShowInteracaoForm] = useState(false)
-
-  // Form nova interação
   const [novaInteracao, setNovaInteracao] = useState({
     canal: 'TELEFONE' as CanalInteracao,
-    resumo: '',
-    proxima_acao: '',
-    proxima_acao_em: ''
+    resumo: '', proxima_acao: '', proxima_acao_em: ''
   })
 
-  useEffect(() => {
-    fetchAll()
-  }, [cnpj])
+  useEffect(() => { fetchAll() }, [cnpj]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchAll() {
     setLoading(true)
-    const [emp, ins, int, con, prop, cont] = await Promise.all([
+    const [emp, ins, int, con, prop, cont, evt] = await Promise.all([
       supabase.from('empresas').select('*').eq('cnpj_raiz', cnpj).single(),
       supabase.from('inscricoes').select('*').eq('cnpj_raiz', cnpj).order('valor_numerico', { ascending: false }),
       supabase.from('interacoes').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
       supabase.from('consultas_seguradora').select('*').eq('cnpj_raiz', cnpj).order('data_consulta', { ascending: false }),
       supabase.from('propostas').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
       supabase.from('contatos').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
+      supabase.from('eventos').select('id,tipo,numero_processo,ocorrido_em,payload')
+        .eq('cnpj_raiz', cnpj).eq('fonte', 'JUDICIAL')
+        .order('ocorrido_em', { ascending: false }).limit(80),
     ])
     setEmpresa(emp.data)
     setInscricoes(ins.data || [])
@@ -67,6 +80,7 @@ export default function EmpresaPage() {
     setConsultas(con.data || [])
     setPropostas(prop.data || [])
     setContatos(cont.data || [])
+    setEventos((evt.data as EventoJudicial[]) || [])
     setLoading(false)
   }
 
@@ -91,7 +105,6 @@ export default function EmpresaPage() {
       estagio_na_interacao: empresa?.estagio,
       criado_por: user?.id,
     })
-    // Atualiza último contato
     if (novaInteracao.proxima_acao_em) {
       await supabase.from('empresas').update({
         ultimo_contato_em: new Date().toISOString(),
@@ -133,31 +146,60 @@ export default function EmpresaPage() {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen text-text-muted">Carregando ficha…</div>
+    return <div className="flex items-center justify-center h-screen text-text-muted">Carregando painel…</div>
   }
   if (!empresa) {
     return <div className="p-8 text-danger">Empresa não encontrada: {cnpj}</div>
   }
 
   const motor = empresa.motor as MotorTipo | null
+  const zona = empresa.zona_risco ?? null
+  const evFiscais = eventos.filter(e => (e.payload?.ramo ?? 'OUTRO') !== 'TRABALHISTA')
+  const evTrab = eventos.filter(e => e.payload?.ramo === 'TRABALHISTA')
+  const tiposFiscais = new Set(evFiscais.map(e => e.tipo))
+  const ratio = empresa.capital_social ? (empresa.valor_total_devida / empresa.capital_social) : null
+  const socios = Array.isArray(empresa.socios) ? empresa.socios : []
+  const dEvt = diasDe(empresa.evento_judicial_em)
+
+  // Leitura de risco — regras do "mapa de guerra"
+  const notasRisco: string[] = []
+  if (tiposFiscais.has('SISBAJUD'))
+    notasRisco.push('Bloqueio de conta (SISBAJUD) em processo fiscal — o seguro garantia substitui a constrição e libera o capital de giro.')
+  if (tiposFiscais.has('PENHORA'))
+    notasRisco.push('Penhora fiscal em curso — substituição por seguro garantia libera o ativo imobilizado.')
+  if (tiposFiscais.has('EMBARGOS_EXEC'))
+    notasRisco.push('Embargos à execução EXIGEM garantia do juízo (Lei 6.830) — jurisprudência aceita seguro garantia.')
+  if (tiposFiscais.has('MANDADO_SEGURANCA'))
+    notasRisco.push('Mandado de segurança NÃO substitui garantia: depende de liminar; se cair, a execução volta.')
+  if (tiposFiscais.has('EXECUCAO_FISCAL'))
+    notasRisco.push('Execução fiscal em andamento — a citação liga o cronômetro do risco de bloqueio.')
 
   return (
     <div className="flex flex-col min-h-screen">
 
-      {/* Header */}
+      {/* ===== Header ===== */}
       <div className="px-6 py-4 border-b border-border bg-bg-secondary">
-        <div className="flex items-center gap-3 mb-3">
-          <Link href="/base-pgfn" className="btn-ghost py-1 text-xs">
-            <ArrowLeft className="w-3.5 h-3.5" /> Voltar
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          <Link href="/oportunidades" className="btn-ghost py-1 text-xs">
+            <ArrowLeft className="w-3.5 h-3.5" /> Fila
           </Link>
-          {motor && (
-            <span className={cn('badge', MOTOR_COLORS[motor])}>
-              {MOTOR_BADGE_LABEL[motor]}
+          {zona && (
+            <span className={cn('badge', ZONA_COLORS[zona] ?? 'bg-bg-hover text-text-muted')}>
+              {zona === 'SUFOCO' && <ShieldAlert className="w-3 h-3 mr-1" />}
+              ZONA {ZONA_LABELS[zona]?.toUpperCase() ?? zona}
             </span>
           )}
-          {empresa.prioridade === 'ALTA' && (
-            <span className="badge bg-red-500/20 text-red-400">
-              <AlertTriangle className="w-3 h-3 mr-1" /> ALTA
+          {motor && (
+            <span className={cn('badge', MOTOR_COLORS[motor])}>{MOTOR_BADGE_LABEL[motor]}</span>
+          )}
+          {empresa.tributo_principal && (
+            <span className="badge bg-bg-hover text-text-muted">{empresa.tributo_principal}</span>
+          )}
+          {ratio != null && (
+            <span className={cn('badge',
+              ratio <= 2 ? 'bg-success/15 text-success' : ratio <= 5 ? 'bg-warning/15 text-warning' : 'bg-danger/15 text-danger')}
+              title="Dívida ÷ Capital — quanto menor, mais segurável">
+              D/C {ratio.toFixed(1)}×
             </span>
           )}
         </div>
@@ -165,16 +207,18 @@ export default function EmpresaPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-text-primary">{empresa.nome_devedor}</h1>
-            <p className="text-text-muted text-sm">{formatCnpj(empresa.cnpj_completo)} | UF: {empresa.uf_devedor}</p>
+            <p className="text-text-muted text-sm">
+              {formatCnpj(empresa.cnpj_completo)} · {empresa.uf_devedor}
+              {empresa.capital_social ? <> · Capital {formatBRLCompact(empresa.capital_social)}</> : null}
+            </p>
           </div>
-
           <div className="text-right">
             <p className="text-2xl font-bold text-vf-red-light">{formatBRLCompact(empresa.valor_total_devida)}</p>
-            <p className="text-text-muted text-xs">{empresa.qtd_inscricoes} inscrições PGFN</p>
+            <p className="text-text-muted text-xs">{empresa.qtd_inscricoes} inscrição(ões) PGFN</p>
           </div>
         </div>
 
-        {/* Estágio selector */}
+        {/* Estágio */}
         <div className="flex items-center gap-3 mt-3">
           <span className="text-text-faint text-xs">Estágio:</span>
           <div className="relative">
@@ -184,29 +228,20 @@ export default function EmpresaPage() {
               onChange={e => updateEstagio(e.target.value as PipelineStage)}
               disabled={saving}
             >
-              {STAGES_ORDERED.map(s => (
-                <option key={s} value={s}>{STAGE_LABELS[s]}</option>
-              ))}
+              {STAGES_ORDERED.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-faint pointer-events-none" />
           </div>
           <span className="text-text-muted text-xs">→ {empresa.seguradora_alvo}</span>
           {saving && <span className="text-text-faint text-xs">Salvando…</span>}
         </div>
-
-        {/* Abordagem do motor */}
-        {motor && (
-          <div className="mt-3 p-2.5 rounded bg-bg-card border border-border text-xs text-text-muted">
-            <span className="font-semibold text-text-primary">Script {motor}:</span> {MOTOR_ABORDAGEM[motor]}
-          </div>
-        )}
       </div>
 
-      {/* Tabs */}
+      {/* ===== Tabs ===== */}
       <div className="border-b border-border bg-bg-secondary px-6">
         <div className="flex gap-0">
           {([
-            { id: 'overview',    label: 'Overview',    icon: Building2 },
+            { id: 'painel',      label: 'Painel',      icon: Target },
             { id: 'inscricoes',  label: `Inscrições (${inscricoes.length})`, icon: FileText },
             { id: 'contatos',    label: `Contatos (${contatos.length})`, icon: User },
             { id: 'interacoes',  label: `Interações (${interacoes.length})`, icon: MessageSquare },
@@ -228,89 +263,173 @@ export default function EmpresaPage() {
         </div>
       </div>
 
-      {/* Tab content */}
       <div className="flex-1 p-6 overflow-auto">
 
-        {/* OVERVIEW */}
-        {tab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
+        {/* ================= PAINEL DA OPORTUNIDADE ================= */}
+        {tab === 'painel' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl">
 
-            {/* Dados PGFN */}
-            <div className="card">
-              <p className="section-header">Dados PGFN</p>
-              <dl className="space-y-2 text-sm">
-                <Row label="Regime" value={empresa.regime_tributario || '—'} />
-                <Row label="Capital Social" value={empresa.capital_social ? formatBRL(empresa.capital_social) : '—'} />
-                <Row label="PL Estimado" value={empresa.pl_estimado ? formatBRL(empresa.pl_estimado) : '—'} />
-                <Row label="Receita Estimada" value={empresa.receita_estimada ? formatBRLCompact(empresa.receita_estimada) : '—'} />
-                <Row label="Situação CNPJ" value={empresa.cnpj_situacao || '—'} />
-                <Row label="NDA" value={empresa.nda_assinado ? `✓ Assinado em ${formatDate(empresa.nda_data)}` : 'Não assinado'} />
-              </dl>
-            </div>
-
-            {/* Consulta Seguradora */}
-            <div className="card">
-              <div className="flex items-center justify-between mb-3">
-                <p className="section-header mb-0">Consulta Seguradora</p>
-                <span className="text-text-muted text-xs">{empresa.seguradora_alvo}</span>
-              </div>
-              {consultas.length === 0 ? (
-                <p className="text-text-faint text-sm">Nenhuma consulta registrada.</p>
-              ) : (
-                <dl className="space-y-2 text-sm">
-                  {consultas.slice(0,1).map(c => (
-                    <div key={c.id}>
-                      <Row label="Status" value={c.status} />
-                      <Row label="Limite" value={c.limite_aprovado ? formatBRL(c.limite_aprovado) : '—'} />
-                      <Row label="Taxa" value={c.taxa_indicativa ? `${(c.taxa_indicativa * 100).toFixed(2)}% a.a.` : '—'} />
-                      <Row label="Modalidade" value={c.modalidade || '—'} />
-                      <Row label="Validade" value={formatDate(c.validade_ate)} />
-                    </div>
+            {/* Leitura de risco */}
+            <div className="card lg:col-span-2 border-l-2 border-l-vf-red">
+              <p className="section-header flex items-center gap-2">
+                <ShieldAlert className="w-3.5 h-3.5 text-vf-red-light" /> Leitura de risco
+              </p>
+              {zona && (
+                <p className="text-text-primary text-sm mb-2">
+                  <span className={cn('badge mr-2', ZONA_COLORS[zona])}>{ZONA_LABELS[zona]}</span>
+                  {ZONA_DESCRICAO[zona]}
+                  {zona === 'SUFOCO' && dEvt != null && (
+                    <span className="text-danger font-semibold"> Última constrição há {dEvt === 0 ? 'menos de 1 dia' : `${dEvt} dias`}.</span>
+                  )}
+                </p>
+              )}
+              {notasRisco.length > 0 ? (
+                <ul className="space-y-1.5 mt-3">
+                  {notasRisco.map((n, i) => (
+                    <li key={i} className="text-xs text-text-muted flex gap-2">
+                      <span className="text-vf-red-light">▸</span> {n}
+                    </li>
                   ))}
-                </dl>
+                </ul>
+              ) : (
+                <p className="text-text-faint text-xs mt-2">
+                  Nenhum processo fiscal localizado nos diários — janela de prevenção (A2): estruturar garantia antes do ajuizamento.
+                </p>
               )}
             </div>
 
-            {/* Decisor */}
+            {/* Quem abordar */}
             <div className="card">
-              <p className="section-header">Decisor</p>
-              <dl className="space-y-2 text-sm">
-                <Row label="Nome" value={empresa.decisor_nome || '—'} />
-                <Row label="Cargo" value={empresa.decisor_cargo || '—'} />
-                <Row label="E-mail" value={empresa.decisor_email || '—'} />
-                <Row label="Telefone" value={empresa.decisor_telefone || '—'} />
-                {empresa.decisor_linkedin && (
-                  <div className="flex justify-between">
-                    <span className="text-text-faint">LinkedIn</span>
-                    <a href={empresa.decisor_linkedin} target="_blank" rel="noreferrer"
-                       className="text-info flex items-center gap-1">
-                      Perfil <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                )}
-              </dl>
+              <p className="section-header flex items-center gap-2">
+                <User className="w-3.5 h-3.5 text-vf-red-light" /> Quem abordar
+              </p>
+              {contatos.length > 0 ? (
+                <div className="space-y-2">
+                  {contatos.slice(0, 3).map(c => (
+                    <div key={c.id} className="text-sm">
+                      <p className="text-text-primary font-medium">{c.nome}</p>
+                      <p className="text-text-muted text-xs">
+                        {c.cargo && <>{c.cargo} · </>}
+                        {c.telefone ?? ''} {c.email ? `· ${c.email}` : ''}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <p className="text-text-faint text-xs mb-2">
+                    Sem decisor mapeado — enriquecer via Econodata (pendente doc/credencial).
+                  </p>
+                  {socios.length > 0 && (
+                    <p className="text-text-muted text-xs">Na ausência, sócios do QSA abaixo. ↓</p>
+                  )}
+                </>
+              )}
+              <button onClick={() => setTab('contatos')} className="btn-secondary text-xs mt-3 w-full justify-center">
+                <Plus className="w-3 h-3" /> Gerenciar contatos
+              </button>
             </div>
 
-            {/* SLA */}
-            <div className="card">
-              <p className="section-header">SLA / Próxima Ação</p>
-              <dl className="space-y-2 text-sm">
-                <Row label="Último contato" value={formatDateTime(empresa.ultimo_contato_em)} />
-                <Row label="Última atualização" value={formatDateTime(empresa.atualizado_em)} />
-                <Row label="Próxima ação" value={empresa.proxima_acao_descricao || '—'} />
-                <Row label="Data" value={formatDate(empresa.proxima_acao_em)} />
-                {empresa.notas && (
-                  <div>
-                    <span className="text-text-faint block mb-1">Notas</span>
-                    <p className="text-text-primary text-xs">{empresa.notas}</p>
+            {/* Timeline fiscal */}
+            <div className="card lg:col-span-2">
+              <p className="section-header flex items-center gap-2">
+                <Landmark className="w-3.5 h-3.5 text-vf-red-light" /> Linha do tempo — processos fiscais ({evFiscais.length})
+              </p>
+              {evFiscais.length === 0 ? (
+                <p className="text-text-faint text-xs">Nenhum evento fiscal capturado nos diários oficiais.</p>
+              ) : (
+                <div className="space-y-0 max-h-96 overflow-y-auto pr-1">
+                  {evFiscais.slice(0, 40).map((ev, i) => {
+                    const alerta = EVENTO_ALERTA_MAXIMO.has(ev.tipo)
+                    return (
+                      <div key={ev.id} className={cn('flex gap-3 py-2', i > 0 && 'border-t border-border/50')}>
+                        <div className="flex-shrink-0 w-20 text-right">
+                          <p className="text-text-muted text-[11px]">{formatDate(ev.ocorrido_em)}</p>
+                          <p className="text-text-faint text-[10px]">{ev.payload?.tribunal}</p>
+                        </div>
+                        <div className={cn('w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0',
+                          alerta ? 'bg-danger' : 'bg-vf-red-light/60')} />
+                        <div className="min-w-0">
+                          <p className={cn('text-xs font-medium', alerta ? 'text-danger' : 'text-text-primary')}>
+                            {alerta && '🚨 '}{EVENTO_JUDICIAL_LABELS[ev.tipo] ?? ev.tipo}
+                            {ev.payload?.polo === 'A' && <span className="text-text-faint font-normal"> · empresa no ataque</span>}
+                            {ev.payload?.polo === 'P' && <span className="text-text-faint font-normal"> · empresa executada</span>}
+                          </p>
+                          <p className="text-text-faint text-[10px] font-mono truncate">{ev.numero_processo}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Coluna direita: trabalhista + sócios + cadastro */}
+            <div className="space-y-6">
+
+              {/* Trabalhista — separado, sem relação securitária */}
+              <div className="card">
+                <p className="section-header flex items-center gap-2">
+                  <Hammer className="w-3.5 h-3.5 text-text-faint" /> Trabalhista (separado)
+                </p>
+                {evTrab.length === 0 ? (
+                  <p className="text-text-faint text-xs">Nenhuma constrição trabalhista capturada.</p>
+                ) : (
+                  <>
+                    <p className="text-text-primary text-sm font-semibold">{evTrab.length} constrição(ões)</p>
+                    <p className="text-text-muted text-xs">Última: {formatDate(empresa.evento_trabalhista_em ?? evTrab[0]?.ocorrido_em)}</p>
+                  </>
+                )}
+                <p className="text-text-faint text-[10px] mt-2 leading-relaxed">
+                  Sem relação com o seguro garantia tributário — usado apenas como sinal de estresse de caixa.
+                </p>
+              </div>
+
+              {/* Sócios (QSA) */}
+              <div className="card">
+                <p className="section-header flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-vf-red-light" /> Sócios · QSA ({socios.length})
+                </p>
+                {socios.length === 0 ? (
+                  <p className="text-text-faint text-xs">QSA não disponível.</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                    {socios.map((s, i) => (
+                      <div key={i} className="text-xs">
+                        <p className="text-text-primary">{s?.nome ?? String(s)}</p>
+                        {s?.qualificacao && <p className="text-text-faint text-[10px]">{s.qualificacao}</p>}
+                      </div>
+                    ))}
                   </div>
                 )}
-              </dl>
+              </div>
+
+              {/* Cadastro */}
+              <div className="card">
+                <p className="section-header">Cadastro</p>
+                <dl className="space-y-2 text-sm">
+                  <Row label="Situação CNPJ" value={empresa.cnpj_situacao || '—'} />
+                  <Row label="Capital Social" value={empresa.capital_social ? formatBRL(empresa.capital_social) : '—'} />
+                  <Row label="Tributo principal" value={empresa.tributo_principal || '—'} />
+                  <Row label="Último contato" value={formatDateTime(empresa.ultimo_contato_em)} />
+                  <Row label="Próxima ação" value={empresa.proxima_acao_descricao || '—'} />
+                </dl>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div className="lg:col-span-3 flex gap-2">
+              <Link href={`/solver?cnpj=${cnpj}`} className="btn-primary text-xs">
+                <Calculator className="w-3.5 h-3.5" /> Estruturar proposta no VF Solver
+              </Link>
+              <button onClick={() => { setTab('interacoes'); setShowInteracaoForm(true) }} className="btn-secondary text-xs">
+                <MessageSquare className="w-3.5 h-3.5" /> Registrar contato
+              </button>
             </div>
           </div>
         )}
 
-        {/* INSCRIÇÕES */}
+        {/* ================= INSCRIÇÕES ================= */}
         {tab === 'inscricoes' && (
           <div>
             <div className="flex items-center justify-between mb-4">
@@ -318,50 +437,28 @@ export default function EmpresaPage() {
                 {inscricoes.length} inscrições — Total: {formatBRL(inscricoes.reduce((s, i) => s + (i.valor_numerico || 0), 0))}
               </p>
             </div>
-
             <div className="overflow-auto">
               <table className="table-vf">
                 <thead>
                   <tr>
-                    <th>Nº Inscrição</th>
-                    <th>Tributo</th>
-                    <th>Situação</th>
-                    <th>Motor</th>
-                    <th>Data</th>
-                    <th>Dias</th>
-                    <th className="text-right">Valor</th>
-                    <th>Garantia</th>
-                    <th>Ajuizado</th>
+                    <th>Nº Inscrição</th><th>Tributo</th><th>Situação</th><th>Motor</th>
+                    <th>Data</th><th>Dias</th><th className="text-right">Valor</th><th>Garantia</th><th>Ajuizado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {inscricoes.map(ins => (
                     <tr key={ins.id}>
                       <td className="font-mono text-xs text-text-muted">{ins.numero_inscricao}</td>
-                      <td>
-                        <span className="badge bg-bg-secondary text-text-muted text-[10px]">
-                          {ins.tributo || '—'}
-                        </span>
-                      </td>
+                      <td><span className="badge bg-bg-secondary text-text-muted text-[10px]">{ins.tributo || '—'}</span></td>
                       <td className="text-xs text-text-muted max-w-36 truncate">{ins.situacao_inscricao}</td>
-                      <td>
-                        {ins.motor && (
-                          <span className={cn('badge text-[10px]', MOTOR_COLORS[ins.motor as MotorTipo])}>
-                            {ins.motor}
-                          </span>
-                        )}
-                      </td>
+                      <td>{ins.motor && <span className={cn('badge text-[10px]', MOTOR_COLORS[ins.motor as MotorTipo])}>{ins.motor}</span>}</td>
                       <td className="text-xs text-text-muted">{formatDate(ins.data_inscricao)}</td>
                       <td className="text-xs text-text-muted">{ins.dias_inscricao ?? '—'}</td>
                       <td className="text-right font-semibold text-text-primary">{formatBRL(ins.valor_numerico)}</td>
                       <td className="text-xs text-text-muted">{ins.tipo_garantia}</td>
-                      <td>
-                        {ins.indicador_ajuizado ? (
-                          <CheckCircle className="w-3.5 h-3.5 text-danger" />
-                        ) : (
-                          <span className="text-text-faint text-xs">Não</span>
-                        )}
-                      </td>
+                      <td>{ins.indicador_ajuizado
+                        ? <CheckCircle className="w-3.5 h-3.5 text-danger" />
+                        : <span className="text-text-faint text-xs">Não</span>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -370,61 +467,33 @@ export default function EmpresaPage() {
           </div>
         )}
 
-        {/* INTERAÇÕES */}
+        {/* ================= CONTATOS ================= */}
         {tab === 'contatos' && (
           <div className="max-w-3xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-text-primary">Contatos / Decisores</h3>
-              <button
-                onClick={() => setShowContatoForm(!showContatoForm)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-vf-red text-white rounded-md hover:bg-vf-red-light transition-colors"
-              >
+              <button onClick={() => setShowContatoForm(!showContatoForm)} className="btn-primary text-xs">
                 <Plus className="w-3.5 h-3.5" /> Adicionar contato
               </button>
             </div>
 
             {showContatoForm && (
-              <div className="mb-4 p-4 bg-surface-2 rounded-lg border border-border space-y-3">
+              <div className="card mb-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <input
-                    placeholder="Nome *"
-                    value={novoContato.nome}
-                    onChange={e => setNovoContato({ ...novoContato, nome: e.target.value })}
-                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
-                  />
-                  <input
-                    placeholder="Cargo"
-                    value={novoContato.cargo}
-                    onChange={e => setNovoContato({ ...novoContato, cargo: e.target.value })}
-                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
-                  />
-                  <input
-                    placeholder="Telefone"
-                    value={novoContato.telefone}
-                    onChange={e => setNovoContato({ ...novoContato, telefone: e.target.value })}
-                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
-                  />
-                  <input
-                    placeholder="E-mail"
-                    value={novoContato.email}
-                    onChange={e => setNovoContato({ ...novoContato, email: e.target.value })}
-                    className="px-3 py-2 text-sm bg-surface-1 border border-border rounded-md text-text-primary"
-                  />
+                  <input placeholder="Nome *" value={novoContato.nome}
+                    onChange={e => setNovoContato({ ...novoContato, nome: e.target.value })} className="input text-sm" />
+                  <input placeholder="Cargo" value={novoContato.cargo}
+                    onChange={e => setNovoContato({ ...novoContato, cargo: e.target.value })} className="input text-sm" />
+                  <input placeholder="Telefone" value={novoContato.telefone}
+                    onChange={e => setNovoContato({ ...novoContato, telefone: e.target.value })} className="input text-sm" />
+                  <input placeholder="E-mail" value={novoContato.email}
+                    onChange={e => setNovoContato({ ...novoContato, email: e.target.value })} className="input text-sm" />
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={adicionarContato}
-                    disabled={saving || !novoContato.nome.trim()}
-                    className="px-4 py-2 text-xs font-medium bg-vf-red text-white rounded-md hover:bg-vf-red-light disabled:opacity-50"
-                  >
+                  <button onClick={adicionarContato} disabled={saving || !novoContato.nome.trim()} className="btn-primary text-xs">
                     {saving ? 'Salvando…' : 'Salvar'}
                   </button>
-                  <button
-                    onClick={() => setShowContatoForm(false)}
-                    className="px-4 py-2 text-xs font-medium text-text-muted hover:text-text-primary"
-                  >
-                    Cancelar
-                  </button>
+                  <button onClick={() => setShowContatoForm(false)} className="btn-secondary text-xs">Cancelar</button>
                 </div>
               </div>
             )}
@@ -436,33 +505,21 @@ export default function EmpresaPage() {
             ) : (
               <div className="space-y-2">
                 {contatos.map((c) => (
-                  <div key={c.id} className="flex items-start justify-between p-3 bg-surface-2 rounded-lg border border-border">
+                  <div key={c.id} className="flex items-start justify-between p-3 bg-bg-card rounded-lg border border-border">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-text-primary">{c.nome}</span>
                         {c.cargo && <span className="text-xs text-text-muted">· {c.cargo}</span>}
                         {c.origem && c.origem !== 'MANUAL' && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-surface-1 rounded text-text-muted">{c.origem}</span>
+                          <span className="text-[10px] px-1.5 py-0.5 bg-bg-secondary rounded text-text-muted">{c.origem}</span>
                         )}
                       </div>
                       <div className="flex gap-4 mt-1">
-                        {c.telefone && (
-                          <span className="flex items-center gap-1 text-xs text-text-muted">
-                            <Phone className="w-3 h-3" /> {c.telefone}
-                          </span>
-                        )}
-                        {c.email && (
-                          <span className="flex items-center gap-1 text-xs text-text-muted">
-                            <Mail className="w-3 h-3" /> {c.email}
-                          </span>
-                        )}
+                        {c.telefone && <span className="flex items-center gap-1 text-xs text-text-muted"><Phone className="w-3 h-3" /> {c.telefone}</span>}
+                        {c.email && <span className="flex items-center gap-1 text-xs text-text-muted"><Mail className="w-3 h-3" /> {c.email}</span>}
                       </div>
                     </div>
-                    <button
-                      onClick={() => excluirContato(c.id)}
-                      className="p-1.5 text-text-muted hover:text-danger transition-colors"
-                      title="Excluir contato"
-                    >
+                    <button onClick={() => excluirContato(c.id)} className="p-1.5 text-text-muted hover:text-danger transition-colors" title="Excluir contato">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -472,6 +529,7 @@ export default function EmpresaPage() {
           </div>
         )}
 
+        {/* ================= INTERAÇÕES ================= */}
         {tab === 'interacoes' && (
           <div className="max-w-2xl">
             <div className="flex items-center justify-between mb-4">
@@ -484,7 +542,6 @@ export default function EmpresaPage() {
             {showInteracaoForm && (
               <div className="card mb-4 space-y-3">
                 <p className="text-text-primary text-sm font-medium">Registrar contato</p>
-
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label">Canal</label>
@@ -500,7 +557,6 @@ export default function EmpresaPage() {
                       onChange={e => setNovaInteracao(n => ({ ...n, proxima_acao_em: e.target.value }))} />
                   </div>
                 </div>
-
                 <div>
                   <label className="label">Resumo do contato *</label>
                   <textarea className="input text-sm resize-none" rows={3}
@@ -508,22 +564,17 @@ export default function EmpresaPage() {
                     value={novaInteracao.resumo}
                     onChange={e => setNovaInteracao(n => ({ ...n, resumo: e.target.value }))} />
                 </div>
-
                 <div>
                   <label className="label">Próxima ação</label>
                   <input className="input text-sm" placeholder="Ex: Enviar proposta, Ligar para confirmar…"
                     value={novaInteracao.proxima_acao}
                     onChange={e => setNovaInteracao(n => ({ ...n, proxima_acao: e.target.value }))} />
                 </div>
-
                 <div className="flex gap-2">
-                  <button onClick={registrarInteracao} disabled={!novaInteracao.resumo.trim() || saving}
-                    className="btn-primary text-xs">
+                  <button onClick={registrarInteracao} disabled={!novaInteracao.resumo.trim() || saving} className="btn-primary text-xs">
                     {saving ? 'Salvando…' : 'Salvar'}
                   </button>
-                  <button onClick={() => setShowInteracaoForm(false)} className="btn-secondary text-xs">
-                    Cancelar
-                  </button>
+                  <button onClick={() => setShowInteracaoForm(false)} className="btn-secondary text-xs">Cancelar</button>
                 </div>
               </div>
             )}
@@ -555,7 +606,7 @@ export default function EmpresaPage() {
           </div>
         )}
 
-        {/* PROPOSTA */}
+        {/* ================= PROPOSTA ================= */}
         {tab === 'proposta' && (
           <div className="max-w-3xl">
             <div className="flex items-center justify-between mb-4">
@@ -589,14 +640,12 @@ export default function EmpresaPage() {
                         {p.status}
                       </span>
                     </div>
-
                     <div className="grid grid-cols-4 gap-3 text-sm">
                       <div><p className="text-text-faint text-xs">Prêmio Bruto</p><p className="font-semibold">{formatBRL(p.premio_bruto)}</p></div>
                       <div><p className="text-text-faint text-xs">Comissão</p><p className="font-semibold text-success">{formatBRL(p.comissao_valor)}</p></div>
                       <div><p className="text-text-faint text-xs">Honorários</p><p className="font-semibold text-info">{formatBRL(p.honorarios_valor)}</p></div>
                       <div><p className="text-text-faint text-xs">Receita V&F</p><p className="font-bold text-vf-red-light">{formatBRL(p.receita_vf_total)}</p></div>
                     </div>
-
                     {p.regra_economica_ok === false && (
                       <div className="mt-2 text-xs text-warning flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3" /> Regra econômica não atingida

@@ -7,15 +7,15 @@
 
 /* ---- CSS Variables ---- */
 :root {
-  --bg-primary:   #0D0E13;
-  --bg-secondary: #161821;
-  --bg-card:      #1C1F2E;
-  --bg-hover:     #222537;
-  --border:       #2A2D3A;
-  --border-strong:#3E4256;
-  --accent:       #C41E3A;
-  --accent-dark:  #9B1630;
-  --accent-light: #E53E5C;
+  --bg-primary:   #0A0C12;
+  --bg-secondary: #10131C;
+  --bg-card:      #151A26;
+  --bg-hover:     #1C2333;
+  --border:       #262D3E;
+  --border-strong:#3D4761;
+  --accent:       #C9A227;
+  --accent-dark:  #9A7B1A;
+  --accent-light: #E5C563;
   --text-primary: #F0F2F5;
   --text-muted:   #8B91A1;
   --text-faint:   #4A5068;
