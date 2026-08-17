@@ -374,9 +374,16 @@ export const TRIAGEM_COLORS: Record<TriagemStatus, string> = {
 
 
 export const EVENTO_JUDICIAL_LABELS: Record<string, string> = {
+  SISBAJUD:          'SISBAJUD',
+  PENHORA:           'Penhora',
+  RENAJUD:           'RENAJUD',
+  CITACAO:           'Citação',
   EXECUCAO_FISCAL:   'Execução Fiscal',
   ANULATORIA:        'Anulatória',
   EMBARGOS_EXEC:     'Embargos',
   MANDADO_SEGURANCA: 'Mand. Segurança',
   CAUTELAR:          'Cautelar',
 }
+
+// movimentos de constrição = alerta máximo (o "sufoco")
+export const EVENTO_ALERTA_MAXIMO = new Set(['SISBAJUD','PENHORA','RENAJUD'])

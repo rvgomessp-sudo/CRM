@@ -7,12 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 import { formatBRLCompact, cn } from '@/lib/utils'
 import {
   MOTOR_COLORS, STAGE_LABELS, TRIAGEM_COLORS, TRIAGEM_LABELS, FONTE_LABELS,
-  EVENTO_JUDICIAL_LABELS,
+  EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO,
   type FilaRow, type MotorTipo, type PipelineStage, type TriagemStatus,
 } from '@/lib/types'
 import {
   Search, Target, Eye, X, Check, ChevronLeft, ChevronRight,
-  Building2, RotateCcw, Flame, Gavel,
+  Building2, RotateCcw, Flame, Gavel, AlertTriangle,
 } from 'lucide-react'
 
 // dias desde uma data ISO
@@ -256,12 +256,16 @@ function FilaOportunidades() {
                   {row.evento_judicial_tipo ? (() => {
                     const d = diasDe(row.evento_judicial_em)
                     const fresco = d != null && d <= 30
+                    const alerta = EVENTO_ALERTA_MAXIMO.has(row.evento_judicial_tipo)
+                    const Icon = alerta ? AlertTriangle : Gavel
                     return (
-                      <div className="flex items-center gap-1">
-                        <Gavel className={cn('w-3 h-3 flex-shrink-0', fresco ? 'text-vf-red-light' : 'text-text-faint')} />
-                        <span className={cn('text-[11px]', fresco ? 'text-text-primary' : 'text-text-muted')}>
+                      <div className={cn('flex items-center gap-1', alerta && 'px-1.5 py-0.5 rounded bg-danger/15 -ml-1.5')}>
+                        <Icon className={cn('w-3 h-3 flex-shrink-0',
+                          alerta ? 'text-danger' : fresco ? 'text-vf-red-light' : 'text-text-faint')} />
+                        <span className={cn('text-[11px]',
+                          alerta ? 'text-danger font-semibold' : fresco ? 'text-text-primary' : 'text-text-muted')}>
                           {EVENTO_JUDICIAL_LABELS[row.evento_judicial_tipo] ?? row.evento_judicial_tipo}
-                          {d != null && <span className="text-text-faint"> · {d === 0 ? 'hoje' : `${d}d`}</span>}
+                          {d != null && <span className={alerta ? 'text-danger/70' : 'text-text-faint'}> · {d === 0 ? 'hoje' : `${d}d`}</span>}
                         </span>
                       </div>
                     )
