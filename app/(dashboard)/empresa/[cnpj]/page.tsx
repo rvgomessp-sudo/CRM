@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +19,7 @@ import {
   ArrowLeft, Building2, FileText, MessageSquare, Calculator, ShieldAlert,
   AlertTriangle, CheckCircle, Clock, Plus, ChevronDown, Phone, Mail, Trash2,
   User, Users, Gavel, Landmark, Hammer, Target,
+  Linkedin, Zap, ArrowRight, Shield,
 } from 'lucide-react'
 
 type Tab = 'painel' | 'inscricoes' | 'contatos' | 'interacoes' | 'proposta'
@@ -181,6 +182,47 @@ export default function EmpresaPage() {
   if (tiposFiscais.has('EXECUCAO_FISCAL'))
     notasRisco.push('Execução fiscal em andamento — a citação liga o cronômetro do risco de bloqueio.')
 
+  // ---- Inteligência derivada (o "volante": cada item existe para uma decisão) ----
+  const temDecisor = !!empresa.decisor_nome
+
+  // Próxima ação: o comando no topo do cockpit, não um log
+  const eventoAlertaRecente = dEvt != null && dEvt <= 20 &&
+    (tiposFiscais.has('SISBAJUD') || tiposFiscais.has('PENHORA') || zona === 'SUFOCO')
+  const acao: { critico: boolean; titulo: string; texto: string; sub: string } = (() => {
+    if (eventoAlertaRecente) {
+      const ev = empresa.evento_judicial_tipo
+        ? (EVENTO_JUDICIAL_LABELS[empresa.evento_judicial_tipo] ?? empresa.evento_judicial_tipo)
+        : 'Constrição'
+      return {
+        critico: true, titulo: 'Janela crítica', texto: 'Simular garantia e iniciar abordagem',
+        sub: `${ev} há ${dEvt === 0 ? 'menos de 1 dia' : dEvt + ' dias'} — o seguro garantia substitui a constrição e libera o caixa.`,
+      }
+    }
+    if (empresa.proxima_acao_descricao) {
+      return {
+        critico: false, titulo: 'Próxima ação agendada', texto: empresa.proxima_acao_descricao,
+        sub: empresa.proxima_acao_em ? `Prazo: ${formatDate(empresa.proxima_acao_em)}` : '',
+      }
+    }
+    if (motor === 'A2') {
+      return {
+        critico: false, titulo: 'Janela de prevenção', texto: 'Estruturar garantia antes do ajuizamento',
+        sub: 'Sem execução localizada — abordagem consultiva (A2).',
+      }
+    }
+    return {
+      critico: false, titulo: 'Próximo passo',
+      texto: temDecisor ? 'Iniciar abordagem ao decisor' : 'Mapear decisor e iniciar abordagem', sub: '',
+    }
+  })()
+
+  // Direcionamento de seguradora: a lógica de roteamento (não SLA inventado)
+  const criteriosSeg: string[] = []
+  if (zona === 'SUFOCO' || zona === 'VERMELHA') criteriosSeg.push('execução fiscal em curso')
+  if (empresa.valor_total_devida >= 1_000_000) criteriosSeg.push('porte > R$ 1M')
+  if (motor) criteriosSeg.push(`motor ${motor}`)
+  const seguradoraRazao = `Direcionado por ${criteriosSeg.join(' · ') || 'regra padrão da carteira'}. Reavalie na análise da seguradora se o apetite mudar.`
+
   return (
     <div className="flex flex-col min-h-screen">
 
@@ -286,6 +328,33 @@ export default function EmpresaPage() {
         {tab === 'painel' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-6xl">
 
+            {/* Próxima ação — o comando no topo do volante */}
+            <div className={cn(
+              'lg:col-span-3 rounded-xl border px-5 py-4 flex items-center gap-4',
+              acao.critico
+                ? 'border-danger/40 bg-gradient-to-r from-danger/10 to-transparent'
+                : 'border-rose/30 bg-gradient-to-r from-rose/10 to-transparent'
+            )}>
+              <div className={cn(
+                'w-10 h-10 rounded-lg grid place-items-center flex-shrink-0 border',
+                acao.critico ? 'bg-danger/15 text-danger border-danger/40' : 'bg-rose/12 text-rose-light border-rose/30'
+              )}>
+                <Zap className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={cn('text-[10px] font-bold uppercase tracking-widest', acao.critico ? 'text-danger' : 'text-rose-light')}>
+                  {acao.titulo}
+                </p>
+                <p className="text-text-primary font-semibold text-sm mt-0.5">
+                  {acao.texto}
+                  {acao.sub && <span className="text-text-muted font-normal"> — {acao.sub}</span>}
+                </p>
+              </div>
+              <Link href={`/solver?cnpj=${cnpj}`} className="btn-primary text-xs flex-shrink-0">
+                Iniciar abordagem <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
             {/* Leitura de risco */}
             <div className="card lg:col-span-2 border-l-2 border-l-vf-red">
               <p className="section-header flex items-center gap-2">
@@ -320,28 +389,51 @@ export default function EmpresaPage() {
               <p className="section-header flex items-center gap-2">
                 <User className="w-3.5 h-3.5 text-vf-red-light" /> Quem abordar
               </p>
+
+              {/* Decisor principal (colunas decisor_* da empresa) */}
+              {temDecisor && (
+                <div className="mb-3 pb-3 border-b border-border">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-text-primary font-semibold text-sm">{empresa.decisor_nome}</p>
+                    <span className="badge bg-rose/12 text-rose-light text-[10px]">Decisor</span>
+                  </div>
+                  {empresa.decisor_cargo && <p className="text-text-muted text-xs">{empresa.decisor_cargo}</p>}
+                  <ChannelRow tel={empresa.decisor_telefone} email={empresa.decisor_email} linkedin={empresa.decisor_linkedin} />
+                </div>
+              )}
+
+              {/* Contatos cadastrados */}
               {contatos.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {contatos.slice(0, 3).map(c => (
-                    <div key={c.id} className="text-sm">
-                      <p className="text-text-primary font-medium">{c.nome}</p>
-                      <p className="text-text-muted text-xs">
-                        {c.cargo && <>{c.cargo} · </>}
-                        {c.telefone ?? ''} {c.email ? `· ${c.email}` : ''}
+                    <div key={c.id}>
+                      <p className="text-text-primary font-medium text-sm">
+                        {c.nome}
+                        {c.cargo && <span className="text-text-muted font-normal text-xs"> · {c.cargo}</span>}
                       </p>
+                      <ChannelRow tel={c.telefone} email={c.email} linkedin={c.linkedin} />
                     </div>
                   ))}
                 </div>
-              ) : (
+              ) : !temDecisor ? (
                 <>
                   <p className="text-text-faint text-xs mb-2">
-                    Sem decisor mapeado — enriquecer via Econodata (pendente doc/credencial).
+                    Sem decisor mapeado — slot pronto para enriquecimento (Econodata).
                   </p>
                   {socios.length > 0 && (
-                    <p className="text-text-muted text-xs">Na ausência, sócios do QSA abaixo. ↓</p>
+                    <div className="space-y-1 mt-2">
+                      <p className="text-text-faint text-[10px] uppercase tracking-wider">Na ausência, sócios do QSA</p>
+                      {socios.slice(0, 3).map((s, i) => (
+                        <p key={i} className="text-text-muted text-xs">
+                          {s?.nome ?? String(s)}
+                          {s?.qualificacao && <span className="text-text-faint"> · {s.qualificacao}</span>}
+                        </p>
+                      ))}
+                    </div>
                   )}
                 </>
-              )}
+              ) : null}
+
               <button onClick={() => setTab('contatos')} className="btn-secondary text-xs mt-3 w-full justify-center">
                 <Plus className="w-3 h-3" /> Gerenciar contatos
               </button>
@@ -408,6 +500,19 @@ export default function EmpresaPage() {
 
             {/* Coluna direita: trabalhista + sócios + cadastro */}
             <div className="space-y-6">
+
+              {/* Direcionamento de seguradora — o porquê, não só o nome */}
+              <div className="card">
+                <p className="section-header flex items-center gap-2">
+                  <Shield className="w-3.5 h-3.5 text-info" /> Direcionamento de seguradora
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="w-14 h-14 rounded-lg grid place-items-center text-xs font-bold bg-info/15 text-info border border-info/30 text-center leading-tight flex-shrink-0">
+                    {empresa.seguradora_alvo}
+                  </span>
+                  <p className="text-text-muted text-xs leading-relaxed">{seguradoraRazao}</p>
+                </div>
+              </div>
 
               {/* Trabalhista — separado, sem relação securitária */}
               <div className="card">
@@ -737,4 +842,26 @@ function ScoreGauge({ score }: { score: number }) {
       </div>
     </div>
   )
+}
+
+// Canais de contato: acesos quando o dado existe, apagados quando falta (F1: cada luz é uma decisão)
+function ChannelRow({ tel, email, linkedin }: { tel?: string | null; email?: string | null; linkedin?: string | null }) {
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+      <Channel on={!!tel} icon={<Phone className="w-3 h-3" />} label={tel || 'sem telefone'} href={tel ? `tel:${tel}` : undefined} />
+      <Channel on={!!email} icon={<Mail className="w-3 h-3" />} label={email || 'sem e-mail'} href={email ? `mailto:${email}` : undefined} />
+      <Channel on={!!linkedin} icon={<Linkedin className="w-3 h-3" />} label={linkedin ? 'LinkedIn' : 'sem LinkedIn'} href={linkedin || undefined} />
+    </div>
+  )
+}
+
+function Channel({ on, icon, label, href }: { on: boolean; icon: ReactNode; label: string; href?: string }) {
+  const cls = cn(
+    'inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border transition-colors',
+    on ? 'text-rose-light border-rose/30 bg-rose/10 hover:bg-rose/20' : 'text-text-faint border-border'
+  )
+  if (on && href) {
+    return <a href={href} target="_blank" rel="noreferrer" className={cls} title={label}>{icon}</a>
+  }
+  return <span className={cls} title={label}>{icon}</span>
 }
