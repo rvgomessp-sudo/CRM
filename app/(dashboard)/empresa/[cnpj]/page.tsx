@@ -26,12 +26,17 @@ import {
 
 type Tab = 'painel' | 'inscricoes' | 'contatos' | 'interacoes' | 'proposta'
 
+interface AdvogadoDJEN { nome: string; oab?: string | null; uf?: string | null }
+
 interface EventoJudicial {
   id: string
   tipo: string
   numero_processo: string | null
   ocorrido_em: string | null
   payload: { polo?: string; tribunal?: string; ramo?: string } | null
+  texto: string | null
+  advogados: AdvogadoDJEN[] | null
+  link_publicacao: string | null
 }
 
 function diasDe(d: string | null | undefined): number | null {
@@ -76,7 +81,7 @@ export default function EmpresaPage() {
       supabase.from('consultas_seguradora').select('*').eq('cnpj_raiz', cnpj).order('data_consulta', { ascending: false }),
       supabase.from('propostas').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
       supabase.from('contatos').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
-      supabase.from('eventos').select('id,tipo,numero_processo,ocorrido_em,payload')
+      supabase.from('eventos').select('id,tipo,numero_processo,ocorrido_em,payload,texto,advogados,link_publicacao')
         .eq('cnpj_raiz', cnpj).eq('fonte', 'JUDICIAL')
         .order('ocorrido_em', { ascending: false }).limit(80),
       supabase.from('vw_fila_oportunidades').select('score,alvo_marinheiro')
@@ -193,6 +198,14 @@ export default function EmpresaPage() {
   const evFiscais = eventos.filter(e => (e.payload?.ramo ?? 'OUTRO') !== 'TRABALHISTA')
   const evTrab = eventos.filter(e => e.payload?.ramo === 'TRABALHISTA')
   const tiposFiscais = new Set(evFiscais.map(e => e.tipo))
+  // Advogados dos autos (DJEN) — canal real de abordagem quando nao ha decisor
+  const advogados = (() => {
+    const m = new Map<string, AdvogadoDJEN>()
+    for (const e of [...evFiscais, ...evTrab]) for (const a of (e.advogados || [])) {
+      if (a?.nome) m.set(`${a.nome}|${a.oab ?? ''}`, a)
+    }
+    return Array.from(m.values())
+  })()
   const ratio = empresa.capital_social ? (empresa.valor_total_devida / empresa.capital_social) : null
   const socios = Array.isArray(empresa.socios) ? empresa.socios : []
   const dEvt = diasDe(empresa.evento_judicial_em)
@@ -494,6 +507,25 @@ export default function EmpresaPage() {
                 </>
               ) : null}
 
+              {advogados.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-text-faint text-[10px] uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                    <Gavel className="w-3 h-3" /> Advogados nos autos · DJEN
+                  </p>
+                  <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                    {advogados.map((a, i) => (
+                      <div key={i} className="text-xs">
+                        <p className="text-text-primary">{a.nome}</p>
+                        {a.oab && <p className="text-text-faint text-[10px] font-mono">OAB {a.oab}{a.uf ? `/${a.uf}` : ''}</p>}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-text-faint text-[10px] mt-1.5 leading-relaxed">
+                    Advogado da executada = porta de entrada técnica: já conhece a execução e fala a língua da garantia.
+                  </p>
+                </div>
+              )}
+
               <button onClick={() => setTab('contatos')} className="btn-secondary text-xs mt-3 w-full justify-center">
                 <Plus className="w-3 h-3" /> Gerenciar contatos
               </button>
@@ -550,6 +582,22 @@ export default function EmpresaPage() {
                               <span className="text-[10px] font-mono text-text-faint truncate max-w-[220px]">{ev.numero_processo}</span>
                             )}
                           </div>
+                          {ev.texto && (
+                            <details className="mt-1.5">
+                              <summary className="cursor-pointer select-none text-[10px] font-medium text-rose-light/80 hover:text-rose-light list-none inline-flex items-center gap-1">
+                                <ChevronDown className="w-3 h-3" /> Trecho do diário
+                              </summary>
+                              <blockquote className="mt-1.5 pl-3 border-l-2 border-rose/40 text-[11px] leading-relaxed text-text-muted bg-bg-secondary/60 rounded-r py-2 pr-2">
+                                {ev.texto}
+                              </blockquote>
+                              {ev.link_publicacao && (
+                                <a href={ev.link_publicacao} target="_blank" rel="noreferrer"
+                                  className="inline-block mt-1 text-[10px] text-info hover:underline">
+                                  Ver comunicação no DJEN ↗
+                                </a>
+                              )}
+                            </details>
+                          )}
                         </div>
                       </div>
                     )

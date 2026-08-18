@@ -1,53 +1,56 @@
 import { createClient } from '@/lib/supabase/server'
-import { formatBRL, formatBRLCompact, formatDateTime } from '@/lib/utils'
-import { STAGE_LABELS, STAGES_ORDERED, normalizeStage, type PipelineStage } from '@/lib/types'
+import { formatBRLCompact } from '@/lib/utils'
+import {
+  STAGE_LABELS, STAGES_ORDERED, normalizeStage,
+  EVENTO_JUDICIAL_LABELS, ZONA_LABELS,
+} from '@/lib/types'
 import Link from 'next/link'
-import { AlertTriangle, TrendingUp, Building2, FileText, CheckCircle, Clock } from 'lucide-react'
+import {
+  AlertTriangle, Building2, FileText, CheckCircle, Clock,
+  ShieldAlert, Zap, ArrowRight, Activity,
+} from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
+
+function diasDe(d: string | null | undefined): number | null {
+  if (!d) return null
+  return Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
+}
+
+const ZONA_META: Record<string, { rank: number; dot: string; bar: string; text: string }> = {
+  SUFOCO:   { rank: 0, dot: 'bg-danger',  bar: 'bg-danger',  text: 'text-danger'  },
+  VERMELHA: { rank: 1, dot: 'bg-rose-deep', bar: 'bg-rose-deep', text: 'text-rose-light' },
+  AMARELA:  { rank: 2, dot: 'bg-warning', bar: 'bg-warning', text: 'text-warning' },
+  VERDE:    { rank: 3, dot: 'bg-success', bar: 'bg-success', text: 'text-success' },
+}
 
 export default async function DashboardPage() {
   const supabase = createClient()
 
-  // KPIs
-  const { data: kpis } = await supabase
-    .from('vw_dashboard_kpis')
-    .select('*')
-    .single()
-
-  // Funil
-  const { data: funil } = await supabase
-    .from('vw_funil_estagio')
-    .select('*')
-
-  // SLA vencidos (top 5)
-  const { data: slaVencidos } = await supabase
-    .from('vw_sla_vencido')
-    .select('*')
-    .limit(5)
-
-  // Empresas com próxima ação hoje
-  const hoje = new Date()
-  hoje.setHours(0,0,0,0)
-  const amanha = new Date(hoje)
-  amanha.setDate(amanha.getDate() + 1)
-
-  const { data: followupsHoje } = await supabase
-    .from('empresas')
-    .select('cnpj_raiz, nome_devedor, estagio, proxima_acao_em, proxima_acao_descricao')
-    .gte('proxima_acao_em', hoje.toISOString())
-    .lt('proxima_acao_em', amanha.toISOString())
-    .eq('ativo', true)
-    .eq('excluido', false)
-    .order('proxima_acao_em')
-    .limit(8)
+  const [
+    { data: kpis },
+    { data: funil },
+    { data: slaVencidos },
+    { data: radar },
+    { data: zonaRows },
+  ] = await Promise.all([
+    supabase.from('vw_dashboard_kpis').select('*').single(),
+    supabase.from('vw_funil_estagio').select('*'),
+    supabase.from('vw_sla_vencido').select('*').limit(5),
+    // Radar de sufoco: as oportunidades mais quentes com constrição ativa
+    supabase.from('vw_fila_oportunidades')
+      .select('cnpj_raiz, nome_devedor, uf_devedor, score, zona_risco, motor, evento_judicial_tipo, evento_judicial_em, valor_total_devida, seguradora_alvo')
+      .order('score', { ascending: false, nullsFirst: false })
+      .limit(8),
+    // Triagem por zona de risco
+    supabase.from('vw_fila_oportunidades').select('zona_risco, valor_total_devida, evento_judicial_tipo'),
+  ])
 
   const k = kpis || {}
   const totalMotores = (k.motor_a1 || 0) + (k.motor_a2 || 0) + (k.motor_b1 || 0) + (k.motor_b2 || 0)
-  // Empresas efetivamente sendo trabalhadas no funil (abordagem → proposta → seguradora).
   const emNegociacao = (k.em_abordagem || 0) + (k.em_proposta || 0) + (k.em_seguradora || 0)
 
-  // Consolida o funil nas 5 etapas canônicas (a view ainda devolve os valores brutos)
+  // Consolida o funil nas 5 etapas canônicas
   const funilCanon = STAGES_ORDERED.map(stage => {
     const rows = (funil || []).filter(r => normalizeStage(r.estagio) === stage)
     return {
@@ -58,27 +61,45 @@ export default async function DashboardPage() {
   })
   const maiorEtapa = Math.max(1, ...funilCanon.map(f => f.qtd))
 
+  // Triagem por zona (a partir da fila)
+  const CONSTRICAO = new Set(['SISBAJUD', 'PENHORA', 'RENAJUD'])
+  const zonaMap = new Map<string, { n: number; divida: number; constricao: number }>()
+  for (const r of (zonaRows || [])) {
+    const z = r.zona_risco || 'SEM_ZONA'
+    const cur = zonaMap.get(z) || { n: 0, divida: 0, constricao: 0 }
+    cur.n += 1
+    cur.divida += Number(r.valor_total_devida) || 0
+    if (CONSTRICAO.has(r.evento_judicial_tipo)) cur.constricao += 1
+    zonaMap.set(z, cur)
+  }
+  const zonas = Array.from(zonaMap.entries())
+    .map(([zona, v]) => ({ zona, ...v }))
+    .sort((a, b) => (ZONA_META[a.zona]?.rank ?? 9) - (ZONA_META[b.zona]?.rank ?? 9))
+  const totalFila = zonas.reduce((s, z) => s + z.n, 0) || 1
+  const sufocoAtivo = zonaMap.get('SUFOCO')?.constricao ?? 0
+  const dividaSufoco = zonaMap.get('SUFOCO')?.divida ?? 0
+
   return (
     <div className="p-6 max-w-7xl mx-auto w-full">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-text-primary">Dashboard</h1>
-          <p className="text-text-muted text-sm">Pipeline PGFN — Seguro Garantia Tributário</p>
+          <h1 className="text-xl font-bold text-text-primary">Cockpit</h1>
+          <p className="text-text-muted text-sm">Pipeline PGFN — Seguro Garantia Tributário · leitura viva da carteira</p>
         </div>
         <Link href="/oportunidades" className="btn-primary text-xs">
-          Ver fila de oportunidades →
+          Ver fila de oportunidades <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
-      {/* KPI Grid */}
+      {/* KPI Grid — cada número aponta para uma decisão */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="kpi-card">
           <Building2 className="w-4 h-4 text-text-faint mb-1" />
           <p className="kpi-value">{k.total_empresas || 0}</p>
           <p className="kpi-label">Empresas na carteira</p>
-          <p className="kpi-sub">{k.em_oportunidade || 0} na fila de oportunidades</p>
+          <p className="kpi-sub">{k.em_oportunidade || 0} na fila · {formatBRLCompact(k.total_divida_carteira)} em dívida</p>
         </div>
 
         <div className="kpi-card">
@@ -92,17 +113,119 @@ export default async function DashboardPage() {
           <CheckCircle className="w-4 h-4 text-success mb-1" />
           <p className="kpi-value text-success">{k.convertidos || 0}</p>
           <p className="kpi-label">Convertidos</p>
-          <p className="kpi-sub">{formatBRLCompact(k.divida_convertida)} em dívida</p>
+          <p className="kpi-sub">{formatBRLCompact(k.divida_convertida)} em dívida garantida</p>
         </div>
 
-        <div className="kpi-card">
-          <AlertTriangle className="w-4 h-4 text-warning mb-1" />
-          <p className="kpi-value text-warning">{k.followups_vencidos || 0}</p>
-          <p className="kpi-label">Follow-ups vencidos</p>
-          <p className="kpi-sub">SLA &gt; 7 dias</p>
+        {/* Sufoco ativo — o KPI de alerta: bloqueio de conta acontecendo agora */}
+        <Link href="/oportunidades?zona=SUFOCO"
+          className="kpi-card border-danger/40 bg-gradient-to-br from-danger/10 to-transparent hover:border-danger/60 transition-colors">
+          <ShieldAlert className="w-4 h-4 text-danger mb-1" />
+          <p className="kpi-value text-danger">{sufocoAtivo}</p>
+          <p className="kpi-label">Em sufoco — bloqueio ativo</p>
+          <p className="kpi-sub">{formatBRLCompact(dividaSufoco)} sob constrição SISBAJUD</p>
+        </Link>
+      </div>
+
+      {/* Radar de sufoco + Triagem por zona */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+
+        {/* Radar de sufoco — a superfície de decisão principal */}
+        <div className="lg:col-span-2 card">
+          <div className="flex items-center justify-between mb-4">
+            <p className="section-header mb-0 flex items-center gap-2">
+              <Zap className="w-3.5 h-3.5 text-danger" /> Radar de sufoco — abordar primeiro
+            </p>
+            <Link href="/oportunidades" className="text-xs text-text-muted hover:text-rose-light">Ver fila →</Link>
+          </div>
+
+          {(!radar || radar.length === 0) ? (
+            <p className="text-text-faint text-xs">Nenhuma oportunidade priorizada.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {radar.map((r) => {
+                const dias = diasDe(r.evento_judicial_em)
+                const zm = ZONA_META[r.zona_risco] ?? ZONA_META.AMARELA
+                const ev = r.evento_judicial_tipo
+                  ? (EVENTO_JUDICIAL_LABELS[r.evento_judicial_tipo] ?? r.evento_judicial_tipo)
+                  : null
+                const score = r.score != null ? Math.round(Number(r.score)) : null
+                return (
+                  <Link key={r.cnpj_raiz} href={`/empresa/${r.cnpj_raiz}`}
+                    className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-bg-hover transition-colors group">
+                    {/* Score */}
+                    <div className="flex-shrink-0 w-11 text-center">
+                      <span className="text-base font-bold text-rose-light tabular-nums leading-none">{score ?? '—'}</span>
+                      <span className="block text-[8px] uppercase tracking-widest text-text-faint">score</span>
+                    </div>
+                    {/* Nome + evento */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-text-primary truncate group-hover:text-rose-light transition-colors">
+                        {r.nome_devedor}
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold ${zm.text}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${zm.dot}`} />
+                          {ZONA_LABELS[r.zona_risco] ?? r.zona_risco}
+                        </span>
+                        {ev && (
+                          <span className="text-[10px] text-text-muted">
+                            · {ev}{dias != null && <> há {dias === 0 ? '<1d' : `${dias}d`}</>}
+                          </span>
+                        )}
+                        <span className="text-[10px] text-text-faint">· {r.uf_devedor}</span>
+                      </div>
+                    </div>
+                    {/* Dívida + seguradora */}
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-sm font-semibold text-text-primary tabular-nums">{formatBRLCompact(r.valor_total_devida)}</p>
+                      <p className="text-[10px] text-text-faint">{r.motor} · {r.seguradora_alvo}</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-text-faint group-hover:text-rose-light transition-colors flex-shrink-0" />
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Triagem por zona de risco */}
+        <div className="card">
+          <p className="section-header flex items-center gap-2">
+            <Activity className="w-3.5 h-3.5 text-rose-light" /> Triagem por zona
+          </p>
+          <div className="space-y-4">
+            {zonas.map(({ zona, n, divida, constricao }) => {
+              const zm = ZONA_META[zona] ?? { dot: 'bg-text-faint', bar: 'bg-text-faint', text: 'text-text-muted' }
+              const pct = (n / totalFila) * 100
+              return (
+                <div key={zona}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={`inline-flex items-center gap-1.5 text-xs font-semibold ${zm.text}`}>
+                      <span className={`w-2 h-2 rounded-full ${zm.dot}`} />
+                      {ZONA_LABELS[zona] ?? zona}
+                    </span>
+                    <span className="text-text-primary text-xs tabular-nums">{n}</span>
+                  </div>
+                  <div className="bg-bg-secondary rounded-full h-1.5 overflow-hidden">
+                    <div className={`h-full ${zm.bar} rounded-full`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-text-faint text-[10px]">{formatBRLCompact(divida)} em dívida</span>
+                    {constricao > 0 && (
+                      <span className="text-danger text-[10px] font-medium">{constricao} com bloqueio</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+          <p className="text-text-faint text-[10px] mt-4 pt-3 border-t border-border leading-relaxed">
+            Zona = leitura do risco processual. <span className="text-danger">Sufoco</span> tem constrição em curso — o seguro garantia substitui o bloqueio e libera o caixa.
+          </p>
         </div>
       </div>
 
+      {/* Funil + Motor */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
         {/* Funil */}
@@ -115,10 +238,7 @@ export default async function DashboardPage() {
                 <div key={stage} className="flex items-center gap-3">
                   <span className="text-text-muted text-xs w-24 truncate">{STAGE_LABELS[stage]}</span>
                   <div className="flex-1 bg-bg-secondary rounded-full h-2 overflow-hidden">
-                    <div
-                      className="h-full bg-vf-red rounded-full transition-all"
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
+                    <div className="h-full bg-vf-red rounded-full transition-all" style={{ width: `${Math.min(pct, 100)}%` }} />
                   </div>
                   <span className="text-text-primary text-xs w-10 text-right tabular-nums">{qtd}</span>
                   <span className="text-text-faint text-xs w-20 text-right tabular-nums">{formatBRLCompact(valor)}</span>
@@ -133,17 +253,17 @@ export default async function DashboardPage() {
           <p className="section-header mb-4">Distribuição por Motor</p>
           <div className="space-y-3">
             {[
-              { motor: 'A1', label: 'Urgência', count: k.motor_a1 || 0, cls: 'bg-red-500' },
-              { motor: 'A2', label: 'Prevenção', count: k.motor_a2 || 0, cls: 'bg-amber-500' },
-              { motor: 'B1', label: 'Penhora', count: k.motor_b1 || 0, cls: 'bg-blue-500' },
-              { motor: 'B2', label: 'Revisão', count: k.motor_b2 || 0, cls: 'bg-purple-500' },
+              { motor: 'A1', label: 'Urgência', count: k.motor_a1 || 0, cls: 'bg-motor-A1' },
+              { motor: 'A2', label: 'Prevenção', count: k.motor_a2 || 0, cls: 'bg-motor-A2' },
+              { motor: 'B1', label: 'Penhora', count: k.motor_b1 || 0, cls: 'bg-motor-B1' },
+              { motor: 'B2', label: 'Revisão', count: k.motor_b2 || 0, cls: 'bg-motor-B2' },
             ].map(({ motor, label, count, cls }) => {
               const pct = totalMotores ? (count / totalMotores * 100) : 0
               return (
                 <div key={motor}>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-text-muted"><span className="font-bold text-text-primary">{motor}</span> — {label}</span>
-                    <span className="text-text-primary">{count}</span>
+                    <span className="text-text-primary tabular-nums">{count}</span>
                   </div>
                   <div className="bg-bg-secondary rounded-full h-1.5 overflow-hidden">
                     <div className={`h-full ${cls} rounded-full`} style={{ width: `${pct}%` }} />
@@ -152,7 +272,6 @@ export default async function DashboardPage() {
               )
             })}
           </div>
-
           <div className="mt-4 pt-4 border-t border-border">
             <p className="text-text-faint text-xs">{totalMotores} empresas classificadas</p>
           </div>
@@ -165,19 +284,14 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <p className="section-header mb-0 flex items-center gap-2">
               <AlertTriangle className="w-3.5 h-3.5 text-danger" />
-              SLA Vencido — Mais de 7 dias sem movimento
+              SLA vencido — mais de 7 dias sem movimento
             </p>
-            <Link href="/pipeline" className="text-xs text-text-muted hover:text-vf-red-light">
-              Ver pipeline →
-            </Link>
+            <Link href="/pipeline" className="text-xs text-text-muted hover:text-rose-light">Ver pipeline →</Link>
           </div>
           <table className="table-vf">
             <thead>
               <tr>
-                <th>Empresa</th>
-                <th>Estágio</th>
-                <th>Motor</th>
-                <th>Responsável</th>
+                <th>Empresa</th><th>Estágio</th><th>Motor</th><th>Responsável</th>
                 <th className="text-right">Dias parado</th>
               </tr>
             </thead>
@@ -185,51 +299,18 @@ export default async function DashboardPage() {
               {slaVencidos.map(row => (
                 <tr key={row.cnpj_raiz}>
                   <td>
-                    <Link href={`/empresa/${row.cnpj_raiz}`} className="text-text-primary hover:text-vf-red-light">
+                    <Link href={`/empresa/${row.cnpj_raiz}`} className="text-text-primary hover:text-rose-light">
                       {row.nome_devedor}
                     </Link>
                   </td>
-                  <td className="text-text-muted text-xs">
-                    {STAGE_LABELS[normalizeStage(row.estagio)]}
-                  </td>
-                  <td>
-                    {row.motor && (
-                      <span className={`motor-${row.motor}`}>{row.motor}</span>
-                    )}
-                  </td>
+                  <td className="text-text-muted text-xs">{STAGE_LABELS[normalizeStage(row.estagio)]}</td>
+                  <td>{row.motor && <span className={`motor-${row.motor}`}>{row.motor}</span>}</td>
                   <td className="text-text-muted">{row.responsavel_nome || '—'}</td>
-                  <td className="text-right text-danger font-medium">{row.dias_parado}d</td>
+                  <td className="text-right text-danger font-medium tabular-nums">{row.dias_parado}d</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* Follow-ups hoje */}
-      {followupsHoje && followupsHoje.length > 0 && (
-        <div className="card mt-6">
-          <p className="section-header mb-4 flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5 text-info" />
-            Follow-ups de Hoje
-          </p>
-          <div className="space-y-2">
-            {followupsHoje.map(row => (
-              <div key={row.cnpj_raiz} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
-                <div className="flex-1">
-                  <Link href={`/empresa/${row.cnpj_raiz}`} className="text-text-primary hover:text-vf-red-light text-sm">
-                    {row.nome_devedor}
-                  </Link>
-                  {row.proxima_acao_descricao && (
-                    <p className="text-text-muted text-xs">{row.proxima_acao_descricao}</p>
-                  )}
-                </div>
-                <span className="text-text-faint text-xs">
-                  {new Date(row.proxima_acao_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       )}
     </div>
