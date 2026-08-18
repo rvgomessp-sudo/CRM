@@ -48,6 +48,8 @@ export default function EmpresaPage() {
   const [propostas, setPropostas] = useState<Proposta[]>([])
   const [contatos, setContatos] = useState<any[]>([])
   const [eventos, setEventos] = useState<EventoJudicial[]>([])
+  const [score, setScore] = useState<number | null>(null)
+  const [alvoMarinheiro, setAlvoMarinheiro] = useState(false)
   const [showContatoForm, setShowContatoForm] = useState(false)
   const [novoContato, setNovoContato] = useState({ nome: '', cargo: '', telefone: '', email: '' })
   const [loading, setLoading] = useState(true)
@@ -63,7 +65,7 @@ export default function EmpresaPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [emp, ins, int, con, prop, cont, evt] = await Promise.all([
+    const [emp, ins, int, con, prop, cont, evt, fil] = await Promise.all([
       supabase.from('empresas').select('*').eq('cnpj_raiz', cnpj).single(),
       supabase.from('inscricoes').select('*').eq('cnpj_raiz', cnpj).order('valor_numerico', { ascending: false }),
       supabase.from('interacoes').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
@@ -73,6 +75,8 @@ export default function EmpresaPage() {
       supabase.from('eventos').select('id,tipo,numero_processo,ocorrido_em,payload')
         .eq('cnpj_raiz', cnpj).eq('fonte', 'JUDICIAL')
         .order('ocorrido_em', { ascending: false }).limit(80),
+      supabase.from('vw_fila_oportunidades').select('score,alvo_marinheiro')
+        .eq('cnpj_raiz', cnpj).order('score', { ascending: false }).limit(1),
     ])
     setEmpresa(emp.data)
     setInscricoes(ins.data || [])
@@ -81,6 +85,9 @@ export default function EmpresaPage() {
     setPropostas(prop.data || [])
     setContatos(cont.data || [])
     setEventos((evt.data as EventoJudicial[]) || [])
+    const fila = (fil.data as { score: number | null; alvo_marinheiro: boolean }[] | null)?.[0]
+    setScore(fila?.score ?? emp.data?.score_vf ?? null)
+    setAlvoMarinheiro(fila?.alvo_marinheiro ?? false)
     setLoading(false)
   }
 
@@ -206,15 +213,25 @@ export default function EmpresaPage() {
 
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-text-primary">{empresa.nome_devedor}</h1>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-xl font-bold text-text-primary">{empresa.nome_devedor}</h1>
+              {alvoMarinheiro && (
+                <span className="badge bg-rose/12 text-rose-light border border-rose/25 gap-1">
+                  <Target className="w-3 h-3" /> Marinheiro
+                </span>
+              )}
+            </div>
             <p className="text-text-muted text-sm">
               {formatCnpj(empresa.cnpj_completo)} · {empresa.uf_devedor}
               {empresa.capital_social ? <> · Capital {formatBRLCompact(empresa.capital_social)}</> : null}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-vf-red-light">{formatBRLCompact(empresa.valor_total_devida)}</p>
-            <p className="text-text-muted text-xs">{empresa.qtd_inscricoes} inscrição(ões) PGFN</p>
+          <div className="flex items-center gap-5">
+            <div className="text-right">
+              <p className="text-2xl font-bold text-rose-light">{formatBRLCompact(empresa.valor_total_devida)}</p>
+              <p className="text-text-muted text-xs">{empresa.qtd_inscricoes} inscrição(ões) PGFN</p>
+            </div>
+            {score != null && <ScoreGauge score={score} />}
           </div>
         </div>
 
@@ -338,24 +355,49 @@ export default function EmpresaPage() {
               {evFiscais.length === 0 ? (
                 <p className="text-text-faint text-xs">Nenhum evento fiscal capturado nos diários oficiais.</p>
               ) : (
-                <div className="space-y-0 max-h-96 overflow-y-auto pr-1">
+                <div className="relative max-h-96 overflow-y-auto pr-1 pl-1">
+                  {/* trilho vertical */}
+                  <div className="absolute left-[86px] top-2 bottom-2 w-px bg-border" />
                   {evFiscais.slice(0, 40).map((ev, i) => {
                     const alerta = EVENTO_ALERTA_MAXIMO.has(ev.tipo)
+                    const dias = diasDe(ev.ocorrido_em)
                     return (
-                      <div key={ev.id} className={cn('flex gap-3 py-2', i > 0 && 'border-t border-border/50')}>
-                        <div className="flex-shrink-0 w-20 text-right">
-                          <p className="text-text-muted text-[11px]">{formatDate(ev.ocorrido_em)}</p>
-                          <p className="text-text-faint text-[10px]">{ev.payload?.tribunal}</p>
+                      <div key={ev.id} className="relative flex gap-3 py-2.5">
+                        <div className="flex-shrink-0 w-[74px] text-right pt-0.5">
+                          <p className="text-text-muted text-[11px] font-medium tabular-nums">{formatDate(ev.ocorrido_em)}</p>
+                          {dias != null && (
+                            <p className="text-text-faint text-[10px]">{dias === 0 ? 'hoje' : `há ${dias}d`}</p>
+                          )}
                         </div>
-                        <div className={cn('w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0',
-                          alerta ? 'bg-danger' : 'bg-vf-red-light/60')} />
-                        <div className="min-w-0">
-                          <p className={cn('text-xs font-medium', alerta ? 'text-danger' : 'text-text-primary')}>
-                            {alerta && '🚨 '}{EVENTO_JUDICIAL_LABELS[ev.tipo] ?? ev.tipo}
-                            {ev.payload?.polo === 'A' && <span className="text-text-faint font-normal"> · empresa no ataque</span>}
-                            {ev.payload?.polo === 'P' && <span className="text-text-faint font-normal"> · empresa executada</span>}
+                        {/* nó */}
+                        <div className="relative flex-shrink-0 w-3 flex justify-center pt-1">
+                          {alerta ? (
+                            <span className="relative flex h-2.5 w-2.5">
+                              <span className="absolute inline-flex h-full w-full rounded-full bg-danger opacity-60 animate-ping" />
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger shadow-[0_0_8px_2px_rgba(240,97,107,.55)]" />
+                            </span>
+                          ) : (
+                            <span className="inline-flex rounded-full h-2 w-2 bg-rose shadow-[0_0_6px_1px_var(--accent-glow)] mt-0.5" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1 pb-0.5">
+                          <p className={cn('text-xs font-semibold leading-snug', alerta ? 'text-danger' : 'text-text-primary')}>
+                            {EVENTO_JUDICIAL_LABELS[ev.tipo] ?? ev.tipo}
                           </p>
-                          <p className="text-text-faint text-[10px] font-mono truncate">{ev.numero_processo}</p>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-light bg-rose/10 border border-rose/20 rounded px-1.5 py-0.5">
+                              <CheckCircle className="w-2.5 h-2.5" /> DJEN{ev.payload?.tribunal ? ` · ${ev.payload.tribunal}` : ''}
+                            </span>
+                            {ev.payload?.polo === 'A' && (
+                              <span className="text-[10px] text-info bg-info/10 border border-info/20 rounded px-1.5 py-0.5">polo ativo</span>
+                            )}
+                            {ev.payload?.polo === 'P' && (
+                              <span className="text-[10px] text-warning bg-warning/10 border border-warning/20 rounded px-1.5 py-0.5">polo passivo · executada</span>
+                            )}
+                            {ev.numero_processo && (
+                              <span className="text-[10px] font-mono text-text-faint truncate max-w-[220px]">{ev.numero_processo}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )
@@ -668,6 +710,31 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between gap-4">
       <span className="text-text-faint">{label}</span>
       <span className="text-text-primary text-right">{value}</span>
+    </div>
+  )
+}
+
+function ScoreGauge({ score }: { score: number }) {
+  const r = 30
+  const c = 2 * Math.PI * r
+  const pct = Math.max(0, Math.min(100, score)) / 100
+  const offset = c * (1 - pct)
+  const faixa = score >= 75 ? 'Quente' : score >= 50 ? 'Morno' : 'Frio'
+  return (
+    <div className="relative flex-shrink-0" style={{ width: 76, height: 76 }} title={`Score de oportunidade: ${score}/100 · ${faixa}`}>
+      <svg width={76} height={76} viewBox="0 0 76 76" className="-rotate-90">
+        <circle cx={38} cy={38} r={r} fill="none" stroke="var(--border-strong)" strokeWidth={5} />
+        <circle
+          cx={38} cy={38} r={r} fill="none"
+          stroke="var(--accent)" strokeWidth={5} strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={offset}
+          style={{ filter: 'drop-shadow(0 0 4px var(--accent-glow))', transition: 'stroke-dashoffset .6s ease' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-lg font-bold leading-none text-rose-light tabular-nums">{score}</span>
+        <span className="text-[8px] uppercase tracking-widest text-text-faint mt-0.5">score</span>
+      </div>
     </div>
   )
 }

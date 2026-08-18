@@ -8,36 +8,37 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // V&F Brand v4 — Preto-azulado + Ouro (vermelho reservado a ALERTA)
-        bg:       { primary: '#0A0C12', secondary: '#10131C', card: '#151A26', hover: '#1C2333' },
-        border:   { DEFAULT: '#262D3E', strong: '#3D4761' },
-        // vf-red* mantidos por compatibilidade de classe — agora renderizam OURO
-        vf:       { red: '#C9A227', 'red-dark': '#9A7B1A', 'red-light': '#E5C563' },
-        gold:     { DEFAULT: '#C9A227', dark: '#9A7B1A', light: '#E5C563' },
-        text:     { primary: '#F0F2F5', muted: '#8B91A1', faint: '#4A5068' },
-        success:  '#22C55E',
-        warning:  '#F59E0B',
-        info:     '#3B82F6',
-        danger:   '#EF4444',
+        // Garantia sem Barreiras v5 — Rose Gold sobre noite mauve (vermelho reservado a ALERTA)
+        bg:       { primary: '#0C0A0E', secondary: '#121016', card: '#18141E', hover: '#1F1A26' },
+        border:   { DEFAULT: '#241F2B', strong: '#37303F' },
+        // vf-red* e gold mantidos por compatibilidade de classe — agora renderizam ROSE GOLD
+        vf:       { red: '#DDA096', 'red-dark': '#BC8073', 'red-light': '#F0C4BA' },
+        gold:     { DEFAULT: '#DDA096', dark: '#BC8073', light: '#F0C4BA' },
+        rose:     { DEFAULT: '#DDA096', dark: '#BC8073', light: '#F0C4BA', deep: '#A66B5C' },
+        text:     { primary: '#F1ECEF', muted: '#9A8F97', faint: '#574C57' },
+        success:  '#35C98E',
+        warning:  '#E0A93C',
+        info:     '#6FA8E8',
+        danger:   '#F0616B',
         // Motor colors
         motor: {
-          A1: '#EF4444',  // vermelho urgente
-          A2: '#F59E0B',  // âmbar
-          B1: '#3B82F6',  // azul
-          B2: '#8B5CF6',  // violeta
+          A1: '#F0616B',  // vermelho-rosé urgente
+          A2: '#E0A93C',  // âmbar
+          B1: '#6FA8E8',  // azul
+          B2: '#B08CC9',  // violeta suave
         },
-        // Pipeline stage colors
+        // Pipeline stage colors — progressão fria→rose gold→verde (conversão)
         stage: {
-          'base-pgfn': '#4A5068',
-          enriquecimento: '#0EA5E9',
-          abordagem: '#F59E0B',
-          interesse: '#10B981',
-          analise: '#8B5CF6',
-          proposta: '#C41E3A',
-          sancor: '#E11D48',
-          aprovado: '#22C55E',
-          fechado: '#15803D',
-          receita: '#166534',
+          'base-pgfn': '#574C57',
+          enriquecimento: '#6FA8E8',
+          abordagem: '#E0A93C',
+          interesse: '#4FB89A',
+          analise: '#B08CC9',
+          proposta: '#DDA096',
+          sancor: '#BC8073',
+          aprovado: '#35C98E',
+          fechado: '#2A9D74',
+          receita: '#1F7A58',
         },
       },
       fontFamily: {

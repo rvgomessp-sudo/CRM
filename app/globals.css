@@ -6,23 +6,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ---- CSS Variables ---- */
+/* Garantia sem Barreiras — Rose Gold sobre noite mauve profunda.
+   Neutros com viés quente/mauve (o acento define o neutro).
+   Vermelho reservado a ALERTA/urgência. */
 :root {
-  --bg-primary:   #0A0C12;
-  --bg-secondary: #10131C;
-  --bg-card:      #151A26;
-  --bg-hover:     #1C2333;
-  --border:       #262D3E;
-  --border-strong:#3D4761;
-  --accent:       #C9A227;
-  --accent-dark:  #9A7B1A;
-  --accent-light: #E5C563;
-  --text-primary: #F0F2F5;
-  --text-muted:   #8B91A1;
-  --text-faint:   #4A5068;
-  --success:      #22C55E;
-  --warning:      #F59E0B;
-  --info:         #3B82F6;
-  --danger:       #EF4444;
+  --bg-primary:   #0C0A0E;
+  --bg-secondary: #121016;
+  --bg-card:      #18141E;
+  --bg-hover:     #1F1A26;
+  --border:       #241F2B;
+  --border-strong:#37303F;
+  --accent:       #DDA096;  /* rose gold primário */
+  --accent-dark:  #BC8073;  /* rose gold profundo  */
+  --accent-light: #F0C4BA;  /* rose gold realce    */
+  --accent-glow:  rgba(221,160,150,.30);
+  --text-primary: #F1ECEF;
+  --text-muted:   #9A8F97;
+  --text-faint:   #574C57;
+  --success:      #35C98E;
+  --warning:      #E0A93C;
+  --info:         #6FA8E8;
+  --danger:       #F0616B;
 }
 
 /* ---- Base ---- */
@@ -44,7 +48,7 @@ html, body {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
 /* ---- Selection ---- */
-::selection { background: var(--accent); color: white; }
+::selection { background: var(--accent); color: #1A0E0C; }
 
 /* ---- Focus ---- */
 :focus-visible {
