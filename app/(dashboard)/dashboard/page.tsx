@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { formatBRL, formatBRLCompact, formatDateTime } from '@/lib/utils'
-import { STAGE_LABELS } from '@/lib/types'
+import { STAGE_LABELS, STAGES_ORDERED, normalizeStage, type PipelineStage } from '@/lib/types'
 import Link from 'next/link'
 import { AlertTriangle, TrendingUp, Building2, FileText, CheckCircle, Clock } from 'lucide-react'
 
@@ -45,6 +45,17 @@ export default async function DashboardPage() {
   const k = kpis || {}
   const totalMotores = (k.motor_a1 || 0) + (k.motor_a2 || 0) + (k.motor_b1 || 0) + (k.motor_b2 || 0)
 
+  // Consolida o funil nas 5 etapas canônicas (a view ainda devolve os valores brutos)
+  const funilCanon = STAGES_ORDERED.map(stage => {
+    const rows = (funil || []).filter(r => normalizeStage(r.estagio) === stage)
+    return {
+      stage,
+      qtd:   rows.reduce((s, r) => s + (r.qtd_empresas || 0), 0),
+      valor: rows.reduce((s, r) => s + (r.valor_total  || 0), 0),
+    }
+  })
+  const maiorEtapa = Math.max(1, ...funilCanon.map(f => f.qtd))
+
   return (
     <div className="p-6 max-w-7xl mx-auto w-full">
 
@@ -54,8 +65,8 @@ export default async function DashboardPage() {
           <h1 className="text-xl font-bold text-text-primary">Dashboard</h1>
           <p className="text-text-muted text-sm">Pipeline PGFN — Seguro Garantia Tributário</p>
         </div>
-        <Link href="/importar" className="btn-primary text-xs">
-          + Importar Base
+        <Link href="/oportunidades" className="btn-primary text-xs">
+          Ver fila de oportunidades →
         </Link>
       </div>
 
@@ -65,7 +76,7 @@ export default async function DashboardPage() {
           <Building2 className="w-4 h-4 text-text-faint mb-1" />
           <p className="kpi-value">{k.total_empresas || 0}</p>
           <p className="kpi-label">Empresas na carteira</p>
-          <p className="kpi-sub">{k.em_base || 0} em base bruta</p>
+          <p className="kpi-sub">{k.em_oportunidade || 0} na fila de oportunidades</p>
         </div>
 
         <div className="kpi-card">
@@ -94,22 +105,21 @@ export default async function DashboardPage() {
 
         {/* Funil */}
         <div className="lg:col-span-2 card">
-          <p className="section-header mb-4">Funil — Empresas por Estágio</p>
-          <div className="space-y-2">
-            {(funil || []).map(row => {
-              const label = STAGE_LABELS[row.estagio as keyof typeof STAGE_LABELS] || row.estagio
-              const pct = k.total_empresas ? (row.qtd_empresas / k.total_empresas * 100) : 0
+          <p className="section-header mb-4">Funil — Empresas por Etapa</p>
+          <div className="space-y-2.5">
+            {funilCanon.map(({ stage, qtd, valor }) => {
+              const pct = (qtd / maiorEtapa) * 100
               return (
-                <div key={row.estagio} className="flex items-center gap-3">
-                  <span className="text-text-muted text-xs w-32 truncate">{label}</span>
+                <div key={stage} className="flex items-center gap-3">
+                  <span className="text-text-muted text-xs w-24 truncate">{STAGE_LABELS[stage]}</span>
                   <div className="flex-1 bg-bg-secondary rounded-full h-2 overflow-hidden">
                     <div
                       className="h-full bg-vf-red rounded-full transition-all"
                       style={{ width: `${Math.min(pct, 100)}%` }}
                     />
                   </div>
-                  <span className="text-text-primary text-xs w-6 text-right">{row.qtd_empresas}</span>
-                  <span className="text-text-faint text-xs w-20 text-right">{formatBRLCompact(row.valor_total)}</span>
+                  <span className="text-text-primary text-xs w-10 text-right tabular-nums">{qtd}</span>
+                  <span className="text-text-faint text-xs w-20 text-right tabular-nums">{formatBRLCompact(valor)}</span>
                 </div>
               )
             })}
@@ -178,7 +188,7 @@ export default async function DashboardPage() {
                     </Link>
                   </td>
                   <td className="text-text-muted text-xs">
-                    {STAGE_LABELS[row.estagio as keyof typeof STAGE_LABELS] || row.estagio}
+                    {STAGE_LABELS[normalizeStage(row.estagio)]}
                   </td>
                   <td>
                     {row.motor && (

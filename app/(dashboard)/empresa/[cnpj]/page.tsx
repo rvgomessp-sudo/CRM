@@ -9,7 +9,7 @@ import {
   formatCnpj, cn
 } from '@/lib/utils'
 import {
-  STAGE_LABELS, STAGES_ORDERED, MOTOR_COLORS, MOTOR_BADGE_LABEL,
+  STAGE_LABELS, STAGES_ORDERED, MOTOR_COLORS, MOTOR_BADGE_LABEL, normalizeStage,
   EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO,
   ZONA_LABELS, ZONA_COLORS, ZONA_DESCRICAO,
   type Empresa, type Inscricao, type Interacao, type ConsultaSeguradora,
@@ -283,7 +283,7 @@ export default function EmpresaPage() {
           <div className="relative">
             <select
               className="select py-1 text-xs pr-8 appearance-none"
-              value={empresa.estagio}
+              value={normalizeStage(empresa.estagio)}
               onChange={e => updateEstagio(e.target.value as PipelineStage)}
               disabled={saving}
             >
@@ -744,7 +744,7 @@ export default function EmpresaPage() {
                       </p>
                     )}
                     <p className="text-text-faint text-[10px] mt-1">
-                      {(int.responsavel as any)?.nome || 'Sistema'} · {int.estagio_na_interacao ? STAGE_LABELS[int.estagio_na_interacao] : ''}
+                      {(int.responsavel as any)?.nome || 'Sistema'} · {int.estagio_na_interacao ? STAGE_LABELS[normalizeStage(int.estagio_na_interacao)] : ''}
                     </p>
                   </div>
                 </div>

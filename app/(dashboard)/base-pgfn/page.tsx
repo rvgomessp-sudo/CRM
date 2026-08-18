@@ -4,7 +4,10 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { formatBRLCompact, formatDate, cn } from '@/lib/utils'
-import { MOTOR_COLORS, STAGE_LABELS, type Empresa, type PipelineStage, type MotorTipo } from '@/lib/types'
+import {
+  MOTOR_COLORS, STAGE_LABELS, STAGE_COLORS, STAGES_ORDERED, STAGE_DB_VALUES, normalizeStage,
+  type Empresa, type PipelineStage, type MotorTipo
+} from '@/lib/types'
 import { Search, Filter, ChevronLeft, ChevronRight, Building2 } from 'lucide-react'
 
 const PAGE_SIZE = 50
@@ -44,7 +47,9 @@ export default function BasePGFNPage() {
 
     // Filtros
     if (filters.motor)      query = query.eq('motor', filters.motor)
-    if (filters.estagio)    query = query.eq('estagio', filters.estagio)
+    // Filtra pela etapa canônica: inclui os valores legados equivalentes,
+    // então funciona antes e depois da migração do enum.
+    if (filters.estagio)    query = query.in('estagio', STAGE_DB_VALUES[filters.estagio as PipelineStage] ?? [filters.estagio])
     if (filters.prioridade) query = query.eq('prioridade', filters.prioridade)
     if (filters.uf)         query = query.eq('uf_devedor', filters.uf)
     if (filters.seguradora) query = query.eq('seguradora_alvo', filters.seguradora)
@@ -104,7 +109,7 @@ export default function BasePGFNPage() {
 
           <select className="select py-1.5 text-xs w-auto" value={filters.estagio} onChange={e => updateFilter('estagio', e.target.value)}>
             <option value="">Estágio</option>
-            {Object.entries(STAGE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            {STAGES_ORDERED.map(s => <option key={s} value={s}>{STAGE_LABELS[s]}</option>)}
           </select>
 
           <select className="select py-1.5 text-xs w-auto" value={filters.prioridade} onChange={e => updateFilter('prioridade', e.target.value)}>
@@ -185,8 +190,8 @@ export default function BasePGFNPage() {
                     {formatBRLCompact(emp.valor_total_devida)}
                   </td>
                   <td>
-                    <span className="text-text-muted text-xs">
-                      {STAGE_LABELS[emp.estagio as PipelineStage] || emp.estagio}
+                    <span className={cn('badge text-[10px]', STAGE_COLORS[normalizeStage(emp.estagio)])}>
+                      {STAGE_LABELS[normalizeStage(emp.estagio)]}
                     </span>
                   </td>
                   <td>

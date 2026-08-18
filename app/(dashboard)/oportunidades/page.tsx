@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { formatBRLCompact, cn } from '@/lib/utils'
 import {
-  MOTOR_COLORS, STAGE_LABELS, TRIAGEM_COLORS, TRIAGEM_LABELS, FONTE_LABELS,
+  MOTOR_COLORS, STAGE_LABELS, normalizeStage, TRIAGEM_COLORS, TRIAGEM_LABELS, FONTE_LABELS,
   EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO, ZONA_LABELS, ZONA_COLORS,
   type FilaRow, type MotorTipo, type PipelineStage, type TriagemStatus,
 } from '@/lib/types'
@@ -286,7 +286,7 @@ function FilaOportunidades() {
                   ) : null}
                 </td>
                 <td className="text-text-muted text-center">{row.qtd_inscricoes}</td>
-                <td><span className="text-text-muted text-xs">{STAGE_LABELS[row.estagio as PipelineStage] || row.estagio}</span></td>
+                <td><span className="text-text-muted text-xs">{STAGE_LABELS[normalizeStage(row.estagio)]}</span></td>
                 <td><span className={cn('badge text-[10px]', TRIAGEM_COLORS[row.triagem])}>{TRIAGEM_LABELS[row.triagem]}</span></td>
                 {/* Ações de triagem */}
                 <td>

@@ -3,22 +3,32 @@
 // Espelho fiel do schema Supabase
 // ============================================================
 
+// ---- Funil enxuto: 5 etapas de prospecção ----
+// Back-office (minuta, faturamento, emissão) NÃO é coluna de funil.
 export type PipelineStage =
-  | 'base_pgfn'
-  | 'enriquecimento'
+  | 'oportunidade'
   | 'abordagem'
-  | 'analise_preliminar'
-  | 'proposta_comercial'
-  | 'aprovado_ad_pagto'
-  | 'analise_estruturacao'
-  | 'submetido_seguradora'
-  | 'aprovacao_minuta'
-  | 'faturamento'
-  | 'consultoria'
-  | 'emissao'
-  | 'reprovado'
+  | 'proposta'
+  | 'seguradora'
+  | 'fechado'
+
+// Taxonomias antigas — mantidas só para LEITURA enquanto a base migra.
+export type LegacyStage =
+  | 'base_pgfn' | 'enriquecimento' | 'interesse_manifesto' | 'analise_rapida'
+  | 'analise_preliminar' | 'proposta_enviada' | 'proposta_comercial'
+  | 'aprovado_ad_pagto' | 'submetido_sancor' | 'analise_estruturacao'
+  | 'submetido_seguradora' | 'aprovacao_minuta' | 'faturamento' | 'aprovado'
+  | 'consultoria' | 'emissao' | 'receita_realizada' | 'reprovado'
+
+export type AnyStage = PipelineStage | LegacyStage
 
 export type TipoFechamento  = 'CONSULTORIA' | 'EMISSAO' | 'AMBOS'
+
+// ---- Desfecho do "Fechado" ----
+// GANHO = negócio fechado. ENCERRADO tem duas origens distintas:
+// PERDA (decisão do cliente) vs. DISPENSA (decisão da V&F).
+// Regra: recusa de seguradora NÃO encerra — a V&F trabalha a reversão.
+export type Desfecho = 'GANHO' | 'PERDA' | 'DISPENSA'
 
 export type PrioridadeTipo  = 'ALTA' | 'MEDIA' | 'BAIXA'
 export type MotorTipo       = 'A1' | 'A2' | 'B1' | 'B2' | 'B3' | 'B4' | 'B5'
@@ -53,6 +63,12 @@ export interface Empresa {
   valor_total_devida:       number
   valor_maior_inscricao:    number
   estagio:                  PipelineStage
+  // Desfecho (preenchido quando estagio = 'fechado')
+  desfecho?:                Desfecho | null
+  tipo_fechamento?:         TipoFechamento | null
+  motivo_encerramento?:     string | null
+  motivo_obs?:              string | null
+  fechado_em?:              string | null
   seguradora_alvo:          SeguradoraTipo
   responsavel_id:           string | null
   ativo:                    boolean
@@ -263,36 +279,119 @@ export interface SolverOutput {
 }
 
 // ---- Labels ----
-export const STAGE_LABELS: Record<PipelineStage, string> = {
+// Inclui os 5 canônicos + os legados, para que qualquer valor vindo do banco
+// tenha rótulo legível durante e depois da migração.
+export const STAGE_LABELS: Record<string, string> = {
+  // canônicos
+  oportunidade:         'Oportunidade',
+  abordagem:            'Abordagem',
+  proposta:             'Proposta',
+  seguradora:           'Seguradora',
+  fechado:              'Fechado',
+  // legados (somente leitura)
   base_pgfn:            'Base PGFN',
   enriquecimento:       'Enriquecimento',
-  abordagem:            'Abordagem',
+  interesse_manifesto:  'Interesse Manifesto',
+  analise_rapida:       'Análise Rápida',
   analise_preliminar:   'Análise Preliminar',
+  proposta_enviada:     'Proposta Enviada',
   proposta_comercial:   'Proposta Comercial',
   aprovado_ad_pagto:    'Aprovado / Ad. Pagto',
+  submetido_sancor:     'Submetido à Sancor',
   analise_estruturacao: 'Análise Estruturação',
   submetido_seguradora: 'Submetido à Seguradora',
   aprovacao_minuta:     'Aprovação / Minuta',
   faturamento:          'Faturamento',
+  aprovado:             'Aprovado',
   consultoria:          'Consultoria',
   emissao:              'Emissão',
+  receita_realizada:    'Receita Realizada',
   reprovado:            'Reprovado',
 }
 
-export const STAGE_COLORS: Record<PipelineStage, string> = {
-  base_pgfn:            'bg-text-faint text-text-muted',
-  enriquecimento:       'bg-info/20 text-info',
-  abordagem:            'bg-warning/20 text-warning',
-  analise_preliminar:   'bg-amber-500/20 text-amber-400',
-  proposta_comercial:   'bg-purple-500/20 text-purple-400',
-  aprovado_ad_pagto:    'bg-cyan-500/20 text-cyan-400',
-  analise_estruturacao: 'bg-indigo-500/20 text-indigo-400',
-  submetido_seguradora: 'bg-vf-red/20 text-vf-red-light',
-  aprovacao_minuta:     'bg-vf-red/30 text-vf-red-light',
-  faturamento:          'bg-success/30 text-success',
-  consultoria:          'bg-emerald-500/30 text-emerald-400',
-  emissao:              'bg-green-900/50 text-green-400',
-  reprovado:            'bg-red-900/40 text-red-400',
+export const STAGE_COLORS: Record<string, string> = {
+  oportunidade: 'bg-text-faint/20 text-text-muted',
+  abordagem:    'bg-warning/20 text-warning',
+  proposta:     'bg-vf-red/20 text-vf-red-light',
+  seguradora:   'bg-info/20 text-info',
+  fechado:      'bg-success/20 text-success',
+}
+
+// ---- Mapa de conversão: qualquer estágio (novo ou legado) → canônico ----
+// Regra do negócio: faturamento não é etapa de funil (é evento financeiro);
+// minuta/estruturação seguem "com a seguradora"; consultoria/emissão = Ganho.
+export const STAGE_TO_CANON: Record<AnyStage, PipelineStage> = {
+  // canônicos
+  oportunidade: 'oportunidade',
+  abordagem:    'abordagem',
+  proposta:     'proposta',
+  seguradora:   'seguradora',
+  fechado:      'fechado',
+  // legados
+  base_pgfn:            'oportunidade',
+  enriquecimento:       'oportunidade',
+  interesse_manifesto:  'abordagem',
+  analise_rapida:       'abordagem',
+  analise_preliminar:   'abordagem',
+  proposta_enviada:     'proposta',
+  proposta_comercial:   'proposta',
+  aprovado_ad_pagto:    'proposta',
+  submetido_sancor:     'seguradora',
+  aprovado:             'seguradora',
+  analise_estruturacao: 'seguradora',
+  submetido_seguradora: 'seguradora',
+  aprovacao_minuta:     'seguradora',
+  faturamento:          'seguradora',
+  consultoria:          'fechado',
+  emissao:              'fechado',
+  receita_realizada:    'fechado',
+  reprovado:            'fechado',
+}
+
+/** Normaliza qualquer valor de estágio vindo do banco para um dos 5 canônicos. */
+export function normalizeStage(s: string | null | undefined): PipelineStage {
+  if (!s) return 'oportunidade'
+  return STAGE_TO_CANON[s as AnyStage] ?? 'oportunidade'
+}
+
+/** Todos os valores de banco que pertencem a cada etapa canônica.
+ *  Permite filtrar com .in() e funcionar ANTES e DEPOIS da migração. */
+export const STAGE_DB_VALUES: Record<PipelineStage, string[]> =
+  (Object.keys(STAGE_TO_CANON) as AnyStage[]).reduce((acc, k) => {
+    acc[STAGE_TO_CANON[k]].push(k)
+    return acc
+  }, { oportunidade: [], abordagem: [], proposta: [], seguradora: [], fechado: [] } as Record<PipelineStage, string[]>)
+
+// ---- Desfecho: labels e motivos ----
+export const DESFECHO_LABELS: Record<Desfecho, string> = {
+  GANHO:    'Ganho',
+  PERDA:    'Perda — decisão do cliente',
+  DISPENSA: 'Dispensa — decisão V&F',
+}
+
+export const DESFECHO_COLORS: Record<Desfecho, string> = {
+  GANHO:    'bg-success/20 text-success',
+  PERDA:    'bg-danger/20 text-danger',
+  DISPENSA: 'bg-warning/20 text-warning',
+}
+
+export const MOTIVOS_PERDA = [
+  'Cliente não disposto a pagar',
+  'Não assinou termo de compromisso',
+  'Outros',
+] as const
+
+export const MOTIVOS_DISPENSA = [
+  'Risco de reputação',
+  'Demanda abaixo do nosso core',
+  'Risco de inadimplência',
+  'Outros',
+] as const
+
+export const TIPO_FECHAMENTO_LABELS: Record<TipoFechamento, string> = {
+  CONSULTORIA: 'Consultoria',
+  EMISSAO:     'Emissão',
+  AMBOS:       'Ambos',
 }
 
 export const MOTOR_LABELS: Record<MotorTipo, string> = {
@@ -319,10 +418,7 @@ export const MOTOR_COLORS: Record<MotorTipo, string> = {
 }
 
 export const STAGES_ORDERED: PipelineStage[] = [
-  'base_pgfn', 'enriquecimento', 'abordagem', 'analise_preliminar',
-  'proposta_comercial', 'aprovado_ad_pagto', 'analise_estruturacao',
-  'submetido_seguradora', 'aprovacao_minuta', 'faturamento',
-  'consultoria', 'emissao', 'reprovado',
+  'oportunidade', 'abordagem', 'proposta', 'seguradora', 'fechado',
 ]
 
 // ============================================================

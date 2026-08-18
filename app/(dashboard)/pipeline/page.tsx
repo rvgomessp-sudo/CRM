@@ -7,7 +7,8 @@ import {
   formatBRLCompact, formatDate, diasDesde, slaClass, cn
 } from '@/lib/utils'
 import {
-  STAGES_ORDERED, STAGE_LABELS, MOTOR_COLORS,
+  STAGES_ORDERED, STAGE_LABELS, MOTOR_COLORS, normalizeStage,
+  DESFECHO_LABELS, DESFECHO_COLORS,
   type Empresa, type PipelineStage, type MotorTipo
 } from '@/lib/types'
 import { AlertTriangle, Filter, RefreshCw, ChevronRight } from 'lucide-react'
@@ -53,8 +54,9 @@ export default function PipelinePage() {
     supabase.from('profiles').select('id, nome').then(({ data }) => setProfiles(data || []))
   }, [fetchData])
 
+  // Agrupa por estágio canônico — tolera valores legados ainda no banco
   const grouped = STAGES_ORDERED.reduce((acc, stage) => {
-    acc[stage] = empresas.filter(e => e.estagio === stage)
+    acc[stage] = empresas.filter(e => normalizeStage(e.estagio) === stage)
     return acc
   }, {} as Record<PipelineStage, Empresa[]>)
 
@@ -115,13 +117,13 @@ export default function PipelinePage() {
 
       {/* Kanban Board */}
       <div className="flex-1 overflow-x-auto p-4">
-        <div className="flex gap-3 min-w-max h-full">
+        <div className="flex gap-3 h-full min-w-[1000px]">
           {STAGES_ORDERED.map(stage => {
             const cards = grouped[stage] || []
             const totalValor = cards.reduce((s, e) => s + (e.valor_total_devida || 0), 0)
 
             return (
-              <div key={stage} className="kanban-col">
+              <div key={stage} className="kanban-col flex-1 basis-0">
                 {/* Column header */}
                 <div className="kanban-col-header">
                   <div>
@@ -190,6 +192,23 @@ function KanbanCard({
         )}
         <span className="text-text-faint text-[10px] ml-auto">{empresa.uf_devedor}</span>
       </div>
+
+      {/* Desfecho — só em Fechado: o sim/não e sua característica */}
+      {empresa.desfecho && (
+        <div className="mb-2 flex items-center gap-1.5 flex-wrap">
+          <span className={cn('badge text-[9px]', DESFECHO_COLORS[empresa.desfecho])}>
+            {DESFECHO_LABELS[empresa.desfecho]}
+          </span>
+          {empresa.desfecho === 'GANHO' && empresa.tipo_fechamento && (
+            <span className="text-text-faint text-[9px]">{empresa.tipo_fechamento}</span>
+          )}
+          {empresa.desfecho !== 'GANHO' && empresa.motivo_encerramento && (
+            <span className="text-text-faint text-[9px] truncate max-w-[130px]" title={empresa.motivo_encerramento}>
+              {empresa.motivo_encerramento}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Nome */}
       <Link href={`/empresa/${empresa.cnpj_raiz}`}>
