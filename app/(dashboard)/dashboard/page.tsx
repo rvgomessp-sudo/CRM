@@ -44,6 +44,8 @@ export default async function DashboardPage() {
 
   const k = kpis || {}
   const totalMotores = (k.motor_a1 || 0) + (k.motor_a2 || 0) + (k.motor_b1 || 0) + (k.motor_b2 || 0)
+  // Empresas efetivamente sendo trabalhadas no funil (abordagem → proposta → seguradora).
+  const emNegociacao = (k.em_abordagem || 0) + (k.em_proposta || 0) + (k.em_seguradora || 0)
 
   // Consolida o funil nas 5 etapas canônicas (a view ainda devolve os valores brutos)
   const funilCanon = STAGES_ORDERED.map(stage => {
@@ -81,9 +83,9 @@ export default async function DashboardPage() {
 
         <div className="kpi-card">
           <FileText className="w-4 h-4 text-text-faint mb-1" />
-          <p className="kpi-value">{k.em_proposta || 0}</p>
-          <p className="kpi-label">Em proposta / Sancor</p>
-          <p className="kpi-sub">{formatBRLCompact(k.total_divida_carteira)} carteira total</p>
+          <p className="kpi-value">{emNegociacao}</p>
+          <p className="kpi-label">Em negociação ativa</p>
+          <p className="kpi-sub">{formatBRLCompact(k.divida_em_jogo)} em jogo</p>
         </div>
 
         <div className="kpi-card">
