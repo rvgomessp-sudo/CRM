@@ -154,4 +154,4 @@ const raiz = cnpj.replace(/\D/g, '').substring(0, 8).padStart(8, '0')
 - [ ] OSINT (Hunter.io, LinkedIn) — com aprovação humana
 - [ ] Exportação Excel da carteira
 
-<!-- deploy trigger -->
+<!-- deploy trigger: 2026-08-17 dossie rose gold -->
