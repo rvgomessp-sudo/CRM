@@ -213,15 +213,18 @@ export interface HistoricoEstagio {
 // ---- Views ----
 export interface DashboardKPIs {
   total_empresas:        number
-  em_base:               number
-  em_enriquecimento:     number
+  em_oportunidade:       number
   em_abordagem:          number
-  em_interesse:          number
-  em_analise:            number
   em_proposta:           number
-  convertidos:           number
+  em_seguradora:         number
+  em_fechado:            number
+  convertidos:           number   // fechado + desfecho GANHO
+  perdidos:              number   // fechado + desfecho PERDA
+  dispensados:           number   // fechado + desfecho DISPENSA
+  fechado_sem_desfecho:  number
   total_divida_carteira: number
   divida_convertida:     number
+  divida_em_jogo:        number
   motor_a1:              number
   motor_a2:              number
   motor_b1:              number
@@ -234,6 +237,9 @@ export interface FunilEstagio {
   qtd_empresas:   number
   valor_total:    number
   score_medio:    number | null
+  ganhos:         number
+  perdas:         number
+  dispensas:      number
 }
 
 // ---- CSV Import ----

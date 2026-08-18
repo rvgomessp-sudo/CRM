@@ -11,6 +11,8 @@ import {
   DESFECHO_LABELS, DESFECHO_COLORS,
   type Empresa, type PipelineStage, type MotorTipo
 } from '@/lib/types'
+import { ScoreBadge, ZonaBadge, EventoFiscalCell } from '@/components/intel'
+import { DesfechoModal, type DesfechoPayload } from '@/components/DesfechoModal'
 import { AlertTriangle, Filter, RefreshCw, ChevronRight } from 'lucide-react'
 
 type Filters = {
@@ -28,7 +30,8 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<Filters>({ responsavel: '', motor: '', seguradora: '', prioridade: '' })
   const [movingId, setMovingId] = useState<string | null>(null)
-  const [moveTarget, setMoveTarget] = useState<{cnpj: string; stage: PipelineStage} | null>(null)
+  const [scoreMap, setScoreMap] = useState<Record<string, number | null>>({})
+  const [fecharAlvo, setFecharAlvo] = useState<Empresa | null>(null)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -49,10 +52,18 @@ export default function PipelinePage() {
     setLoading(false)
   }, [filters])
 
+  useEffect(() => { fetchData() }, [fetchData])
+
+  // Score vive na view; carrego o mapa uma vez e cruzo por cnpj_raiz.
   useEffect(() => {
-    fetchData()
     supabase.from('profiles').select('id, nome').then(({ data }) => setProfiles(data || []))
-  }, [fetchData])
+    supabase.from('vw_fila_oportunidades').select('cnpj_raiz,score').then(({ data }) => {
+      const m: Record<string, number | null> = {}
+      for (const r of (data as { cnpj_raiz: string; score: number | null }[] | null) || []) m[r.cnpj_raiz] = r.score
+      setScoreMap(m)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Agrupa por estágio canônico — tolera valores legados ainda no banco
   const grouped = STAGES_ORDERED.reduce((acc, stage) => {
@@ -61,14 +72,45 @@ export default function PipelinePage() {
   }, {} as Record<PipelineStage, Empresa[]>)
 
   async function moverEstagio(cnpjRaiz: string, novoEstagio: PipelineStage) {
+    // Mover para Fechado exige o desfecho (sim/não e características).
+    if (novoEstagio === 'fechado') {
+      const emp = empresas.find(e => e.cnpj_raiz === cnpjRaiz)
+      if (emp) setFecharAlvo(emp)
+      return
+    }
     setMovingId(cnpjRaiz)
+    // Sair de Fechado (ou qualquer outro estágio) limpa o desfecho.
     await supabase
       .from('empresas')
-      .update({ estagio: novoEstagio, atualizado_em: new Date().toISOString() })
+      .update({
+        estagio: novoEstagio,
+        desfecho: null, tipo_fechamento: null, motivo_encerramento: null, motivo_obs: null, fechado_em: null,
+        atualizado_em: new Date().toISOString(),
+      })
       .eq('cnpj_raiz', cnpjRaiz)
     await fetchData()
     setMovingId(null)
-    setMoveTarget(null)
+  }
+
+  async function confirmarDesfecho(p: DesfechoPayload) {
+    if (!fecharAlvo) return
+    const cnpj = fecharAlvo.cnpj_raiz
+    setMovingId(cnpj)
+    await supabase
+      .from('empresas')
+      .update({
+        estagio: 'fechado',
+        desfecho: p.desfecho,
+        tipo_fechamento: p.tipo_fechamento,
+        motivo_encerramento: p.motivo_encerramento,
+        motivo_obs: p.motivo_obs,
+        fechado_em: new Date().toISOString(),
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('cnpj_raiz', cnpj)
+    setFecharAlvo(null)
+    await fetchData()
+    setMovingId(null)
   }
 
   function updateFilter(key: keyof Filters, value: string) {
@@ -148,6 +190,7 @@ export default function PipelinePage() {
                       <KanbanCard
                         key={emp.cnpj_raiz}
                         empresa={emp}
+                        score={scoreMap[emp.cnpj_raiz] ?? null}
                         currentStage={stage}
                         moving={movingId === emp.cnpj_raiz}
                         onMove={(novoEstagio) => moverEstagio(emp.cnpj_raiz, novoEstagio)}
@@ -160,15 +203,32 @@ export default function PipelinePage() {
           })}
         </div>
       </div>
+
+      {/* Modal de desfecho ao mover para Fechado */}
+      {fecharAlvo && (
+        <DesfechoModal
+          empresaNome={fecharAlvo.nome_devedor}
+          initial={{
+            desfecho: fecharAlvo.desfecho ?? undefined,
+            tipo_fechamento: fecharAlvo.tipo_fechamento ?? undefined,
+            motivo_encerramento: fecharAlvo.motivo_encerramento ?? undefined,
+            motivo_obs: fecharAlvo.motivo_obs ?? undefined,
+          }}
+          saving={movingId === fecharAlvo.cnpj_raiz}
+          onConfirm={confirmarDesfecho}
+          onCancel={() => setFecharAlvo(null)}
+        />
+      )}
     </div>
   )
 }
 
 // ---- Kanban Card ----
 function KanbanCard({
-  empresa, currentStage, moving, onMove
+  empresa, score, currentStage, moving, onMove
 }: {
   empresa: Empresa
+  score: number | null
   currentStage: PipelineStage
   moving: boolean
   onMove: (stage: PipelineStage) => void
@@ -180,8 +240,9 @@ function KanbanCard({
   return (
     <div className={cn('kanban-card', moving && 'opacity-50')}>
 
-      {/* Motor + prioridade */}
+      {/* Score + motor + prioridade */}
       <div className="flex items-center gap-1.5 mb-2">
+        <ScoreBadge score={score} />
         {empresa.motor && (
           <span className={cn('badge text-[10px]', MOTOR_COLORS[empresa.motor as MotorTipo])}>
             {empresa.motor}
@@ -192,6 +253,20 @@ function KanbanCard({
         )}
         <span className="text-text-faint text-[10px] ml-auto">{empresa.uf_devedor}</span>
       </div>
+
+      {/* Inteligência: zona de risco + evento fiscal mais grave */}
+      {(empresa.zona_risco || empresa.evento_judicial_tipo) && (
+        <div className="flex items-center gap-1.5 flex-wrap mb-2">
+          {empresa.zona_risco && <ZonaBadge zona={empresa.zona_risco} />}
+          {empresa.evento_judicial_tipo && (
+            <EventoFiscalCell
+              tipo={empresa.evento_judicial_tipo}
+              em={empresa.evento_judicial_em}
+              trabalhistas={empresa.eventos_trabalhistas}
+            />
+          )}
+        </div>
+      )}
 
       {/* Desfecho — só em Fechado: o sim/não e sua característica */}
       {empresa.desfecho && (

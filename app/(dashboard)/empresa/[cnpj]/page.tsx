@@ -12,9 +12,11 @@ import {
   STAGE_LABELS, STAGES_ORDERED, MOTOR_COLORS, MOTOR_BADGE_LABEL, normalizeStage,
   EVENTO_JUDICIAL_LABELS, EVENTO_ALERTA_MAXIMO,
   ZONA_LABELS, ZONA_COLORS, ZONA_DESCRICAO,
+  DESFECHO_LABELS, DESFECHO_COLORS, TIPO_FECHAMENTO_LABELS,
   type Empresa, type Inscricao, type Interacao, type ConsultaSeguradora,
   type Proposta, type PipelineStage, type MotorTipo, type CanalInteracao
 } from '@/lib/types'
+import { DesfechoModal, type DesfechoPayload } from '@/components/DesfechoModal'
 import {
   ArrowLeft, Building2, FileText, MessageSquare, Calculator, ShieldAlert,
   AlertTriangle, CheckCircle, Clock, Plus, ChevronDown, Phone, Mail, Trash2,
@@ -56,6 +58,7 @@ export default function EmpresaPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Tab>('painel')
   const [saving, setSaving] = useState(false)
+  const [desfechoOpen, setDesfechoOpen] = useState(false)
   const [showInteracaoForm, setShowInteracaoForm] = useState(false)
   const [novaInteracao, setNovaInteracao] = useState({
     canal: 'TELEFONE' as CanalInteracao,
@@ -94,9 +97,34 @@ export default function EmpresaPage() {
 
   async function updateEstagio(novoEstagio: PipelineStage) {
     if (!empresa) return
+    // Fechar exige o desfecho: abre o modal em vez de gravar direto.
+    if (novoEstagio === 'fechado') { setDesfechoOpen(true); return }
     setSaving(true)
-    await supabase.from('empresas').update({ estagio: novoEstagio, atualizado_em: new Date().toISOString() }).eq('cnpj_raiz', cnpj)
-    setEmpresa(e => e ? { ...e, estagio: novoEstagio } : null)
+    const patch = {
+      estagio: novoEstagio,
+      desfecho: null, tipo_fechamento: null, motivo_encerramento: null, motivo_obs: null, fechado_em: null,
+      atualizado_em: new Date().toISOString(),
+    }
+    await supabase.from('empresas').update(patch).eq('cnpj_raiz', cnpj)
+    setEmpresa(e => e ? { ...e, ...patch } : null)
+    setSaving(false)
+  }
+
+  async function confirmarDesfecho(p: DesfechoPayload) {
+    if (!empresa) return
+    setSaving(true)
+    const patch = {
+      estagio: 'fechado' as PipelineStage,
+      desfecho: p.desfecho,
+      tipo_fechamento: p.tipo_fechamento,
+      motivo_encerramento: p.motivo_encerramento,
+      motivo_obs: p.motivo_obs,
+      fechado_em: new Date().toISOString(),
+      atualizado_em: new Date().toISOString(),
+    }
+    await supabase.from('empresas').update(patch).eq('cnpj_raiz', cnpj)
+    setEmpresa(e => e ? { ...e, ...patch } : null)
+    setDesfechoOpen(false)
     setSaving(false)
   }
 
@@ -292,9 +320,41 @@ export default function EmpresaPage() {
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-faint pointer-events-none" />
           </div>
           <span className="text-text-muted text-xs">→ {empresa.seguradora_alvo}</span>
+
+          {/* Desfecho — só quando Fechado; clicável para revisar */}
+          {normalizeStage(empresa.estagio) === 'fechado' && empresa.desfecho && (
+            <button onClick={() => setDesfechoOpen(true)} className="inline-flex items-center gap-1.5" title="Revisar desfecho">
+              <span className={cn('badge text-[10px]', DESFECHO_COLORS[empresa.desfecho])}>
+                {DESFECHO_LABELS[empresa.desfecho]}
+              </span>
+              {empresa.desfecho === 'GANHO' && empresa.tipo_fechamento && (
+                <span className="text-text-faint text-[10px]">{TIPO_FECHAMENTO_LABELS[empresa.tipo_fechamento]}</span>
+              )}
+              {empresa.desfecho !== 'GANHO' && empresa.motivo_encerramento && (
+                <span className="text-text-faint text-[10px] truncate max-w-[160px]">{empresa.motivo_encerramento}</span>
+              )}
+            </button>
+          )}
+
           {saving && <span className="text-text-faint text-xs">Salvando…</span>}
         </div>
       </div>
+
+      {/* Modal de desfecho */}
+      {desfechoOpen && (
+        <DesfechoModal
+          empresaNome={empresa.nome_devedor}
+          initial={{
+            desfecho: empresa.desfecho ?? undefined,
+            tipo_fechamento: empresa.tipo_fechamento ?? undefined,
+            motivo_encerramento: empresa.motivo_encerramento ?? undefined,
+            motivo_obs: empresa.motivo_obs ?? undefined,
+          }}
+          saving={saving}
+          onConfirm={confirmarDesfecho}
+          onCancel={() => setDesfechoOpen(false)}
+        />
+      )}
 
       {/* ===== Tabs ===== */}
       <div className="border-b border-border bg-bg-secondary px-6">
