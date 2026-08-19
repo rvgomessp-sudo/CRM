@@ -40,6 +40,7 @@ export default async function DashboardPage() {
     { data: provColeta },
     { data: provEnriquecimento },
     { data: provInscricoes },
+    { data: coletaRuns },
   ] = await Promise.all([
     supabase.from('vw_dashboard_kpis').select('*').single(),
     supabase.from('vw_funil_estagio').select('*'),
@@ -59,7 +60,13 @@ export default async function DashboardPage() {
     supabase.from('eventos').select('capturado_em').order('capturado_em', { ascending: false }).limit(1),
     supabase.from('eventos').select('enriquecido_em').not('enriquecido_em', 'is', null).order('enriquecido_em', { ascending: false }).limit(1),
     supabase.from('inscricoes').select('criado_em').order('criado_em', { ascending: false }).limit(1),
+    supabase.from('coletas').select('iniciada_em').eq('fonte', 'DJEN_COMUNICA')
+      .order('iniciada_em', { ascending: false }).limit(1),
   ])
+
+  const minColeta = coletaRuns?.[0]?.iniciada_em
+    ? Math.floor((Date.now() - new Date(coletaRuns[0].iniciada_em).getTime()) / 60000) : null
+  const coletaViva = minColeta != null && minColeta <= 30
 
   // Pauta mais recente
   const pautaData = pautaRows?.[0]?.data ?? null
@@ -383,7 +390,9 @@ export default async function DashboardPage() {
         <span>Eventos judiciais (DJEN): coletados em <b className="text-text-muted">{fmtDia(provColeta?.[0]?.capturado_em)}</b></span>
         <span>Teores + advogados: enriquecidos em <b className="text-text-muted">{fmtDia(provEnriquecimento?.[0]?.enriquecido_em)}</b></span>
         <span>Dívida PGFN: carga de <b className="text-text-muted">{fmtDia(provInscricoes?.[0]?.criado_em)}</b> <span className="text-warning">(parcial — consolidação pendente)</span></span>
-        <span className="text-text-faint">Coleta recorrente: <span className="text-warning">não ligada</span> — próxima fase</span>
+        {coletaViva
+          ? <span>Coleta recorrente: <b className="text-success">ATIVA</b> — última execução há {minColeta} min</span>
+          : <span>Coleta recorrente: <span className="text-warning">{minColeta != null ? `sem execução há ${minColeta} min` : 'sem execução registrada'}</span></span>}
       </div>
     </div>
   )
