@@ -10,7 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/pauta',         label: 'Pauta do dia',  icon: CalendarCheck },
+  { href: '/pauta',         label: 'Central',       icon: CalendarCheck },
   { href: '/oportunidades', label: 'Oportunidades', icon: Target },
   { href: '/pipeline',      label: 'Pipeline',      icon: KanbanSquare },
   { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
