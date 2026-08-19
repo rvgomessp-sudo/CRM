@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'CRM V3 | Vazquez & Fonseca',
-  description: 'Pipeline PGFN — Seguro Garantia Tributário',
+  title: 'GSB · Monitor Judicial | Grupo V&F',
+  description: 'Garantia sem Barreiras — inteligência judicial para Seguro Garantia',
   robots: 'noindex, nofollow',
 }
 

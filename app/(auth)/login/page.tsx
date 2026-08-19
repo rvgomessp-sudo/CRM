@@ -36,15 +36,16 @@ export default function LoginPage() {
     <div className="min-h-screen bg-bg-primary flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
 
-        {/* Logo V&F */}
+        {/* Marca GSB */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 bg-vf-red rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
+          <div className="inline-flex flex-col items-center gap-2 mb-2">
+            <div className="w-14 h-14 rounded-full border-2 border-vf-red bg-bg-secondary flex items-center justify-center"
+                 style={{ boxShadow: '0 0 0 1px var(--accent-dark) inset' }}>
+              <span className="font-serif font-bold text-vf-red-light text-xl tracking-tighter">GB</span>
             </div>
-            <span className="text-text-primary font-semibold text-lg">Vazquez & Fonseca</span>
+            <span className="text-text-primary font-semibold text-lg mt-1">GSB · Monitor Judicial</span>
           </div>
-          <p className="text-text-muted text-sm">CRM V3 — Pipeline PGFN</p>
+          <p className="text-vf-red-light text-[11px] uppercase tracking-widest">Garantia sem Barreiras · Grupo V&amp;F</p>
         </div>
 
         {/* Form */}
@@ -94,8 +95,9 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-text-faint text-xs mt-6">
-          Uso restrito — V&F Grupo © {new Date().getFullYear()}
+        <p className="text-center text-vf-red-light/80 text-xs italic mt-6">&ldquo;A inteligência sempre vence.&rdquo;</p>
+        <p className="text-center text-text-faint text-[11px] mt-2">
+          Uso restrito — Grupo V&amp;F © {new Date().getFullYear()}
         </p>
       </div>
     </div>

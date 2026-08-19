@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, KanbanSquare, Database, Activity,
-  Calculator, LogOut, Shield, Target, CalendarCheck
+  Calculator, LogOut, Target, CalendarCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -38,15 +38,16 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
   return (
     <aside className="flex flex-col w-56 min-h-screen bg-bg-secondary border-r border-border">
 
-      {/* Logo */}
+      {/* Marca GSB — Garantia sem Barreiras */}
       <div className="px-4 py-5 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-vf-red rounded flex items-center justify-center flex-shrink-0">
-            <Shield className="w-3.5 h-3.5 text-white" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-full border-2 border-vf-red bg-bg-primary flex items-center justify-center flex-shrink-0"
+               style={{ boxShadow: '0 0 0 1px var(--accent-dark) inset' }}>
+            <span className="font-serif font-bold text-vf-red-light text-[13px] tracking-tighter">GB</span>
           </div>
           <div>
-            <p className="text-text-primary font-semibold text-sm leading-tight">V&F Grupo</p>
-            <p className="text-vf-red-light text-[10px] uppercase tracking-widest">Originação por Eventos</p>
+            <p className="text-text-primary font-semibold text-sm leading-tight">GSB · Monitor Judicial</p>
+            <p className="text-vf-red-light text-[10px] uppercase tracking-widest">Grupo V&amp;F</p>
           </div>
         </div>
       </div>
@@ -89,6 +90,13 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
           <LogOut className="w-4 h-4" />
           Sair
         </button>
+      </div>
+
+      {/* Assinatura + frase da marca */}
+      <div className="px-4 pt-3 pb-4 border-t border-border">
+        <p className="text-vf-red-light/90 text-[11px] italic leading-snug">&ldquo;A inteligência sempre vence.&rdquo;</p>
+        <p className="text-text-faint text-[9px] mt-2 uppercase tracking-widest">Concebido por</p>
+        <p className="text-text-muted text-[13px]" style={{ fontFamily: 'Georgia, \"Times New Roman\", serif', fontStyle: 'italic' }}>Ana Fonseca</p>
       </div>
     </aside>
   )

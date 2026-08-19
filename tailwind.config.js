@@ -8,19 +8,19 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Garantia sem Barreiras v6 — COBRE sobre AZUL-MARINHO PROFUNDO
-        // (Fase 17 da ordem executiva 19/08; referência: mockups GSB)
-        bg:       { primary: '#0A1322', secondary: '#0F1B2E', card: '#142238', hover: '#1B2C47' },
-        border:   { DEFAULT: '#233650', strong: '#33496B' },
-        // vf-red*/gold/rose mantidos por compatibilidade de classe — renderizam COBRE
-        vf:       { red: '#D89B78', 'red-dark': '#B47A55', 'red-light': '#EDC1A4' },
-        gold:     { DEFAULT: '#D89B78', dark: '#B47A55', light: '#EDC1A4' },
-        rose:     { DEFAULT: '#D89B78', dark: '#B47A55', light: '#EDC1A4', deep: '#9E6743' },
-        text:     { primary: '#EDF1F7', muted: '#94A4BA', faint: '#566A85' },
-        success:  '#3BCE93',
-        warning:  '#E2AC42',
-        info:     '#6FA8E8',
-        danger:   '#F0616B',
+        // Garantia sem Barreiras v7 — COBRE/DOURADO sobre OXBLOOD (vinho profundo)
+        // Marca GSB · Monitor Judicial · Grupo V&F. Ref: logo GB + mockup GSB Monitor.
+        bg:       { primary: '#1A0B0B', secondary: '#22100E', card: '#2B1614', hover: '#38201C' },
+        border:   { DEFAULT: '#4A2822', strong: '#6B3D31' },
+        // vf-red*/gold/rose mantidos por compatibilidade de classe — renderizam COBRE/DOURADO
+        vf:       { red: '#C98A54', 'red-dark': '#A66B3C', 'red-light': '#E8C39A' },
+        gold:     { DEFAULT: '#C98A54', dark: '#A66B3C', light: '#E8C39A' },
+        rose:     { DEFAULT: '#C98A54', dark: '#A66B3C', light: '#E8C39A', deep: '#8A5330' },
+        text:     { primary: '#F3E9E2', muted: '#B49B92', faint: '#7C6058' },
+        success:  '#45C98E',
+        warning:  '#E8B14A',
+        info:     '#8AB0DE',
+        danger:   '#FF6B6B',
         // Motor colors
         motor: {
           A1: '#F0616B',  // vermelho-rosé urgente
