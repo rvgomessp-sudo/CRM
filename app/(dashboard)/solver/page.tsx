@@ -139,7 +139,11 @@ function SolverInner() {
         <Calculator className="w-5 h-5 text-vf-red" />
         <div>
           <h1 className="text-xl font-bold text-text-primary">VF Solver</h1>
-          <p className="text-text-muted text-sm">Precificação ótima — regra: comissão + honorários ≥ R$ {(TETO_MIN/1000).toFixed(0)}K</p>
+          <p className="text-text-muted text-sm">
+            <span className="badge bg-info/15 text-info mr-2">SIMULAÇÃO</span>
+            Cenários de precificação — regra interna: comissão + honorários ≥ R$ {(TETO_MIN/1000).toFixed(0)}K.
+            Não é cotação, aprovação nem promessa de emissão; seguradora é decisão humana por apetite vigente.
+          </p>
         </div>
       </div>
 
@@ -384,9 +388,9 @@ function SolverInner() {
                     <p className="text-text-faint text-xs font-medium mb-2">Checklist Sancor</p>
                     <div className="space-y-1 text-xs text-text-muted">
                       <Check ok={vg <= 20_000_000} label="Dívida ≤ R$ 20M" />
-                      <Check ok={true} label="PL estimado ≥ R$ 20M (confirmar)" />
-                      <Check ok={true} label="Lucro Real ou Presumido (confirmar)" />
-                      <Check ok={true} label="Consulta cadastral pré-aprovada" />
+                      <Check ok={false} label="PL estimado ≥ R$ 20M — NÃO CONFIRMADO" />
+                      <Check ok={false} label="Lucro Real ou Presumido — NÃO CONFIRMADO" />
+                      <Check ok={false} label="Consulta cadastral — PENDENTE DE VALIDAÇÃO" />
                     </div>
                   </div>
                 )}

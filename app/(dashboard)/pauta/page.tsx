@@ -115,6 +115,8 @@ function Central() {
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState(q)
   const [painelId, setPainelId] = useState<string | null>(null)
+  const [painelContatos, setPainelContatos] = useState<{ telefone: string | null; email: string | null; cargo: string | null }[]>([])
+  const [painelAdv, setPainelAdv] = useState<{ nome: string; oab: string | null; uf: string | null } | null>(null)
   const [nota, setNota] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [atualizadoEm, setAtualizadoEm] = useState<Date | null>(null)
@@ -212,6 +214,20 @@ function Central() {
 
   const painel = painelId ? alertas.find(a => a.id === painelId) ?? null : null
   const painelFila = painel ? fila.get(painel.cnpj_raiz) : undefined
+
+  // Abordagem sem caça: contato (Receita/manual) + advogado dos autos no painel
+  useEffect(() => {
+    setPainelContatos([]); setPainelAdv(null)
+    if (!painel || painel.cnpj_raiz === '00000000') return
+    supabase.from('contatos').select('telefone,email,cargo').eq('cnpj_raiz', painel.cnpj_raiz).limit(4)
+      .then(({ data }) => setPainelContatos(data ?? []))
+    if (painel.numero_processo) {
+      supabase.from('eventos').select('advogados').eq('fonte', 'JUDICIAL')
+        .eq('numero_processo', painel.numero_processo).not('advogados', 'is', null).limit(1)
+        .then(({ data }) => setPainelAdv((data?.[0]?.advogados as any)?.[0] ?? null))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [painelId])
 
   return (
     <div className="flex h-screen">
@@ -411,6 +427,28 @@ function Central() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {(painelAdv || painelContatos.length > 0) && (
+              <div className="card !p-3.5 space-y-1.5">
+                <p className="section-header !mb-1">Abordagem — sem caça a contato</p>
+                {painelAdv && (
+                  <p className="text-xs text-text-primary flex items-center gap-1.5">
+                    <Scale className="w-3 h-3 text-vf-red-light flex-shrink-0" />
+                    {painelAdv.nome}{painelAdv.oab ? ` · OAB ${painelAdv.oab}${painelAdv.uf ? '/' + painelAdv.uf : ''}` : ''}
+                    <span className="text-text-faint">(advogado dos autos — interlocutor potencial, não decisor)</span>
+                  </p>
+                )}
+                {painelContatos.filter(c => c.telefone).map((c, i) => (
+                  <p key={i} className="text-xs text-text-muted">
+                    ☎ <span className="font-mono text-text-primary">{c.telefone}</span>{' '}
+                    <span className="text-text-faint">({c.cargo === 'CADASTRO RFB' ? 'cadastro Receita' : c.cargo ?? 'contato'})</span>
+                  </p>
+                ))}
+                {painelContatos.filter(c => c.email).map((c, i) => (
+                  <p key={i} className="text-xs"><a className="text-info hover:underline" href={`mailto:${c.email}`}>{c.email}</a></p>
+                ))}
               </div>
             )}
 

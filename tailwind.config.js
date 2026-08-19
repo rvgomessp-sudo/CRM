@@ -8,16 +8,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Garantia sem Barreiras v5 — Rose Gold sobre noite mauve (vermelho reservado a ALERTA)
-        bg:       { primary: '#0C0A0E', secondary: '#121016', card: '#18141E', hover: '#1F1A26' },
-        border:   { DEFAULT: '#241F2B', strong: '#37303F' },
-        // vf-red* e gold mantidos por compatibilidade de classe — agora renderizam ROSE GOLD
-        vf:       { red: '#DDA096', 'red-dark': '#BC8073', 'red-light': '#F0C4BA' },
-        gold:     { DEFAULT: '#DDA096', dark: '#BC8073', light: '#F0C4BA' },
-        rose:     { DEFAULT: '#DDA096', dark: '#BC8073', light: '#F0C4BA', deep: '#A66B5C' },
-        text:     { primary: '#F1ECEF', muted: '#9A8F97', faint: '#574C57' },
-        success:  '#35C98E',
-        warning:  '#E0A93C',
+        // Garantia sem Barreiras v6 — COBRE sobre AZUL-MARINHO PROFUNDO
+        // (Fase 17 da ordem executiva 19/08; referência: mockups GSB)
+        bg:       { primary: '#0A1322', secondary: '#0F1B2E', card: '#142238', hover: '#1B2C47' },
+        border:   { DEFAULT: '#233650', strong: '#33496B' },
+        // vf-red*/gold/rose mantidos por compatibilidade de classe — renderizam COBRE
+        vf:       { red: '#D89B78', 'red-dark': '#B47A55', 'red-light': '#EDC1A4' },
+        gold:     { DEFAULT: '#D89B78', dark: '#B47A55', light: '#EDC1A4' },
+        rose:     { DEFAULT: '#D89B78', dark: '#B47A55', light: '#EDC1A4', deep: '#9E6743' },
+        text:     { primary: '#EDF1F7', muted: '#94A4BA', faint: '#566A85' },
+        success:  '#3BCE93',
+        warning:  '#E2AC42',
         info:     '#6FA8E8',
         danger:   '#F0616B',
         // Motor colors
