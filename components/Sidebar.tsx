@@ -22,9 +22,10 @@ const NAV = [
 interface SidebarProps {
   userName?: string
   userRole?: string
+  onNavigate?: () => void
 }
 
-export default function Sidebar({ userName, userRole }: SidebarProps) {
+export default function Sidebar({ userName, userRole, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
@@ -60,6 +61,7 @@ export default function Sidebar({ userName, userRole }: SidebarProps) {
             <Link
               key={href}
               href={href}
+              onClick={onNavigate}
               className={cn(
                 'flex items-center gap-2.5 px-3 py-2 rounded text-sm transition-colors',
                 active

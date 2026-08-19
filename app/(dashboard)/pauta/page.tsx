@@ -230,7 +230,7 @@ function Central() {
   }, [painelId])
 
   return (
-    <div className="flex h-screen">
+    <div className="flex min-h-screen lg:h-screen">
       <div className="flex-1 min-w-0 flex flex-col">
 
         {/* ===== Cabeçalho + KPIs ===== */}
@@ -382,9 +382,9 @@ function Central() {
         </div>
       </div>
 
-      {/* ===== Painel lateral de validação ===== */}
+      {/* ===== Painel lateral de validação — overlay no mobile, lateral no desktop ===== */}
       {painel && (
-        <aside className="w-[380px] flex-shrink-0 border-l border-border bg-bg-secondary overflow-y-auto">
+        <aside className="fixed inset-0 z-40 lg:static lg:inset-auto lg:z-auto w-full lg:w-[380px] flex-shrink-0 border-l border-border bg-bg-secondary overflow-y-auto">
           <div className="p-5 space-y-4">
             <div className="flex items-start justify-between gap-2">
               <div>
