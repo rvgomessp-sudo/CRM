@@ -180,12 +180,15 @@ export default function EmpresaPage() {
     setSaving(false)
   }
 
+  const ENGINE = process.env.NEXT_PUBLIC_ENGINE_URL || 'https://vf-graph-intelligence.onrender.com'
+  const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
   async function gerarDossie() {
     setDossieLoading(true); setDossieMsg(null)
+    // 1) camada rápida (Receita QSA) — instantânea
     try {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gerar-dossie`
       const { data: { session } } = await supabase.auth.getSession()
-      const r = await fetch(url, {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gerar-dossie`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -195,14 +198,22 @@ export default function EmpresaPage() {
         body: JSON.stringify({ cnpj_raiz: cnpj }),
       })
       const j = await r.json()
-      if (j.ok) {
-        setDossieMsg(`Dossiê gerado: ${j.decisores_criados} decisor(es) do QSA da Receita${j.contato_cadastral ? ' + contato cadastral' : ''}. Veja em Decisores e na aba Contatos — todos para validação.`)
-        await fetchAll()
-      } else {
-        setDossieMsg(`Não foi possível gerar: ${j.erro ?? 'fonte indisponível'}`)
-      }
+      if (j.ok) { setDossieMsg(`Receita: ${j.decisores_criados} sócio(s)/administrador(es) + contato cadastral. Varredura profunda em andamento…`); await fetchAll() }
+    } catch { /* segue pra varredura */ }
+
+    // 2) varredura completa (engine · Tavily + OSINT), assíncrona
+    const cnpjCompleto = (inscricoes[0]?.cnpj_completo ?? '').replace(/\D/g, '')
+    if (cnpjCompleto.length !== 14) { setDossieMsg(m => (m ?? '') + ' (CNPJ completo indisponível para a varredura profunda.)'); setDossieLoading(false); return }
+    try {
+      const kick = await fetch(`${ENGINE}/api/dossie/jobs`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cnpj: cnpjCompleto, legal_name: empresa?.nome_devedor, state: empresa?.uf_devedor, deep: true, use_tavily: true }),
+      }).then(x => x.json())
+      if (!kick.job_id) throw new Error('engine não aceitou o job')
+      // O engine grava direto no banco ao terminar (~5 min). Não precisa sondar.
+      setDossieMsg(m => (m ?? '') + ' A varredura profunda roda no engine e grava sozinha no banco em ~5 min — pode fechar esta tela; os decisores da web aparecem em Decisores.')
     } catch (e: any) {
-      setDossieMsg(`Falha ao chamar o dossiê: ${e?.message ?? 'erro de rede'}`)
+      setDossieMsg(m => (m ?? '') + ` (Varredura profunda indisponível: ${e?.message ?? 'engine offline'}.)`)
     }
     setDossieLoading(false)
   }
