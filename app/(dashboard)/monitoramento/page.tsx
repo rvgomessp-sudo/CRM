@@ -20,7 +20,7 @@ function fmt(d: string | null | undefined): string {
 export default async function MonitoramentoPage() {
   const supabase = createClient()
 
-  const [insc, evCap, evEnr, evCnt, enrCnt, semAdv, ctRfb, alerta, alertaCnt, empCnt] = await Promise.all([
+  const [insc, evCap, evEnr, evCnt, enrCnt, semAdv, ctRfb, alerta, alertaCnt, empCnt, coletas] = await Promise.all([
     supabase.from('inscricoes').select('criado_em').order('criado_em', { ascending: false }).limit(1),
     supabase.from('eventos').select('capturado_em').order('capturado_em', { ascending: false }).limit(1),
     supabase.from('eventos').select('enriquecido_em').not('enriquecido_em', 'is', null).order('enriquecido_em', { ascending: false }).limit(1),
@@ -31,7 +31,16 @@ export default async function MonitoramentoPage() {
     supabase.from('alertas').select('detectado_em').order('detectado_em', { ascending: false }).limit(1),
     supabase.from('alertas').select('id', { count: 'exact', head: true }),
     supabase.from('empresas').select('cnpj_raiz', { count: 'exact', head: true }),
+    // Status MEDIDO da coleta recorrente: últimas execuções reais do coletor
+    supabase.from('coletas').select('iniciada_em, concluida_em, processados, novos_eventos, novos_alertas, erros')
+      .eq('fonte', 'DJEN_COMUNICA').order('iniciada_em', { ascending: false }).limit(6),
   ])
+
+  const runs = coletas.data ?? []
+  const ultimaColeta = runs[0]?.iniciada_em
+  const minDesdeColeta = ultimaColeta ? Math.floor((Date.now() - new Date(ultimaColeta).getTime()) / 60000) : null
+  const coletaAtiva = minDesdeColeta != null && minDesdeColeta <= 30
+  const somaEventos = runs.reduce((s, r) => s + (r.novos_eventos ?? 0), 0)
 
   const fontes = [
     {
@@ -43,7 +52,7 @@ export default async function MonitoramentoPage() {
     {
       icon: Scale, nome: 'DJEN/Comunica — eventos judiciais',
       ultima: evCap.data?.[0]?.capturado_em, registros: `${evCnt.count ?? 0} eventos`,
-      modo: 'COLETA MANUAL (script fora do produto)',
+      modo: coletaAtiva ? 'CRON AUTOMÁTICO (15 min, Edge Function coleta-djen)' : 'CRON AGENDADO (aguardando próxima execução)',
       divergencia: null,
     },
     {
@@ -72,12 +81,44 @@ export default async function MonitoramentoPage() {
         <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
           <Activity className="w-5 h-5 text-vf-red-light" /> Monitoramento das fontes
         </h1>
-        <span className="badge bg-warning/15 text-warning">coleta recorrente: NÃO LIGADA</span>
+        {coletaAtiva ? (
+          <span className="badge bg-success/15 text-success">
+            coleta recorrente ATIVA · última há {minDesdeColeta} min
+          </span>
+        ) : (
+          <span className="badge bg-warning/15 text-warning">
+            coleta recorrente: {ultimaColeta ? `SEM EXECUÇÃO HÁ ${minDesdeColeta} MIN` : 'SEM EXECUÇÃO REGISTRADA'}
+          </span>
+        )}
       </div>
       <p className="text-text-muted text-sm mb-6 max-w-3xl">
         Estado real de cada fonte, medido do banco agora. Este painel não simula atividade:
-        enquanto a coleta agendada não existir, o status honesto é o que está abaixo.
+        o selo acima só fica verde quando existe execução do coletor registrada nos últimos 30 minutos.
       </p>
+
+      {/* Execuções reais do coletor (cron a cada 15 min) */}
+      {runs.length > 0 && (
+        <div className="card mb-4">
+          <p className="section-header">Coletor DJEN — execuções reais (lotes de 40 processos, cron 15 min)</p>
+          <div className="overflow-x-auto">
+            <table className="table-vf">
+              <thead><tr><th>Início</th><th className="text-right">Processos</th><th className="text-right">Eventos novos</th><th className="text-right">Alertas</th><th className="text-right">Erros</th></tr></thead>
+              <tbody>
+                {runs.map((r, i) => (
+                  <tr key={i}>
+                    <td className="text-xs text-text-muted">{new Date(r.iniciada_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td className="text-right text-xs tabular-nums">{r.processados}</td>
+                    <td className="text-right text-xs tabular-nums text-success font-semibold">{r.novos_eventos}</td>
+                    <td className="text-right text-xs tabular-nums text-vf-red-light">{r.novos_alertas}</td>
+                    <td className={`text-right text-xs tabular-nums ${r.erros ? 'text-danger' : 'text-text-faint'}`}>{r.erros}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[11px] text-text-faint mt-2">{somaEventos} eventos novos nas últimas {runs.length} execuções · alertas de constrição nascem CANDIDATO e aguardam validação na Central.</p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {fontes.map(f => {
@@ -116,8 +157,8 @@ export default async function MonitoramentoPage() {
         <p className="section-header">Fluxo da inteligência — estado real de cada etapa</p>
         <div className="flex flex-wrap items-center gap-y-2 text-xs">
           {[
-            ['Fontes', 'manuais'], ['Normalização', 'scripts'], ['Cruzamento', 'CNPJ raiz'],
-            ['Validação', 'Central ✓'], ['Classificação', 'playbook SQL'],
+            ['Fontes', coletaAtiva ? 'cron 15min ✓' : 'cron agendado'], ['Normalização', 'no coletor ✓'], ['Cruzamento', 'CNPJ raiz ✓'],
+            ['Validação', 'Central ✓'], ['Classificação', 'tipo+ramo ✓'],
             ['Alertas', `${alertaCnt.count ?? 0} ✓`], ['Oportunidades', 'via validação ✓'],
             ['Dossiês', 'VF_OSINT local'], ['Relatórios', 'não construído'],
           ].map(([etapa, estado], i, arr) => (
