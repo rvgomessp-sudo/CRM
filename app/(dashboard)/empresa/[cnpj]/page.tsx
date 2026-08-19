@@ -257,12 +257,8 @@ export default function EmpresaPage() {
     }
   })()
 
-  // Direcionamento de seguradora: a lógica de roteamento (não SLA inventado)
-  const criteriosSeg: string[] = []
-  if (zona === 'SUFOCO' || zona === 'VERMELHA') criteriosSeg.push('execução fiscal em curso')
-  if (empresa.valor_total_devida >= 1_000_000) criteriosSeg.push('porte > R$ 1M')
-  if (motor) criteriosSeg.push(`motor ${motor}`)
-  const seguradoraRazao = `Direcionado por ${criteriosSeg.join(' · ') || 'regra padrão da carteira'}. Reavalie na análise da seguradora se o apetite mudar.`
+  // Seguradora: SEM direcionamento automático (decisão 19/08 — olhamos o mercado caso a caso)
+  const seguradoraRazao = 'Sem direcionamento automático — a seguradora é escolhida olhando o mercado, caso a caso, na estruturação da proposta.'
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -332,7 +328,6 @@ export default function EmpresaPage() {
             </select>
             <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-text-faint pointer-events-none" />
           </div>
-          <span className="text-text-muted text-xs">→ {empresa.seguradora_alvo}</span>
 
           {/* Desfecho — só quando Fechado; clicável para revisar */}
           {normalizeStage(empresa.estagio) === 'fechado' && empresa.desfecho && (
@@ -609,17 +604,12 @@ export default function EmpresaPage() {
             {/* Coluna direita: trabalhista + sócios + cadastro */}
             <div className="space-y-6">
 
-              {/* Direcionamento de seguradora — o porquê, não só o nome */}
+              {/* Seguradora — sem direcionamento automático; decisão de mercado */}
               <div className="card">
                 <p className="section-header flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-info" /> Direcionamento de seguradora
+                  <Shield className="w-3.5 h-3.5 text-info" /> Seguradora
                 </p>
-                <div className="flex items-center gap-3">
-                  <span className="w-14 h-14 rounded-lg grid place-items-center text-xs font-bold bg-info/15 text-info border border-info/30 text-center leading-tight flex-shrink-0">
-                    {empresa.seguradora_alvo}
-                  </span>
-                  <p className="text-text-muted text-xs leading-relaxed">{seguradoraRazao}</p>
-                </div>
+                <p className="text-text-muted text-xs leading-relaxed">{seguradoraRazao}</p>
               </div>
 
               {/* Trabalhista — separado, sem relação securitária */}

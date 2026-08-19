@@ -4,12 +4,13 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  LayoutDashboard, KanbanSquare, Database, Building2,
-  Upload, Calculator, Settings, LogOut, Shield, Target
+  LayoutDashboard, KanbanSquare, Database,
+  Calculator, LogOut, Shield, Target, CalendarCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
+  { href: '/pauta',         label: 'Pauta do dia',  icon: CalendarCheck },
   { href: '/oportunidades', label: 'Oportunidades', icon: Target },
   { href: '/pipeline',      label: 'Pipeline',      icon: KanbanSquare },
   { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },

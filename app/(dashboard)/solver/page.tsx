@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { formatBRL, formatTaxa, cn } from '@/lib/utils'
 import { Calculator, CheckCircle, AlertTriangle, TrendingUp, Save } from 'lucide-react'
@@ -45,7 +46,17 @@ function calcular(
 }
 
 export default function SolverPage() {
+  // useSearchParams exige Suspense no App Router
+  return (
+    <Suspense>
+      <SolverInner />
+    </Suspense>
+  )
+}
+
+function SolverInner() {
   const supabase = createClient()
+  const sp = useSearchParams()
 
   // Inputs
   const [seguradora, setSeguradora] = useState<SeguradoraTipo>('SANCOR')
@@ -55,8 +66,27 @@ export default function SolverPage() {
   const [comissaoPct, setComissaoPct] = useState<string>('22')       // % (22 = 22% = 0.22)
   const [honorarios, setHonorarios] = useState<string>('0')
   const [cnpjRef, setCnpjRef] = useState<string>('')
+  const [empresaNome, setEmpresaNome] = useState<string>('')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // A ficha da empresa chama /solver?cnpj=<raiz> — preencher tudo que dá
+  useEffect(() => {
+    const cnpj = sp.get('cnpj')
+    if (!cnpj) return
+    setCnpjRef(cnpj)
+    supabase.from('vw_fila_oportunidades')
+      .select('nome_devedor, valor_total_devida')
+      .eq('cnpj_raiz', cnpj.replace(/\D/g, '').slice(0, 8)).limit(1)
+      .then(({ data }) => {
+        const emp = data?.[0]
+        if (emp) {
+          setEmpresaNome(emp.nome_devedor)
+          if (emp.valor_total_devida) setValorGarantia(String(Math.round(emp.valor_total_devida)))
+        }
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const params = SEGURADORA_PARAMS[seguradora]
 
@@ -263,6 +293,11 @@ export default function SolverPage() {
               value={cnpjRef}
               onChange={e => setCnpjRef(e.target.value.replace(/\D/g, ''))}
             />
+            {empresaNome && (
+              <p className="text-xs text-vf-red-light mt-1.5 truncate" title={empresaNome}>
+                → {empresaNome} <span className="text-text-faint">(dívida pré-carregada como valor da garantia)</span>
+              </p>
+            )}
           </div>
         </div>
 

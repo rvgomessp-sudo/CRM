@@ -39,6 +39,7 @@ function FilaOportunidades() {
   const motor     = sp.get('motor')    ?? ''
   const uf        = sp.get('uf')       ?? ''
   const triagem   = sp.get('triagem')  ?? ''
+  const zona      = sp.get('zona')     ?? ''   // ex.: dashboard → /oportunidades?zona=SUFOCO
   const soAlvo    = sp.get('alvo')     !== '0'   // marinheiro LIGADO por padrão
   const verDescart= sp.get('descart')  === '1'
   const page      = Math.max(0, parseInt(sp.get('page') ?? '0', 10) || 0)
@@ -74,6 +75,7 @@ function FilaOportunidades() {
     if (q)       query = query.ilike('nome_devedor', `%${q}%`)
     if (motor)   query = query.eq('motor', motor)
     if (uf)      query = query.eq('uf_devedor', uf)
+    if (zona)    query = query.eq('zona_risco', zona)
     if (soAlvo)  query = query.eq('alvo_marinheiro', true)
     if (triagem) query = query.eq('triagem', triagem)
     else if (!verDescart) query = query.neq('triagem', 'DESCARTADO')
@@ -87,7 +89,7 @@ function FilaOportunidades() {
     const { data, count, error } = await query.range(from, from + PAGE_SIZE - 1)
     if (!error) { setRows((data as FilaRow[]) || []); setTotal(count || 0) }
     setLoading(false)
-  }, [supabase, q, motor, uf, soAlvo, triagem, verDescart, page])
+  }, [supabase, q, motor, uf, zona, soAlvo, triagem, verDescart, page])
 
   useEffect(() => { fetchData() }, [fetchData])
 
@@ -110,7 +112,7 @@ function FilaOportunidades() {
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
-  const filtrosAtivos = !!(q || motor || uf || triagem || soAlvo || verDescart)
+  const filtrosAtivos = !!(q || motor || uf || zona || triagem || soAlvo || verDescart)
 
   return (
     <div className="flex flex-col h-screen">
@@ -151,6 +153,13 @@ function FilaOportunidades() {
             <option value="">Triagem</option>
             {(['NOVO','VISTO','ABORDAR','DESCARTADO'] as TriagemStatus[]).map(t =>
               <option key={t} value={t}>{TRIAGEM_LABELS[t]}</option>)}
+          </select>
+
+          <select className="select py-1.5 text-xs w-auto" value={zona} onChange={e => setParam({ zona: e.target.value })}>
+            <option value="">Zona</option>
+            <option value="SUFOCO">🚨 Sufoco</option>
+            <option value="VERMELHA">Vermelha</option>
+            <option value="AMARELA">Amarela</option>
           </select>
 
           <button
