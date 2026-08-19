@@ -4,18 +4,19 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  LayoutDashboard, KanbanSquare, Database,
+  LayoutDashboard, KanbanSquare, Database, Activity,
   Calculator, LogOut, Shield, Target, CalendarCheck
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
-  { href: '/pauta',         label: 'Pauta do dia',  icon: CalendarCheck },
-  { href: '/oportunidades', label: 'Oportunidades', icon: Target },
-  { href: '/pipeline',      label: 'Pipeline',      icon: KanbanSquare },
-  { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
-  { href: '/base-pgfn',     label: 'Base PGFN',     icon: Database },
-  { href: '/solver',        label: 'VF Solver',     icon: Calculator },
+  { href: '/pauta',         label: 'Central',        icon: CalendarCheck },
+  { href: '/oportunidades', label: 'Oportunidades',  icon: Target },
+  { href: '/pipeline',      label: 'Pipeline',       icon: KanbanSquare },
+  { href: '/dashboard',     label: 'Dashboard',      icon: LayoutDashboard },
+  { href: '/monitoramento', label: 'Monitoramento',  icon: Activity },
+  { href: '/base-pgfn',     label: 'Base PGFN',      icon: Database },
+  { href: '/solver',        label: 'VF Solver',      icon: Calculator },
 ]
 
 interface SidebarProps {

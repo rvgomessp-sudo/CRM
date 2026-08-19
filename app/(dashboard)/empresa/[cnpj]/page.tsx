@@ -39,6 +39,19 @@ interface EventoJudicial {
   link_publicacao: string | null
 }
 
+// Fase 6 — resumo do alerta da Central (a validação vem antes da abordagem)
+interface AlertaResumo {
+  id: string
+  titulo: string
+  gravidade: string
+  estado: string
+  evidencia_condicao: string
+  papel_processual: string
+  pendencias: string[] | null
+  numero_processo: string | null
+  detectado_em: string
+}
+
 function diasDe(d: string | null | undefined): number | null {
   if (!d) return null
   return Math.floor((Date.now() - new Date(d).getTime()) / 86400000)
@@ -56,6 +69,7 @@ export default function EmpresaPage() {
   const [propostas, setPropostas] = useState<Proposta[]>([])
   const [contatos, setContatos] = useState<any[]>([])
   const [eventos, setEventos] = useState<EventoJudicial[]>([])
+  const [alertas, setAlertas] = useState<AlertaResumo[]>([])
   const [score, setScore] = useState<number | null>(null)
   const [alvoMarinheiro, setAlvoMarinheiro] = useState(false)
   const [showContatoForm, setShowContatoForm] = useState(false)
@@ -74,7 +88,7 @@ export default function EmpresaPage() {
 
   async function fetchAll() {
     setLoading(true)
-    const [emp, ins, int, con, prop, cont, evt, fil] = await Promise.all([
+    const [emp, ins, int, con, prop, cont, evt, fil, alr] = await Promise.all([
       supabase.from('empresas').select('*').eq('cnpj_raiz', cnpj).single(),
       supabase.from('inscricoes').select('*').eq('cnpj_raiz', cnpj).order('valor_numerico', { ascending: false }),
       supabase.from('interacoes').select('*').eq('cnpj_raiz', cnpj).order('criado_em', { ascending: false }),
@@ -86,6 +100,9 @@ export default function EmpresaPage() {
         .order('ocorrido_em', { ascending: false }).limit(80),
       supabase.from('vw_fila_oportunidades').select('score,alvo_marinheiro')
         .eq('cnpj_raiz', cnpj).order('score', { ascending: false }).limit(1),
+      // Fase 6: alertas da Central para esta empresa (validação primeiro)
+      supabase.from('alertas').select('*').eq('cnpj_raiz', cnpj)
+        .order('detectado_em', { ascending: false }).limit(10),
     ])
     setEmpresa(emp.data)
     setInscricoes(ins.data || [])
@@ -94,6 +111,7 @@ export default function EmpresaPage() {
     setPropostas(prop.data || [])
     setContatos(cont.data || [])
     setEventos((evt.data as EventoJudicial[]) || [])
+    setAlertas((alr.data as AlertaResumo[]) || [])
     const fila = (fil.data as { score: number | null; alvo_marinheiro: boolean }[] | null)?.[0]
     setScore(fila?.score ?? emp.data?.score_vf ?? null)
     setAlvoMarinheiro(fila?.alvo_marinheiro ?? false)
@@ -419,8 +437,66 @@ export default function EmpresaPage() {
                 </p>
               </div>
               <Link href={`/solver?cnpj=${cnpj}`} className="btn-primary text-xs flex-shrink-0">
-                Iniciar abordagem <ArrowRight className="w-3.5 h-3.5" />
+                Iniciar simulação <ArrowRight className="w-3.5 h-3.5" />
               </Link>
+            </div>
+
+            {/* ===== POR QUE ESTA EMPRESA PODE SER UMA OPORTUNIDADE AGORA? (Fase 6) ===== */}
+            <div className="lg:col-span-3 card border-l-2 border-l-info">
+              <p className="section-header flex items-center gap-2">
+                <Zap className="w-3.5 h-3.5 text-info" /> Por que esta empresa pode ser uma oportunidade agora?
+              </p>
+              {alertas.length === 0 ? (
+                <p className="text-text-muted text-xs">
+                  Nenhum alerta da Central para esta empresa. A leitura abaixo vem do acervo
+                  (eventos históricos) — <span className="text-warning">sem validação humana registrada</span>.
+                </p>
+              ) : (
+                <div className="space-y-2.5">
+                  {alertas.slice(0, 3).map(a => (
+                    <div key={a.id} className="flex items-start gap-3 text-xs">
+                      <span className={cn('badge text-[10px] flex-shrink-0 mt-0.5',
+                        a.estado === 'VALIDADO' ? 'bg-success/15 text-success'
+                        : a.estado === 'CONFLITO' ? 'bg-danger/15 text-danger'
+                        : a.estado === 'DESCARTADO' ? 'bg-bg-hover text-text-faint'
+                        : 'bg-info/15 text-info')}>
+                        {a.estado.replace('_', ' ').toLowerCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-text-primary">
+                          <b>Fato:</b> {a.titulo.replace(/^Pauta 20\/08 · /, '')}
+                          {a.numero_processo && <span className="text-text-faint font-mono"> · {a.numero_processo}</span>}
+                        </p>
+                        <p className="text-text-muted mt-0.5">
+                          Evidência: <span className="font-medium">{a.evidencia_condicao}</span>
+                          {' '}· papel: <span className={a.papel_processual === 'CREDORA' ? 'text-danger font-semibold' : ''}>{a.papel_processual}</span>
+                          {(a.pendencias?.length ?? 0) > 0 && (
+                            <span className="text-warning"> · falta confirmar: {(a.pendencias ?? []).length} item(ns)</span>
+                          )}
+                        </p>
+                        <p className="text-text-muted mt-0.5">
+                          <b className="text-text-primary">Interpretação:</b>{' '}
+                          {a.papel_processual === 'CREDORA'
+                            ? 'empresa é CREDORA nesta publicação — o gatilho fiscal dela está em outros autos; não abordar por este processo.'
+                            : a.estado === 'VALIDADO'
+                              ? 'fato validado — apta a abordagem consultiva sobre garantia.'
+                              : 'candidato: conferir a fonte na Central antes de abordar.'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-2 border-t border-border flex items-center justify-between">
+                    <p className="text-[11px] text-text-faint">
+                      Recomendação: {alertas.some(a => a.estado === 'VALIDADO')
+                        ? 'preparar abordagem consultiva (há fato validado).'
+                        : 'submeter à validação na Central antes de qualquer contato.'}
+                    </p>
+                    <Link href="/pauta" className="text-xs text-info hover:underline flex-shrink-0">
+                      Validar na Central →
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Leitura de risco */}
