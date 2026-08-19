@@ -21,7 +21,7 @@ import {
   ArrowLeft, Building2, FileText, MessageSquare, Calculator, ShieldAlert,
   AlertTriangle, CheckCircle, Clock, Plus, ChevronDown, Phone, Mail, Trash2,
   User, Users, Gavel, Landmark, Hammer, Target,
-  Linkedin, Zap, ArrowRight, Shield,
+  Linkedin, Zap, ArrowRight, Shield, Sparkles,
 } from 'lucide-react'
 
 type Tab = 'painel' | 'inscricoes' | 'contatos' | 'interacoes' | 'proposta'
@@ -72,6 +72,8 @@ export default function EmpresaPage() {
   const [alertas, setAlertas] = useState<AlertaResumo[]>([])
   const [score, setScore] = useState<number | null>(null)
   const [alvoMarinheiro, setAlvoMarinheiro] = useState(false)
+  const [dossieLoading, setDossieLoading] = useState(false)
+  const [dossieMsg, setDossieMsg] = useState<string | null>(null)
   const [showContatoForm, setShowContatoForm] = useState(false)
   const [novoContato, setNovoContato] = useState({ nome: '', cargo: '', telefone: '', email: '' })
   const [loading, setLoading] = useState(true)
@@ -176,6 +178,33 @@ export default function EmpresaPage() {
     setShowInteracaoForm(false)
     await fetchAll()
     setSaving(false)
+  }
+
+  async function gerarDossie() {
+    setDossieLoading(true); setDossieMsg(null)
+    try {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/gerar-dossie`
+      const { data: { session } } = await supabase.auth.getSession()
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+          Authorization: `Bearer ${session?.access_token ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ cnpj_raiz: cnpj }),
+      })
+      const j = await r.json()
+      if (j.ok) {
+        setDossieMsg(`Dossiê gerado: ${j.decisores_criados} decisor(es) do QSA da Receita${j.contato_cadastral ? ' + contato cadastral' : ''}. Veja em Decisores e na aba Contatos — todos para validação.`)
+        await fetchAll()
+      } else {
+        setDossieMsg(`Não foi possível gerar: ${j.erro ?? 'fonte indisponível'}`)
+      }
+    } catch (e: any) {
+      setDossieMsg(`Falha ao chamar o dossiê: ${e?.message ?? 'erro de rede'}`)
+    }
+    setDossieLoading(false)
   }
 
   async function adicionarContato() {
@@ -436,10 +465,19 @@ export default function EmpresaPage() {
                   {acao.sub && <span className="text-text-muted font-normal"> — {acao.sub}</span>}
                 </p>
               </div>
-              <Link href={`/solver?cnpj=${cnpj}`} className="btn-primary text-xs flex-shrink-0">
-                Iniciar simulação <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                <button onClick={gerarDossie} disabled={dossieLoading}
+                  className="btn-secondary text-xs" title="Puxa sócios/administradores e contato cadastral da Receita">
+                  <Sparkles className="w-3.5 h-3.5" /> {dossieLoading ? 'Gerando…' : 'Gerar dossiê'}
+                </button>
+                <Link href={`/solver?cnpj=${cnpj}`} className="btn-primary text-xs">
+                  Iniciar simulação <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
             </div>
+            {dossieMsg && (
+              <div className="lg:col-span-3 -mt-3 text-xs px-1 text-success">{dossieMsg}</div>
+            )}
 
             {/* ===== POR QUE ESTA EMPRESA PODE SER UMA OPORTUNIDADE AGORA? (Fase 6) ===== */}
             <div className="lg:col-span-3 card border-l-2 border-l-info">
