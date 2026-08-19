@@ -5,13 +5,14 @@ import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   LayoutDashboard, KanbanSquare, Database, Activity,
-  Calculator, LogOut, Target, CalendarCheck
+  Calculator, LogOut, Target, CalendarCheck, Users
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const NAV = [
   { href: '/pauta',         label: 'Central',        icon: CalendarCheck },
   { href: '/oportunidades', label: 'Oportunidades',  icon: Target },
+  { href: '/decisores',     label: 'Decisores',      icon: Users },
   { href: '/pipeline',      label: 'Pipeline',       icon: KanbanSquare },
   { href: '/dashboard',     label: 'Dashboard',      icon: LayoutDashboard },
   { href: '/monitoramento', label: 'Monitoramento',  icon: Activity },
