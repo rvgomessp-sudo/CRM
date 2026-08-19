@@ -96,8 +96,24 @@ FROM pauta WHERE data = '2026-08-20' AND alerta IS NOT NULL
 HAVING count(*) <> 3
 ON CONFLICT (cnpj_raiz, numero_processo, titulo) DO NOTHING;
 
--- Conferência da fixture (esperado: 20 candidatos + 1 informativo se a
--- inconsistência existir; 2 CREDORA; 2 PENDENTE; 12 CRITICO)
+-- (extensão da detecção 6) Meta-alerta: o PDF declara "zona sufoco ×12";
+-- a contagem real por zona_risco atual diverge → registrar como fato medido.
+INSERT INTO alertas (cnpj_raiz, titulo, gravidade, estado, evidencia_condicao,
+                     papel_processual, pendencias, fonte, trecho)
+SELECT '00000000',
+       'Inconsistência documental · Pauta 20/08 declara 12 em sufoco; zona atual = ' || count(*),
+       'INFORMATIVO', 'CANDIDATO', 'CONFIRMADO', 'NAO_CONFIRMADO',
+       '["CORRIGIR_DOCUMENTO_PAUTA"]'::jsonb,
+       'AUDITORIA_FASE_2',
+       'Contagem verificável: pauta 2026-08-20 × vw_fila_oportunidades.zona_risco = SUFOCO'
+FROM pauta p JOIN vw_fila_oportunidades f USING (cnpj_raiz)
+WHERE p.data = '2026-08-20' AND f.zona_risco = 'SUFOCO'
+HAVING count(*) <> 12
+ON CONFLICT (cnpj_raiz, numero_processo, titulo) DO NOTHING;
+
+-- Conferência da fixture (esperado: 20 candidatos + meta-alertas de
+-- inconsistência quando existirem; 2 CREDORA; 2 PENDENTE; CRITICO = nº
+-- de registros da pauta em zona SUFOCO — medido, não declarado)
 SELECT estado, gravidade, papel_processual, count(*)
 FROM alertas WHERE fonte IN ('PAUTA_20_08+DJEN_COMUNICA','AUDITORIA_FASE_2')
 GROUP BY 1,2,3 ORDER BY 1,2,3;

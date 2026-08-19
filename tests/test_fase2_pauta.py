@@ -53,10 +53,10 @@ check("AC Coelho: CREDORA com evidência em CONFLITO",
 check("Aguapeí: grupo econômico não confirmado",
       "SELECT count(*)=1 FROM alertas WHERE cnpj_raiz='35203047' AND pendencias ? 'GRUPO_ECONOMICO_NAO_CONFIRMADO'",
       "embargante é a holding; identidade não confirmada")
-check("N M Engenharia: candidato crítico com teor corroborado",
-      "SELECT count(*)=1 FROM alertas WHERE cnpj_raiz='51594950' AND gravidade='CRITICO' "
+check("N M Engenharia: DEVEDORA corroborada, gravidade coerente com a zona (VERMELHA->IMPORTANTE)",
+      "SELECT count(*)=1 FROM alertas WHERE cnpj_raiz='51594950' AND gravidade='IMPORTANTE' "
       "AND evidencia_condicao='CORROBORADO' AND papel_processual='DEVEDORA'",
-      "embargos extintos por ausência de garantia — teor DJEN presente")
+      "embargos extintos por ausência de garantia — teor DJEN presente; zona VERMELHA no banco")
 check("Pandurata: fonte original ausente detectada",
       "SELECT count(*)=1 FROM alertas WHERE cnpj_raiz='70940994' AND pendencias ? 'FONTE_ORIGINAL_AUSENTE'",
       "link genérico do DJE-TJSP, sem documento específico")
@@ -80,11 +80,17 @@ check("score legado registrado como histórico (coluna própria)",
       "score do PDF não é autoridade; vive em score_legado")
 check("inconsistência 3×4 avisos da pauta detectada",
       "SELECT count(*)=1 FROM alertas WHERE fonte='AUDITORIA_FASE_2' "
-      "AND titulo LIKE 'Inconsistência documental%'",
+      "AND titulo LIKE 'Inconsistência documental · Pauta 20/08 declara 3 avisos%'",
       "detecção 6: o documento declara 3 avisos; registros = 4")
-check("12 críticos (zona sufoco da pauta)",
-      "SELECT count(*)=12 FROM alertas WHERE fonte='PAUTA_20_08+DJEN_COMUNICA' AND gravidade='CRITICO'",
-      "PDF classifica 12 como zona sufoco")
+check("críticos = contagem MEDIDA de zona SUFOCO na pauta (não o nº declarado no PDF)",
+      "SELECT (SELECT count(*) FROM alertas WHERE fonte='PAUTA_20_08+DJEN_COMUNICA' AND gravidade='CRITICO') = "
+      "(SELECT count(*) FROM pauta p JOIN vw_fila_oportunidades f USING (cnpj_raiz) "
+      " WHERE p.data='2026-08-20' AND f.zona_risco='SUFOCO')",
+      "gravidade deve derivar da zona no banco; o PDF é amostra, não verdade")
+check("divergência PDF (12 sufoco declarados) detectada como meta-alerta",
+      "SELECT count(*)=1 FROM alertas WHERE fonte='AUDITORIA_FASE_2' "
+      "AND titulo LIKE 'Inconsistência documental · Pauta 20/08 declara 12 em sufoco%'",
+      "o documento declara 12; a contagem real diverge e o sistema expõe")
 
 # --- Guarda de promoção (validação humana obrigatória) ---
 cur.execute("SELECT id FROM alertas WHERE fonte='PAUTA_20_08+DJEN_COMUNICA' AND estado='CANDIDATO' LIMIT 1")
